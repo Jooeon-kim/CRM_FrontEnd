@@ -1486,6 +1486,117 @@ input {
   color: var(--muted);
 }
 
+.admin-home-rules {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-home-rules-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.admin-home-rules-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-home-rules-sub {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.admin-home-rules-count {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.admin-home-rules-message {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #1d4ed8;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.admin-home-rules-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.admin-home-rules-form input {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.admin-home-rules-form button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-home-rules-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.admin-home-rules-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.admin-home-rules-item {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+  background: #f8fafc;
+}
+
+.admin-home-rules-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-home-rules-keywords {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.admin-home-rules-delete {
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  color: #dc2626;
+  background: #fff1f2;
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 .admin-home-modal {
   position: fixed;
   inset: 0;
@@ -1650,6 +1761,10 @@ input {
   }
 
   .admin-home-tm-list {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-home-rules-form {
     grid-template-columns: 1fr;
   }
 }

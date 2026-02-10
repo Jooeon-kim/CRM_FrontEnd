@@ -5,6 +5,7 @@ import api from '../apiClient'
 export default function AdminHome() {
   const [syncing, setSyncing] = useState(false)
   const [message, setMessage] = useState('')
+  const [ruleMessage, setRuleMessage] = useState('')
   const [stats, setStats] = useState({
     total: 0,
     unassigned: 0,
@@ -13,11 +14,26 @@ export default function AdminHome() {
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [rulesLoading, setRulesLoading] = useState(true)
+  const [rules, setRules] = useState([])
+  const [ruleForm, setRuleForm] = useState({ name: '', keywords: '' })
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState('add')
   const [formData, setFormData] = useState({ id: '', name: '', phone: '', password: '' })
 
   useEffect(() => {
+    const loadRules = async () => {
+      try {
+        setRulesLoading(true)
+        const res = await api.get('/admin/event-rules')
+        setRules(res.data || [])
+      } catch (err) {
+        setRuleMessage('이벤트 규칙을 불러오지 못했습니다.')
+      } finally {
+        setRulesLoading(false)
+      }
+    }
+
     const load = async () => {
       try {
         setLoading(true)
@@ -40,6 +56,7 @@ export default function AdminHome() {
     }
 
     load()
+    loadRules()
   }, [])
 
   const handleSync = async () => {
@@ -97,6 +114,34 @@ export default function AdminHome() {
       setModalOpen(false)
     } catch (err) {
       setMessage('TM 정보 저장에 실패했습니다.')
+    }
+  }
+
+  const handleRuleSubmit = async (event) => {
+    event.preventDefault()
+    if (!ruleForm.name.trim() || !ruleForm.keywords.trim()) return
+    try {
+      setRuleMessage('')
+      await api.post('/admin/event-rules', {
+        name: ruleForm.name.trim(),
+        keywords: ruleForm.keywords.trim(),
+      })
+      setRuleForm({ name: '', keywords: '' })
+      const res = await api.get('/admin/event-rules')
+      setRules(res.data || [])
+    } catch (err) {
+      setRuleMessage('이벤트 규칙 저장에 실패했습니다.')
+    }
+  }
+
+  const handleRuleDelete = async (ruleId) => {
+    if (!ruleId) return
+    try {
+      setRuleMessage('')
+      await api.delete(`/admin/event-rules/${ruleId}`)
+      setRules((prev) => prev.filter((rule) => rule.id !== ruleId))
+    } catch (err) {
+      setRuleMessage('이벤트 규칙 삭제에 실패했습니다.')
     }
   }
 
@@ -256,6 +301,60 @@ export default function AdminHome() {
           </div>
         </div>
       ) : null}
+
+      <div className="admin-home-rules">
+        <div className="admin-home-rules-header">
+          <div>
+            <div className="admin-home-rules-title">이벤트 규칙</div>
+            <p className="admin-home-rules-sub">
+              키워드는 쉼표로 구분합니다. 공백은 무시되고, 모든 키워드를 포함해야 매칭됩니다.
+            </p>
+          </div>
+          <span className="admin-home-rules-count">
+            {rulesLoading ? '...' : `${rules.length}개`}
+          </span>
+        </div>
+
+        {ruleMessage ? <div className="admin-home-rules-message">{ruleMessage}</div> : null}
+
+        <form className="admin-home-rules-form" onSubmit={handleRuleSubmit}>
+          <input
+            type="text"
+            placeholder="이벤트 이름 (예: 강남 올타이트)"
+            value={ruleForm.name}
+            onChange={(e) => setRuleForm({ ...ruleForm, name: e.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="키워드 (예: 강남,올타이트)"
+            value={ruleForm.keywords}
+            onChange={(e) => setRuleForm({ ...ruleForm, keywords: e.target.value })}
+          />
+          <button type="submit">규칙 추가</button>
+        </form>
+
+        {rules.length === 0 ? (
+          <div className="admin-home-rules-empty">등록된 규칙이 없습니다.</div>
+        ) : (
+          <div className="admin-home-rules-list">
+            {rules.map((rule) => (
+              <div key={rule.id} className="admin-home-rules-item">
+                <div>
+                  <div className="admin-home-rules-name">{rule.name}</div>
+                  <div className="admin-home-rules-keywords">{rule.keywords}</div>
+                </div>
+                <button
+                  type="button"
+                  className="admin-home-rules-delete"
+                  onClick={() => handleRuleDelete(rule.id)}
+                >
+                  삭제
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="admin-home-charts">
         <div className="admin-home-chart">
