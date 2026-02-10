@@ -21,6 +21,7 @@ export default function TmLayout() {
           const statusValue = item['상태'] || item.status || ''
           if (statusValue !== '예약') return false
           const reservationValue = item['예약_내원일시'] || item.reservation_at || item.reservationAt
+          if (!reservationValue) return false
           const date = new Date(reservationValue)
           if (Number.isNaN(date.getTime())) return false
           return date.toISOString().slice(0, 10) === todayKey
