@@ -9,6 +9,7 @@ export default function TmLayout() {
   const { status, user } = useSelector((state) => state.auth)
   const location = useLocation()
   const [todayCount, setTodayCount] = useState(0)
+  const [assignedTodayCount, setAssignedTodayCount] = useState(0)
 
   useEffect(() => {
     const loadToday = async () => {
@@ -38,6 +39,21 @@ export default function TmLayout() {
     loadToday()
   }, [user?.id])
 
+  useEffect(() => {
+    const loadAssignedToday = async () => {
+      if (!user?.id) return
+      try {
+        const res = await api.get('/dbdata', { params: { tm: user.id, assignedToday: 1 } })
+        const list = res.data || []
+        setAssignedTodayCount(list.length || 0)
+      } catch {
+        setAssignedTodayCount(0)
+      }
+    }
+
+    loadAssignedToday()
+  }, [user?.id])
+
   const pageTitle = location.pathname.includes('/main/waiting')
     ? '대기'
     : location.pathname.includes('/main/available')
@@ -48,6 +64,8 @@ export default function TmLayout() {
           ? '리콜대기'
           : location.pathname.includes('/main/reserved')
             ? '예약'
+            : location.pathname.includes('/main/assigned-today')
+              ? '당일 배정 DB'
             : location.pathname.includes('/main/calendar')
               ? '캘린더'
               : '배정 완료 DB'
@@ -115,6 +133,17 @@ export default function TmLayout() {
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
               예약
+            </NavLink>
+            <NavLink
+              to="/main/assigned-today"
+              className={({ isActive }) =>
+                `admin-nav-item${isActive ? ' active' : ''}${assignedTodayCount ? ' calendar-alert' : ''}`
+              }
+            >
+              <span>당일 배정 DB</span>
+              {assignedTodayCount ? (
+                <span className="calendar-badge">오늘 배정 {assignedTodayCount}건</span>
+              ) : null}
             </NavLink>
             <NavLink
               to="/main/calendar"

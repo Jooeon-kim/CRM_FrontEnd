@@ -29,6 +29,7 @@ export default function DbList() {
   const [missMin, setMissMin] = useState('')
   const [regionQuery, setRegionQuery] = useState('')
   const [memoQuery, setMemoQuery] = useState('')
+  const [assignedTodayOnly, setAssignedTodayOnly] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [activeLead, setActiveLead] = useState(null)
   const [memos, setMemos] = useState([])
@@ -218,6 +219,18 @@ export default function DbList() {
   const callMinNum = Number(callMin)
   const missMinNum = Number(missMin)
 
+  const isAssignedToday = (value) => {
+    if (!value) return false
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return false
+    const today = new Date()
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    )
+  }
+
   const filteredRows = rows.filter((row) => {
     const tmOk = tmFilter === 'all' || String(row.tm) === String(tmFilter)
     const statusOk =
@@ -232,8 +245,9 @@ export default function DbList() {
     const memoOk =
       !normalizedMemo ||
       String(row['최근메모내용'] || '').toLowerCase().includes(normalizedMemo)
+    const assignedOk = !assignedTodayOnly || isAssignedToday(row['배정날짜'])
 
-    return tmOk && statusOk && callOk && missOk && regionOk && memoOk
+    return tmOk && statusOk && callOk && missOk && regionOk && memoOk && assignedOk
   })
 
   const handleReset = () => {
@@ -357,6 +371,14 @@ export default function DbList() {
             placeholder="검색"
             value={memoQuery}
             onChange={(e) => setMemoQuery(e.target.value)}
+          />
+        </label>
+        <label>
+          오늘 배정만
+          <input
+            type="checkbox"
+            checked={assignedTodayOnly}
+            onChange={(e) => setAssignedTodayOnly(e.target.checked)}
           />
         </label>
       </div>

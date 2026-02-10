@@ -18,7 +18,7 @@ const buildTimes = () => {
 
 const timeOptions = buildTimes()
 
-export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAvailable = false }) {
+export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAvailable = false, assignedTodayOnly = false }) {
   const { user } = useSelector((state) => state.auth)
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
@@ -53,6 +53,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             params: {
               tm: user.id,
               status: statusFilter || 'all',
+              assignedToday: assignedTodayOnly ? 1 : undefined,
             },
           }),
           api.get('/tm/agents'),
@@ -128,6 +129,19 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     const now = new Date()
     const nowMinutes = now.getHours() * 60 + now.getMinutes()
     return nowMinutes >= range.start && nowMinutes <= range.end
+  }
+
+  const isAssignedToday = (lead) => {
+    const value = lead?.['배정날짜']
+    if (!value) return false
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return false
+    const today = new Date()
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    )
   }
 
   const visibleColumns = ['인입날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', '최근메모내용', '콜횟수']
@@ -246,10 +260,11 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       const emptyStatus = !row['상태'] || String(row['상태']).trim().length === 0
       const passEmptyStatus = !onlyEmptyStatus || emptyStatus
       const passAvailable = !onlyAvailable || isAvailableNow(row)
+      const passAssignedToday = !assignedTodayOnly || isAssignedToday(row)
       if (!passStatus || !passEvent || !passRegion || !passCall || !passMiss || !passNoShow) {
         return false
       }
-      if (!passEmptyStatus || !passAvailable) {
+      if (!passEmptyStatus || !passAvailable || !passAssignedToday) {
         return false
       }
       if (!term) return true

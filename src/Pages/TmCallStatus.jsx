@@ -23,6 +23,7 @@ export default function TmCallStatus() {
   const [activeTm, setActiveTm] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [assignedTodayOnly, setAssignedTodayOnly] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [activeLead, setActiveLead] = useState(null)
   const [memos, setMemos] = useState([])
@@ -121,6 +122,18 @@ export default function TmCallStatus() {
     return value ?? '-'
   }
 
+  const isAssignedToday = (value) => {
+    if (!value) return false
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return false
+    const today = new Date()
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    )
+  }
+
   const splitDateTime = (value) => {
     if (!value) return { date: '', time: '' }
     const date = new Date(value)
@@ -197,9 +210,10 @@ export default function TmCallStatus() {
   }
 
   const filteredRows = useMemo(() => {
-    if (activeTm === 'all') return rows
-    return rows.filter((row) => String(row.tm) === String(activeTm))
-  }, [rows, activeTm])
+    const base = activeTm === 'all' ? rows : rows.filter((row) => String(row.tm) === String(activeTm))
+    if (!assignedTodayOnly) return base
+    return base.filter((row) => isAssignedToday(row['배정날짜']))
+  }, [rows, activeTm, assignedTodayOnly])
 
   const statusBuckets = ['대기', '부재중', '리콜대기', '예약', '무효', '예약부도', '내원완료']
   const statusCounts = statusBuckets.reduce((acc, status) => {
@@ -281,7 +295,17 @@ export default function TmCallStatus() {
     <div className="tm-call">
       <div className="tm-call-header">
         <h1>TM 콜 현황</h1>
-        <span className="db-list-count">{filteredRows.length}건</span>
+        <div className="db-list-actions">
+          <label>
+            오늘 배정만
+            <input
+              type="checkbox"
+              checked={assignedTodayOnly}
+              onChange={(e) => setAssignedTodayOnly(e.target.checked)}
+            />
+          </label>
+          <span className="db-list-count">{filteredRows.length}건</span>
+        </div>
       </div>
 
       <div className="tm-call-charts">
