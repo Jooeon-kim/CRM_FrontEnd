@@ -179,6 +179,108 @@ input {
   .login-shell {
     padding: 3rem 1.5rem;
   }
+  .admin-header {
+    padding: 0.75rem 1.2rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .admin-header-left {
+    flex-wrap: wrap;
+  }
+  .admin-header-right {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .admin-body {
+    grid-template-columns: 1fr;
+  }
+  .admin-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--panel-border);
+    padding: 0.8rem 1rem;
+  }
+  .admin-nav {
+    flex-direction: row;
+    gap: 0.6rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+  .admin-nav-item {
+    white-space: nowrap;
+  }
+  .admin-content {
+    padding: 1.2rem;
+  }
+  .tm-assign-controls {
+    gap: 0.6rem;
+  }
+  .tm-assign-search input,
+  .tm-assign-filter select {
+    width: 100%;
+  }
+  .tm-db-filters,
+  .db-list-filters {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+  .db-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .db-list-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .tm-db-search input {
+    width: 100%;
+  }
+  .db-list-table {
+    max-height: 70vh;
+  }
+  .db-list-row {
+    min-width: 900px;
+  }
+  .tm-db-table .tm-db-row {
+    min-width: 860px;
+  }
+  .tm-lead-card {
+    padding: 1rem;
+  }
+  .tm-lead-top {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+  .tm-lead-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-header {
+    padding: 0.7rem 1rem;
+  }
+  .admin-page-title {
+    padding-left: 0;
+    border-left: none;
+  }
+  .db-list-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tm-db-filters,
+  .db-list-filters {
+    grid-template-columns: 1fr;
+  }
+  .tm-lead-top {
+    grid-template-columns: 1fr;
+  }
+  .tm-lead-summary {
+    grid-template-columns: 1fr;
+  }
+}
 }
 
 .admin-page {
