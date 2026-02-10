@@ -402,9 +402,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
               onClick={() => openModal(row)}
             >
               <div className="tm-available-cell" data-label="상담가능">
-                <span className="tm-db-value">
-                  {isAvailableNow(row) ? <span className="tm-available-badge">상담가능</span> : '-'}
-                </span>
+                {isAvailableNow(row) ? <span className="tm-available-badge">상담가능</span> : null}
               </div>
               {visibleColumns.map((key) => {
                 const cell =
@@ -423,7 +421,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                       .filter(Boolean)
                       .join(' ')}
                   >
-                    <span className="tm-db-value">{cell}</span>
+                    {cell}
                   </div>
                 )
               })}
