@@ -65,7 +65,7 @@ export default function TmLayout() {
           : location.pathname.includes('/main/reserved')
             ? '예약'
             : location.pathname.includes('/main/assigned-today')
-              ? '당일 배정 DB'
+              ? '당일배정DB'
             : location.pathname.includes('/main/calendar')
               ? '캘린더'
               : '배정 완료 DB'
