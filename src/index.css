@@ -176,6 +176,24 @@ input {
 }
 
 @media (max-width: 900px) {
+  .db-list-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .db-list-row {
+    min-width: 860px;
+    font-size: 0.82rem;
+    padding: 0.45rem 0.6rem;
+  }
+  .tm-db-table .tm-db-row {
+    min-width: 820px;
+  }
+  .db-list-head {
+    position: sticky;
+    top: 0;
+    background: #ffffff;
+    z-index: 1;
+  }
   .login-shell {
     padding: 3rem 1.5rem;
   }
@@ -240,12 +258,6 @@ input {
   }
   .db-list-table {
     max-height: 70vh;
-  }
-  .db-list-row {
-    min-width: 900px;
-  }
-  .tm-db-table .tm-db-row {
-    min-width: 860px;
   }
   .tm-lead-card {
     padding: 1rem;
