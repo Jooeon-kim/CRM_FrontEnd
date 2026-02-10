@@ -390,9 +390,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       ) : (
         <div className="db-list-table tm-db-table">
           <div className="db-list-row db-list-head tm-db-row">
-            <div></div>
+            <div data-label="상담가능"></div>
             {visibleColumns.map((key) => (
-              <div key={key}>{key}</div>
+              <div key={key} data-label={key}>{key}</div>
             ))}
           </div>
           {filteredList.map((row, index) => (
@@ -401,7 +401,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
               key={index}
               onClick={() => openModal(row)}
             >
-              <div className="tm-available-cell">
+              <div className="tm-available-cell" data-label="상담가능">
                 {isAvailableNow(row) ? <span className="tm-available-badge">상담가능</span> : null}
               </div>
               {visibleColumns.map((key) => {
@@ -414,6 +414,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 return (
                   <div
                     key={key}
+                    data-label={key}
                     className={[
                       key === '최근메모내용' ? 'db-list-cell-memo' : '',
                     ]
