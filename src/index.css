@@ -176,9 +176,6 @@ input {
 }
 
 @media (max-width: 900px) {
-  html {
-    font-size: 60%;
-  }
   .login-shell {
     padding: 3rem 1.5rem;
   }
@@ -245,12 +242,10 @@ input {
     max-height: 70vh;
   }
   .db-list-row {
-    min-width: 760px;
-    font-size: 0.82rem;
-    padding: 0.45rem 0.6rem;
+    min-width: 900px;
   }
   .tm-db-table .tm-db-row {
-    min-width: 720px;
+    min-width: 860px;
   }
   .tm-lead-card {
     padding: 1rem;
@@ -264,22 +259,12 @@ input {
 }
 
 @media (max-width: 600px) {
-  html {
-    font-size: 56%;
-  }
   .admin-header {
     padding: 0.7rem 1rem;
   }
   .admin-page-title {
     padding-left: 0;
     border-left: none;
-  }
-  .admin-logo {
-    font-size: 0.9rem;
-  }
-  .admin-team,
-  .admin-page-title {
-    font-size: 0.85rem;
   }
   .db-list-actions {
     flex-direction: column;
