@@ -63,6 +63,17 @@ const readClientUserId = () => {
   return localStorage.getItem(CLIENT_USER_ID)
 }
 
+const resolveErrorMessage = (error, fallback) => {
+  const data = error?.response?.data
+  return (
+    data?.message ||
+    data?.error ||
+    (typeof data === 'string' ? data : '') ||
+    error?.message ||
+    fallback
+  )
+}
+
 export const login = createAsyncThunk(
   'auth/login',
   async ({ username, password }, { rejectWithValue }) => {
@@ -78,11 +89,7 @@ export const login = createAsyncThunk(
       setClientUserId(response.data?.id)
       return response.data
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data ||
-        error?.message ||
-        '로그인에 실패했습니다.'
+      const message = resolveErrorMessage(error, '로그인에 실패했습니다.')
       return rejectWithValue(message)
     }
   }
@@ -101,11 +108,7 @@ export const logout = createAsyncThunk(
       clearClientUserId()
       return response.data
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data ||
-        error?.message ||
-        '로그아웃에 실패했습니다.'
+      const message = resolveErrorMessage(error, '로그아웃에 실패했습니다.')
       return rejectWithValue(message)
     }
   }
