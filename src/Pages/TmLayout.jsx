@@ -24,10 +24,7 @@ export default function TmLayout() {
           if (!reservationValue) return false
           const date = new Date(reservationValue)
           if (Number.isNaN(date.getTime())) return false
-          const yyyy = date.getFullYear()
-          const mm = String(date.getMonth() + 1).padStart(2, '0')
-          const dd = String(date.getDate()).padStart(2, '0')
-          return `${yyyy}-${mm}-${dd}` === todayKey
+          return date.toISOString().slice(0, 10) === todayKey
         }).length
         setTodayCount(count)
       } catch {
