@@ -23,7 +23,7 @@ export default function Login() {
 
   const loading = status === 'loading'
   const statusMessage = error
-    ? { type: 'error', message: error }
+    ? { type: 'error', message: typeof error === 'string' ? error : JSON.stringify(error) }
     : isAuthenticated
       ? { type: 'success', message: '로그인 성공' }
       : null
