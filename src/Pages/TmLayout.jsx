@@ -14,18 +14,21 @@ export default function TmLayout() {
     const loadToday = async () => {
       if (!user?.id) return
       try {
-        const res = await api.get('/dbdata', { params: { tm: user.id, status: '예약' } })
+        const res = await api.get('/dbdata', { params: { tm: user.id, status: '?�약' } })
         const list = res.data || []
-        const todayKey = new Date().toISOString().slice(0, 10)
-        const count = list.filter((item) => {
-          const statusValue = item['상태'] || item.status || ''
-          if (statusValue !== '예약') return false
-          const reservationValue = item['예약_내원일시'] || item.reservation_at || item.reservationAt
-          if (!reservationValue) return false
+        const today = new Date()
+        const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+        const countByDate = new Map()
+        list.forEach((item) => {
+          const reservationValue = item['?�약_?�원?�시'] || item.reservation_at || item.reservationAt
+          if (!reservationValue) return
           const date = new Date(reservationValue)
-          if (Number.isNaN(date.getTime())) return false
-          return date.toISOString().slice(0, 10) === todayKey
-        }).length
+          if (Number.isNaN(date.getTime())) return
+          const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+          const current = countByDate.get(key) || 0
+          countByDate.set(key, current + 1)
+        })
+        const count = countByDate.get(todayKey) || 0
         setTodayCount(count)
       } catch {
         setTodayCount(0)
@@ -36,39 +39,39 @@ export default function TmLayout() {
   }, [user?.id])
 
   const pageTitle = location.pathname.includes('/main/waiting')
-    ? '대기'
+    ? '?��?
     : location.pathname.includes('/main/available')
-      ? '상담가능'
+      ? '?�담가??
       : location.pathname.includes('/main/missed')
-        ? '부재중'
+        ? '부?�중'
         : location.pathname.includes('/main/recall')
-          ? '리콜대기'
+          ? '리콜?��?
           : location.pathname.includes('/main/reserved')
-            ? '예약'
+            ? '?�약'
             : location.pathname.includes('/main/calendar')
-              ? '캘린더'
-              : '배정 완료 DB'
+              ? '캘린??
+              : '배정 ?�료 DB'
 
-  const calendarLabel = useMemo(() => '캘린더', [])
+  const calendarLabel = useMemo(() => '캘린??, [])
 
   return (
     <div className="admin-page">
       <header className="admin-header">
         <div className="admin-header-left">
           <div className="admin-logo">Client Manager</div>
-          <div className="admin-team">샤인유의원 고객관리팀</div>
+          <div className="admin-team">?�인?�의??고객관리�?</div>
           <div className="admin-page-title">{pageTitle}</div>
         </div>
         <div className="admin-header-right">
           <span className="admin-welcome">
-            {user?.username ? `${user.username}님` : '담당자님'} 환영합니다
+            {user?.username ? `${user.username}?? : '?�당?�님'} ?�영?�니??
           </span>
           <button
             className="admin-logout"
             onClick={() => dispatch(logout())}
             disabled={status === 'loading'}
           >
-            로그아웃
+            로그?�웃
           </button>
         </div>
       </header>
@@ -81,37 +84,37 @@ export default function TmLayout() {
               end
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
-              배정 완료 DB
+              배정 ?�료 DB
             </NavLink>
             <NavLink
               to="/main/waiting"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
-              대기
+              ?��?
             </NavLink>
             <NavLink
               to="/main/available"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
-              상담가능
+              ?�담가??
             </NavLink>
             <NavLink
               to="/main/missed"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
-              부재중
+              부?�중
             </NavLink>
             <NavLink
               to="/main/recall"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
-              리콜대기
+              리콜?��?
             </NavLink>
             <NavLink
               to="/main/reserved"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
-              예약
+              ?�약
             </NavLink>
             <NavLink
               to="/main/calendar"
@@ -120,7 +123,7 @@ export default function TmLayout() {
               }
             >
               <span>{calendarLabel}</span>
-              {todayCount ? <span className="calendar-badge">오늘 예약 {todayCount}명</span> : null}
+              {todayCount ? <span className="calendar-badge">?�늘 ?�약 {todayCount}�?/span> : null}
             </NavLink>
           </nav>
         </aside>
@@ -132,3 +135,5 @@ export default function TmLayout() {
     </div>
   )
 }
+
+
