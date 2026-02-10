@@ -373,13 +373,13 @@ export default function DbList() {
             onChange={(e) => setMemoQuery(e.target.value)}
           />
         </label>
-        <label>
-          오늘 배정만
+        <label className="db-list-checkbox">
           <input
             type="checkbox"
             checked={assignedTodayOnly}
             onChange={(e) => setAssignedTodayOnly(e.target.checked)}
           />
+          당일배정DB
         </label>
       </div>
 

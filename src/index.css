@@ -845,6 +845,18 @@ input {
   gap: 0.6rem;
 }
 
+.db-list-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.db-list-checkbox input {
+  margin: 0;
+}
+
 .tm-db-search input {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;

@@ -140,7 +140,7 @@ export default function TmLayout() {
                 `admin-nav-item${isActive ? ' active' : ''}${assignedTodayCount ? ' calendar-alert' : ''}`
               }
             >
-              <span>당일 배정 DB</span>
+              <span>당일배정DB</span>
               {assignedTodayCount ? (
                 <span className="calendar-badge">오늘 배정 {assignedTodayCount}건</span>
               ) : null}
