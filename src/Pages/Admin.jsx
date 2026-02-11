@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from 'react-redux'
+﻿import { useDispatch, useSelector } from 'react-redux'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import api from '../apiClient'
@@ -23,9 +23,11 @@ export default function Admin() {
       ? 'TM콜현황'
       : location.pathname.includes('/admin/db-list')
         ? 'DB목록'
-        : location.pathname.includes('/admin/calendar')
-          ? '캘린더'
-        : '관리자'
+        : location.pathname.includes('/admin/daily-report')
+          ? '마감보고'
+          : location.pathname.includes('/admin/calendar')
+            ? '캘린더'
+            : '관리자'
 
   const openProfile = async () => {
     try {
@@ -87,7 +89,7 @@ export default function Admin() {
         </div>
         <div className="admin-header-right">
           <span className="admin-welcome">
-            {user?.username ? `${user.username}님` : '담당자님'} 환영합니다
+            {user?.username ? `${user.username}님` : '관리자님'} 환영합니다
           </span>
           <button
             className="admin-profile-button"
@@ -142,6 +144,14 @@ export default function Admin() {
               }
             >
               DB목록
+            </NavLink>
+            <NavLink
+              to="/admin/daily-report"
+              className={({ isActive }) =>
+                `admin-nav-item${isActive ? ' active' : ''}`
+              }
+            >
+              마감보고
             </NavLink>
             <NavLink
               to="/admin/calendar"

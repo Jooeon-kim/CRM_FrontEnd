@@ -437,6 +437,9 @@ export default function AdminHome() {
         <Link className="admin-home-action" to="/admin/tm-call">
           TM 콜 현황 보기
         </Link>
+        <Link className="admin-home-action" to="/admin/daily-report">
+          TM 마감보고 보기
+        </Link>
         <Link className="admin-home-action" to="/admin/db-list">
           DB 목록 열기
         </Link>
