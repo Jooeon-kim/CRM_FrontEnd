@@ -161,9 +161,13 @@ export default function Admin() {
             >
               캘린더
             </NavLink>
-            <div className="admin-sidebar-mascot">
+            <button
+              type="button"
+              className="admin-sidebar-mascot"
+              onClick={() => window.alert('똑딱이 아저씨 화이팅')}
+            >
               <img src="/admin-bot.png" alt="관리자 페이지 마스코트" />
-            </div>
+            </button>
           </nav>
         </aside>
 
