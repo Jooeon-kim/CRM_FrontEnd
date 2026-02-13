@@ -40,11 +40,11 @@ const formatReportTitle = (dateKey, tmName) => {
     const month = Number(datePartMatch[2]) - 1
     const day = Number(datePartMatch[3])
     const date = new Date(year, month, day)
-    return `${date.getMonth() + 1}\uC6D4 ${date.getDate()}\uC77C (${DAY_LABELS[date.getDay()]}\uC694\uC77C) (${tmName || '-'}) \uB9C8\uAC10\uBCF4\uACE0`
+    return `${date.getMonth() + 1}\uC6D4 ${date.getDate()}\uC77C (${DAY_LABELS[date.getDay()]}\uC694\uC77C) ${tmName || '-'} \uB9C8\uAC10\uBCF4\uACE0`
   }
   const parsed = new Date(raw)
-  if (Number.isNaN(parsed.getTime())) return `(${tmName || '-'}) \uB9C8\uAC10\uBCF4\uACE0`
-  return `${parsed.getMonth() + 1}\uC6D4 ${parsed.getDate()}\uC77C (${DAY_LABELS[parsed.getDay()]}\uC694\uC77C) (${tmName || '-'}) \uB9C8\uAC10\uBCF4\uACE0`
+  if (Number.isNaN(parsed.getTime())) return `${tmName || '-'} \uB9C8\uAC10\uBCF4\uACE0`
+  return `${parsed.getMonth() + 1}\uC6D4 ${parsed.getDate()}\uC77C (${DAY_LABELS[parsed.getDay()]}\uC694\uC77C) ${tmName || '-'} \uB9C8\uAC10\uBCF4\uACE0`
 }
 
 const countOf = (row, manualKey, autoKey) => row?.[manualKey] ?? row?.[autoKey] ?? 0
