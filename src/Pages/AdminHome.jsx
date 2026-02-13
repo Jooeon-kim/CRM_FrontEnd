@@ -37,6 +37,11 @@ export default function AdminHome() {
     const load = async () => {
       try {
         setLoading(true)
+        try {
+          await api.post('/admin/sync-meta-leads')
+        } catch (syncErr) {
+          // 자동 동기화 실패 시에도 화면 데이터 로드는 계속 진행
+        }
         const [dbRes, unassignedRes, tmRes] = await Promise.all([
           api.get('/dbdata'),
           api.get('/tm/leads'),
