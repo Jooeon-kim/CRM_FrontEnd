@@ -360,7 +360,7 @@ export default function AdminHome() {
         <div className="admin-home-chart">
           <div className="admin-home-chart-title">상태 분포</div>
           <div className="admin-home-bar">
-            {['대기', '예약', '부재중', '리콜대기', '무효', '예약부도', '내원완료'].map((status) => {
+            {['대기', '예약', '부재중', '리콜대기', '실패', '무효', '예약부도', '내원완료'].map((status) => {
               const count = rows.filter((row) => {
                 const state = String(row['상태'] || '').trim()
                 if (!state) return status === '대기'

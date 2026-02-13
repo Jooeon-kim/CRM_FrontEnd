@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react'
 import api from '../apiClient'
 
-const statusOptions = ['부재중', '리콜대기', '예약', '무효', '예약부도', '내원완료']
+const statusOptions = ['부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
 
 const buildTimes = () => {
   const times = []
@@ -212,7 +212,7 @@ export default function DbList() {
     new Set(rows.map((row) => row.tm).filter(Boolean))
   )
 
-  const statusOptions = ['대기', '예약', '부재중', '리콜대기', '무효', '예약부도', '내원완료']
+  const statusOptions = ['대기', '예약', '부재중', '리콜대기', '실패', '무효', '예약부도', '내원완료']
 
   const normalizedRegion = regionQuery.trim().toLowerCase()
   const normalizedMemo = memoQuery.trim().toLowerCase()

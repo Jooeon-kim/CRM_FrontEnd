@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import api from '../apiClient'
 
-const statusOptions = ['부재중', '리콜대기', '예약', '무효', '예약부도', '내원완료']
+const statusOptions = ['부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
 
 const buildTimes = () => {
   const times = []
@@ -215,7 +215,7 @@ export default function TmCallStatus() {
     return base.filter((row) => isAssignedToday(row['배정날짜']))
   }, [rows, activeTm, assignedTodayOnly])
 
-  const statusBuckets = ['대기', '부재중', '리콜대기', '예약', '무효', '예약부도', '내원완료']
+  const statusBuckets = ['대기', '부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
   const statusCounts = statusBuckets.reduce((acc, status) => {
     acc[status] = filteredRows.filter((row) => {
       const state = String(row['상태'] || '').trim()
@@ -230,6 +230,7 @@ export default function TmCallStatus() {
     부재중: '#fbbf24',
     리콜대기: '#a78bfa',
     예약: '#34d399',
+    실패: '#ef4444',
     무효: '#f87171',
     예약부도: '#f97316',
     내원완료: '#22c55e',
