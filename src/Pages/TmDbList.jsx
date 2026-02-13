@@ -41,6 +41,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     time: '',
   })
   const [memos, setMemos] = useState([])
+  const [phoneEvents, setPhoneEvents] = useState([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -163,12 +164,20 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       time: '',
     })
     setMemos([])
+    setPhoneEvents([])
     setModalOpen(true)
     try {
-      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'] } })
-      setMemos(res.data || [])
+      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'], detailed: 1 } })
+      if (Array.isArray(res.data)) {
+        setMemos(res.data || [])
+        setPhoneEvents([])
+      } else {
+        setMemos(res.data?.memos || [])
+        setPhoneEvents(res.data?.events || [])
+      }
     } catch {
       setMemos([])
+      setPhoneEvents([])
     }
   }
 
@@ -235,7 +244,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       setActiveLead(nextLead)
       if (form.memo && String(form.memo).trim()) {
         setMemos((prev) => [
-          { memo_time: nowIso, memo_content: form.memo, tm_id: user.id },
+          { memo_time: nowIso, memo_content: form.memo, tm_id: user.id, tm_name: user?.username || '' },
           ...prev,
         ])
       }
@@ -249,7 +258,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
       try {
         const [memosRes, dbRes] = await Promise.all([
-          api.get('/tm/memos', { params: { phone: leadPhone } }),
+          api.get('/tm/memos', { params: { phone: leadPhone, detailed: 1 } }),
           api.get('/dbdata', {
             params: {
               tm: user.id,
@@ -262,7 +271,13 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         const latestRows = dbRes.data || []
         const latestLead = latestRows.find((row) => String(row.id) === String(leadId))
 
-        setMemos(memosRes.data || [])
+        if (Array.isArray(memosRes.data)) {
+          setMemos(memosRes.data || [])
+          setPhoneEvents([])
+        } else {
+          setMemos(memosRes.data?.memos || [])
+          setPhoneEvents(memosRes.data?.events || [])
+        }
         setRows(latestRows)
         if (latestLead) {
           setActiveLead((prev) => (prev ? { ...prev, ...latestLead } : prev))
@@ -536,6 +551,12 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 <div className="tm-lead-summary-label">거주지</div>
                 <div className="tm-lead-summary-value">{activeLead['거주지'] || '-'}</div>
               </div>
+              <div className="tm-lead-summary-card">
+                <div className="tm-lead-summary-label">이전 신청 이벤트</div>
+                <div className="tm-lead-summary-value">
+                  {phoneEvents.length > 0 ? phoneEvents.join(', ') : '-'}
+                </div>
+              </div>
             </div>
 
             <div className="tm-lead-body">
@@ -550,6 +571,11 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                         <div key={idx} className="tm-lead-memo">
                           <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
                           <div className="tm-lead-memo-content">{memo.memo_content}</div>
+                          {memo.tm_id && String(memo.tm_id) !== String(user?.id) ? (
+                            <div className="tm-lead-memo-time">
+                              작성 TM: {memo.tm_name || memo.tm_id}
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
