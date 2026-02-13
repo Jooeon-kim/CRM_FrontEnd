@@ -499,7 +499,7 @@ input {
   padding-top: 0.5rem;
   display: flex;
   justify-content: center;
-  cursor: pointer;
+  cursor: default;
 }
 
 .admin-sidebar-mascot img {

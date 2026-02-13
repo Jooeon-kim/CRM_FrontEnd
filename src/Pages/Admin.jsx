@@ -164,7 +164,7 @@ export default function Admin() {
             <button
               type="button"
               className="admin-sidebar-mascot"
-              onClick={() => window.alert('똑딱이 아저씨 화이팅')}
+              onClick={() => window.alert('뚝딱뚝딱')}
             >
               <img src="/admin-bot.png" alt="관리자 페이지 마스코트" />
             </button>
