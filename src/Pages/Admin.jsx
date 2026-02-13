@@ -162,6 +162,9 @@ export default function Admin() {
               캘린더
             </NavLink>
           </nav>
+          <div className="admin-sidebar-mascot">
+            <img src="/admin-bot.png" alt="관리자 페이지 마스코트" />
+          </div>
         </aside>
 
         <main className="admin-content">
