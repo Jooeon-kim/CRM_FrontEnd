@@ -73,6 +73,19 @@ export default function TmAssign() {
     }
   }
 
+  const handleHold = async (leadId) => {
+    try {
+      setAssigningId(leadId)
+      await api.post('/tm/assign', { leadId, tmId: 0 })
+      setLeads((prev) => prev.filter((lead) => lead.id !== leadId))
+      setError('')
+    } catch (err) {
+      setError('보류 처리에 실패했습니다.')
+    } finally {
+      setAssigningId(null)
+    }
+  }
+
   const toggleTm = (tmId) => {
     const normalized = String(tmId)
     setSelectedTms((prev) =>
@@ -263,7 +276,7 @@ export default function TmAssign() {
               <div>{lead.phone ? formatPhone(lead.phone) : '-'}</div>
               <div>{lead.availableTime || '-'}</div>
               <div>{lead.event || '-'}</div>
-              <div>
+              <div className="tm-assign-cell-actions">
                 <select
                   className="tm-assign-select"
                   value=""
@@ -277,6 +290,14 @@ export default function TmAssign() {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className="tm-assign-hold"
+                  disabled={assigningId === lead.id || autoAssigning}
+                  onClick={() => handleHold(lead.id)}
+                >
+                  보류
+                </button>
               </div>
             </div>
           ))

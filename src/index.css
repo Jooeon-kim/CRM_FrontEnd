@@ -2172,6 +2172,28 @@ input {
   background: #ffffff;
 }
 
+.tm-assign-cell-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tm-assign-hold {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tm-assign-hold:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .tm-assign-empty {
   padding: 2rem;
   text-align: center;
