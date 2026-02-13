@@ -43,6 +43,13 @@ export default function TmAssign() {
     const load = async () => {
       try {
         setLoading(true)
+        // 페이지 진입 시 최신 리드를 보장하기 위해 동기화를 먼저 실행
+        try {
+          await api.post('/admin/sync-meta-leads')
+        } catch (syncErr) {
+          // 동기화 실패 시에도 기존 데이터 조회는 진행
+        }
+
         const [leadsRes, agentsRes] = await Promise.all([
           api.get('/tm/leads'),
           api.get('/tm/agents'),
