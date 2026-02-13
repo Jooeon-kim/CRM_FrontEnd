@@ -33,9 +33,18 @@ const formatDateTime = (value) => {
 }
 
 const formatReportTitle = (dateKey, tmName) => {
-  const date = new Date(`${dateKey}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return ''
-  return `${date.getMonth() + 1}\uC6D4 ${date.getDate()}\uC77C (${DAY_LABELS[date.getDay()]}\uC694\uC77C) (${tmName || '-'}) \uB9C8\uAC10\uBCF4\uACE0`
+  const raw = String(dateKey || '').trim()
+  const datePartMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (datePartMatch) {
+    const year = Number(datePartMatch[1])
+    const month = Number(datePartMatch[2]) - 1
+    const day = Number(datePartMatch[3])
+    const date = new Date(year, month, day)
+    return `${date.getMonth() + 1}\uC6D4 ${date.getDate()}\uC77C (${DAY_LABELS[date.getDay()]}\uC694\uC77C) (${tmName || '-'}) \uB9C8\uAC10\uBCF4\uACE0`
+  }
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return `(${tmName || '-'}) \uB9C8\uAC10\uBCF4\uACE0`
+  return `${parsed.getMonth() + 1}\uC6D4 ${parsed.getDate()}\uC77C (${DAY_LABELS[parsed.getDay()]}\uC694\uC77C) (${tmName || '-'}) \uB9C8\uAC10\uBCF4\uACE0`
 }
 
 const countOf = (row, manualKey, autoKey) => row?.[manualKey] ?? row?.[autoKey] ?? 0
@@ -199,6 +208,8 @@ export default function AdminDailyReport() {
 
             <pre className="daily-report-preview">
 {[
+  `${formatReportTitle(modalData.report?.report_date, modalData.report?.tm_name)}`,
+  '',
   `1. \uB2F9\uC77C \uC608\uC57D: ${countOf(modalData.report, 'manual_reserved_count', 'reserved_count')}\uBA85`,
   `2. \uB2F9\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_today_count', 'visit_today_count')}\uBA85`,
   `3. \uC775\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_nextday_count', 'visit_nextday_count')}\uBA85`,
