@@ -44,6 +44,13 @@ const formatDateTime = (value) => {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`
 }
 
+const formatShortDate = (value) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`
+}
+
 export default function TmDailyReport() {
   const { user } = useSelector((state) => state.auth)
   const [date, setDate] = useState(toDateKey())
@@ -281,7 +288,7 @@ export default function TmDailyReport() {
             </div>
             {reports.map((row) => (
               <div key={row.id} className="db-list-row daily-report-row">
-                <div>{row.report_date}</div>
+                <div>{formatShortDate(row.report_date)}</div>
                 <div>{row.is_submitted ? '\uC644\uB8CC' : '\uC9C4\uD589\uC911'}</div>
                 <div>{formatDateTime(row.submitted_at)}</div>
                 <div>
