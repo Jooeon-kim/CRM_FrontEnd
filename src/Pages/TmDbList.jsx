@@ -551,12 +551,12 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 <div className="tm-lead-summary-label">거주지</div>
                 <div className="tm-lead-summary-value">{activeLead['거주지'] || '-'}</div>
               </div>
-              <div className="tm-lead-summary-card">
-                <div className="tm-lead-summary-label">이전 신청 이벤트</div>
-                <div className="tm-lead-summary-value">
-                  {phoneEvents.length > 0 ? phoneEvents.join(', ') : '-'}
+              {phoneEvents.length > 0 ? (
+                <div className="tm-lead-summary-card">
+                  <div className="tm-lead-summary-label">이전 신청 이벤트</div>
+                  <div className="tm-lead-summary-value">{phoneEvents.join(', ')}</div>
                 </div>
-              </div>
+              ) : null}
             </div>
 
             <div className="tm-lead-body">
