@@ -2,7 +2,7 @@
 import { useSelector } from 'react-redux'
 import api from '../apiClient'
 
-const statusOptions = ['부재중', '리콜대기', '예약', '무효', '예약부도', '내원완료']
+const statusOptions = ['부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
 
 const buildTimes = () => {
   const times = []
@@ -209,7 +209,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 상태: form.status,
                 거주지: form.region,
                 예약_내원일시: reservationAt || row['예약_내원일시'],
-                콜횟수: (Number(row['콜횟수'] || 0) + (['부재중', '리콜대기', '예약', '예약부도'].includes(form.status) ? 1 : 0)),
+                콜횟수: (Number(row['콜횟수'] || 0) + (['부재중', '리콜대기', '예약', '실패', '예약부도'].includes(form.status) ? 1 : 0)),
                 부재중_횟수: form.status === '부재중' ? Number(row['부재중_횟수'] || 0) + 1 : row['부재중_횟수'],
                 예약부도_횟수: form.status === '예약부도' ? Number(row['예약부도_횟수'] || 0) + 1 : row['예약부도_횟수'],
                 최근메모내용: form.memo || row['최근메모내용'],
@@ -218,7 +218,6 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             : row
         )
       )
-      setModalOpen(false)
     } catch (err) {
       setError('저장에 실패했습니다.')
     } finally {
@@ -344,6 +343,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             <option value="부재중">부재중</option>
             <option value="리콜대기">리콜대기</option>
             <option value="무효">무효</option>
+            <option value="실패">실패</option>
             <option value="예약부도">예약부도</option>
             <option value="내원완료">내원완료</option>
           </select>
