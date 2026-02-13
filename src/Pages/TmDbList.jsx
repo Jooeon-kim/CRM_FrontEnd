@@ -188,36 +188,81 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     if (!form.status) return
     if (form.status === '예약' && (!form.date || !form.time)) return
 
+    const leadId = activeLead.id
+    const leadPhone = activeLead['연락처'] || ''
     const reservationAt =
       form.status === '예약' ? `${form.date} ${form.time}:00` : null
 
     try {
       setSaving(true)
-      await api.post(`/tm/leads/${activeLead.id}/update`, {
+      await api.post(`/tm/leads/${leadId}/update`, {
         status: form.status,
         region: form.region,
         memo: form.memo,
         tmId: user.id,
         reservationAt,
-        phone: activeLead['연락처'] || '',
+        phone: leadPhone,
       })
+      const nowIso = new Date().toISOString()
+      const nextLead = {
+        ...activeLead,
+        상태: form.status,
+        거주지: form.region,
+        예약_내원일시: reservationAt || activeLead['예약_내원일시'],
+        콜횟수: (Number(activeLead['콜횟수'] || 0) + (['부재중', '리콜대기', '예약', '실패', '예약부도'].includes(form.status) ? 1 : 0)),
+        부재중_횟수: form.status === '부재중' ? Number(activeLead['부재중_횟수'] || 0) + 1 : activeLead['부재중_횟수'],
+        예약부도_횟수: form.status === '예약부도' ? Number(activeLead['예약부도_횟수'] || 0) + 1 : activeLead['예약부도_횟수'],
+        최근메모내용: form.memo || activeLead['최근메모내용'],
+        최근메모시간: form.memo ? nowIso : activeLead['최근메모시간'],
+      }
       setRows((prev) =>
         prev.map((row) =>
-          row.id === activeLead.id
+          String(row.id) === String(leadId)
             ? {
                 ...row,
-                상태: form.status,
-                거주지: form.region,
-                예약_내원일시: reservationAt || row['예약_내원일시'],
-                콜횟수: (Number(row['콜횟수'] || 0) + (['부재중', '리콜대기', '예약', '실패', '예약부도'].includes(form.status) ? 1 : 0)),
-                부재중_횟수: form.status === '부재중' ? Number(row['부재중_횟수'] || 0) + 1 : row['부재중_횟수'],
-                예약부도_횟수: form.status === '예약부도' ? Number(row['예약부도_횟수'] || 0) + 1 : row['예약부도_횟수'],
-                최근메모내용: form.memo || row['최근메모내용'],
-                최근메모시간: form.memo ? new Date().toISOString() : row['최근메모시간'],
+                ...nextLead,
               }
             : row
         )
       )
+      setActiveLead(nextLead)
+      if (form.memo && String(form.memo).trim()) {
+        setMemos((prev) => [
+          { memo_time: nowIso, memo_content: form.memo, tm_id: user.id },
+          ...prev,
+        ])
+      }
+      setForm((prev) => ({
+        ...prev,
+        status: '',
+        memo: '',
+        date: '',
+        time: '',
+      }))
+
+      try {
+        const [memosRes, dbRes] = await Promise.all([
+          api.get('/tm/memos', { params: { phone: leadPhone } }),
+          api.get('/dbdata', {
+            params: {
+              tm: user.id,
+              status: statusFilter || 'all',
+              assignedToday: assignedTodayOnly ? 1 : undefined,
+            },
+          }),
+        ])
+
+        const latestRows = dbRes.data || []
+        const latestLead = latestRows.find((row) => String(row.id) === String(leadId))
+
+        setMemos(memosRes.data || [])
+        setRows(latestRows)
+        if (latestLead) {
+          setActiveLead((prev) => (prev ? { ...prev, ...latestLead } : prev))
+        }
+      } catch {
+        // Keep optimistic UI state when background refresh fails.
+      }
     } catch (err) {
       setError('저장에 실패했습니다.')
     } finally {
