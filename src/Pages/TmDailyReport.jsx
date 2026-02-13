@@ -69,12 +69,12 @@ export default function TmDailyReport() {
   const checklistDone = form.checkDbCrm && form.checkInhouseCrm && form.checkSheet
 
   const loadList = async () => {
-    const res = await api.get('/tm/reports/mine')
+    const res = await api.get('/tm/reports/mine', { params: { tmId: user?.id } })
     setReports(res.data || [])
   }
 
   const loadDraftForDate = async (targetDate) => {
-    const draftRes = await api.post('/tm/reports/draft', { reportDate: targetDate })
+    const draftRes = await api.post('/tm/reports/draft', { reportDate: targetDate, tmId: user?.id })
     const row = draftRes.data?.report
     setReport(row || null)
     if (row) {
@@ -112,6 +112,7 @@ export default function TmDailyReport() {
       setError('')
       await api.post('/tm/reports/draft', {
         reportDate: date,
+        tmId: user?.id,
         manualReservedCount: parseNumber(form.reservedCount),
         manualVisitTodayCount: parseNumber(form.visitTodayCount),
         manualVisitNextdayCount: parseNumber(form.visitNextdayCount),
@@ -136,6 +137,7 @@ export default function TmDailyReport() {
       setError('')
       await api.post('/tm/reports/submit', {
         reportDate: date,
+        tmId: user?.id,
         manualReservedCount: parseNumber(form.reservedCount),
         manualVisitTodayCount: parseNumber(form.visitTodayCount),
         manualVisitNextdayCount: parseNumber(form.visitNextdayCount),
@@ -155,7 +157,7 @@ export default function TmDailyReport() {
 
   const openModal = async (row) => {
     try {
-      const res = await api.get(`/tm/reports/${row.id}/full`)
+      const res = await api.get(`/tm/reports/${row.id}/full`, { params: { tmId: user?.id } })
       setModalData(res.data || null)
     } catch (err) {
       try {
