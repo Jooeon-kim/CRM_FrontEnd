@@ -34,6 +34,15 @@ const formatTime = (value) => {
   return `${hh}:${mm}`
 }
 
+const normalizePhoneDigits = (value) => {
+  if (!value) return ''
+  let digits = String(value).replace(/\D/g, '')
+  if (digits.startsWith('82')) {
+    digits = `0${digits.slice(2)}`
+  }
+  return digits
+}
+
 export default function AdminCalendar() {
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date()
@@ -44,6 +53,8 @@ export default function AdminCalendar() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
+  const [tmFilter, setTmFilter] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -93,9 +104,28 @@ export default function AdminCalendar() {
     })
   }, [reservations, currentMonth])
 
+  const filteredReservations = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    const termDigits = normalizePhoneDigits(term)
+    return monthReservations.filter((item) => {
+      const passTm = tmFilter === 'all' || String(item.tm) === String(tmFilter)
+      if (!passTm) return false
+      if (!term) return true
+
+      const name = String(item['이름'] || '').toLowerCase()
+      const event = String(item['이벤트'] || '').toLowerCase()
+      const phone = normalizePhoneDigits(item['연락처'])
+      return (
+        name.includes(term) ||
+        event.includes(term) ||
+        (termDigits ? phone.includes(termDigits) : false)
+      )
+    })
+  }, [monthReservations, tmFilter, searchTerm])
+
   const reservationsByDate = useMemo(() => {
     const map = new Map()
-    monthReservations.forEach((item) => {
+    filteredReservations.forEach((item) => {
       const date = new Date(item['예약_내원일시'])
       if (Number.isNaN(date.getTime())) return
       const key = formatDateKey(date)
@@ -112,7 +142,7 @@ export default function AdminCalendar() {
       map.set(key, list)
     })
     return map
-  }, [monthReservations])
+  }, [filteredReservations])
 
   const calendarCells = useMemo(() => {
     const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
@@ -136,6 +166,26 @@ export default function AdminCalendar() {
         <div>
           <h1>캘린더</h1>
           <p>전체 예약 인원을 날짜별로 확인하세요.</p>
+        </div>
+        <div className="tm-assign-controls">
+          <div className="tm-assign-filter">
+            <select value={tmFilter} onChange={(e) => setTmFilter(e.target.value)}>
+              <option value="all">전체 TM</option>
+              {agents
+                .filter((agent) => !agent.isAdmin)
+                .map((agent) => (
+                  <option key={agent.id} value={agent.id}>{agent.name}</option>
+                ))}
+            </select>
+          </div>
+          <div className="tm-assign-search">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="이름, 전화번호, 이벤트 검색"
+            />
+          </div>
         </div>
         <div className="tm-calendar-nav">
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>

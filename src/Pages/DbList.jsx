@@ -25,6 +25,8 @@ export default function DbList() {
   const [downloading, setDownloading] = useState(false)
   const [tmFilter, setTmFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [nameQuery, setNameQuery] = useState('')
+  const [phoneQuery, setPhoneQuery] = useState('')
   const [callMin, setCallMin] = useState('')
   const [missMin, setMissMin] = useState('')
   const [regionQuery, setRegionQuery] = useState('')
@@ -91,6 +93,15 @@ export default function DbList() {
       return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
     }
     return value
+  }
+
+  const normalizePhoneDigits = (value) => {
+    if (!value) return ''
+    let digits = String(value).replace(/\D/g, '')
+    if (digits.startsWith('82')) {
+      digits = `0${digits.slice(2)}`
+    }
+    return digits
   }
 
   const visibleColumns = [
@@ -216,6 +227,8 @@ export default function DbList() {
 
   const normalizedRegion = regionQuery.trim().toLowerCase()
   const normalizedMemo = memoQuery.trim().toLowerCase()
+  const normalizedName = nameQuery.trim().toLowerCase()
+  const normalizedPhone = normalizePhoneDigits(phoneQuery)
   const callMinNum = Number(callMin)
   const missMinNum = Number(missMin)
 
@@ -239,6 +252,12 @@ export default function DbList() {
     const missCount = Number(row['부재중_횟수'] || 0)
     const callOk = Number.isNaN(callMinNum) || callMin === '' || callCount >= callMinNum
     const missOk = Number.isNaN(missMinNum) || missMin === '' || missCount >= missMinNum
+    const nameOk =
+      !normalizedName ||
+      String(row['이름'] || '').toLowerCase().includes(normalizedName)
+    const phoneOk =
+      !normalizedPhone ||
+      normalizePhoneDigits(row['연락처']).includes(normalizedPhone)
     const regionOk =
       !normalizedRegion ||
       String(row['거주지'] || '').toLowerCase().includes(normalizedRegion)
@@ -247,12 +266,14 @@ export default function DbList() {
       String(row['최근메모내용'] || '').toLowerCase().includes(normalizedMemo)
     const assignedOk = !assignedTodayOnly || isAssignedToday(row['배정날짜'])
 
-    return tmOk && statusOk && callOk && missOk && regionOk && memoOk && assignedOk
+    return tmOk && statusOk && callOk && missOk && nameOk && phoneOk && regionOk && memoOk && assignedOk
   })
 
   const handleReset = () => {
     setTmFilter('all')
     setStatusFilter('all')
+    setNameQuery('')
+    setPhoneQuery('')
     setCallMin('')
     setMissMin('')
     setRegionQuery('')
@@ -296,6 +317,22 @@ export default function DbList() {
       <div className="db-list-header">
         <h1>DB 목록</h1>
         <div className="db-list-actions">
+          <div className="tm-db-search">
+            <input
+              type="text"
+              value={nameQuery}
+              onChange={(e) => setNameQuery(e.target.value)}
+              placeholder="이름 검색"
+            />
+          </div>
+          <div className="tm-db-search">
+            <input
+              type="text"
+              value={phoneQuery}
+              onChange={(e) => setPhoneQuery(e.target.value)}
+              placeholder="전화번호 검색"
+            />
+          </div>
           <button
             className="db-list-export"
             type="button"

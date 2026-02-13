@@ -98,6 +98,13 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     return value
   }
 
+  const normalizePhoneDigits = (value) => {
+    if (!value) return ''
+    let digits = String(value).replace(/\D/g, '')
+    if (digits.startsWith('82')) digits = `0${digits.slice(2)}`
+    return digits
+  }
+
   const parseKoreanRange = (value) => {
     if (!value) return null
     const parts = String(value).replace(/\s+/g, ' ').split('~').map((part) => part.trim())
@@ -270,7 +277,16 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     }
   }
 
-  const filteredRows = useMemo(() => rows, [rows])
+  const filteredRows = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      const aTime = new Date(a?.['인입날짜']).getTime()
+      const bTime = new Date(b?.['인입날짜']).getTime()
+      if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0
+      if (Number.isNaN(aTime)) return 1
+      if (Number.isNaN(bTime)) return -1
+      return bTime - aTime
+    })
+  }, [rows])
 
   const filterOptions = useMemo(() => {
     const events = new Set()
@@ -287,6 +303,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   const filteredList = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
+    const termDigits = normalizePhoneDigits(term)
     const callMinNum = callMin === '' ? null : Number(callMin)
     const missMinNum = missMin === '' ? null : Number(missMin)
     const noShowMinNum = noShowMin === '' ? null : Number(noShowMin)
@@ -313,17 +330,17 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       }
       if (!term) return true
       const name = String(row['이름'] || '').toLowerCase()
-      const phone = String(row['연락처'] || '').replace(/\D/g, '')
+      const phone = normalizePhoneDigits(row['연락처'])
       const event = String(row['이벤트'] || '').toLowerCase()
       const memo = String(row['최근메모내용'] || '').toLowerCase()
       return (
         name.includes(term) ||
-        phone.includes(term.replace(/\D/g, '')) ||
+        (termDigits ? phone.includes(termDigits) : false) ||
         event.includes(term) ||
         memo.includes(term)
       )
     })
-  }, [filteredRows, searchTerm, statusFilterLocal, eventFilter, regionFilter, callMin, missMin, noShowMin, onlyEmptyStatus, onlyAvailable])
+  }, [filteredRows, searchTerm, statusFilterLocal, eventFilter, regionFilter, callMin, missMin, noShowMin, onlyEmptyStatus, onlyAvailable, assignedTodayOnly])
 
   const handleExport = () => {
     if (filteredList.length === 0) return
