@@ -158,7 +158,26 @@ export default function TmDailyReport() {
       const res = await api.get(`/tm/reports/${row.id}/full`)
       setModalData(res.data || null)
     } catch (err) {
-      setError('\uB9C8\uAC10\uBCF4\uACE0 \uC694\uC57D\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.')
+      try {
+        const metrics = ['MISSED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
+        const results = await Promise.all(
+          metrics.map((metric) =>
+            api
+              .get(`/admin/reports/${row.id}/leads`, { params: { metric } })
+              .then((res) => [metric, res.data?.leads || []])
+          )
+        )
+        const leads = results.reduce(
+          (acc, [metric, rows]) => {
+            acc[metric] = rows
+            return acc
+          },
+          { MISSED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
+        )
+        setModalData({ report: row, leads })
+      } catch {
+        setError('\uB9C8\uAC10\uBCF4\uACE0 \uC694\uC57D\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.')
+      }
     }
   }
 

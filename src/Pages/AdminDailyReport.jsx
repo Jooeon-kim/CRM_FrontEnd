@@ -75,12 +75,35 @@ export default function AdminDailyReport() {
     )
   }, [reports])
 
-  const openModal = async (reportId) => {
+  const fetchLeadsFallback = async (reportId) => {
+    const metrics = ['MISSED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
+    const results = await Promise.all(
+      metrics.map((metric) =>
+        api
+          .get(`/admin/reports/${reportId}/leads`, { params: { metric } })
+          .then((res) => [metric, res.data?.leads || []])
+      )
+    )
+    return results.reduce(
+      (acc, [metric, rows]) => {
+        acc[metric] = rows
+        return acc
+      },
+      { MISSED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
+    )
+  }
+
+  const openModal = async (row) => {
     try {
-      const res = await api.get(`/admin/reports/${reportId}/full`)
+      const res = await api.get(`/admin/reports/${row.id}/full`)
       setModalData(res.data || null)
     } catch (err) {
-      setError('\uB9C8\uAC10\uBCF4\uACE0 \uC0C1\uC138\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.')
+      try {
+        const leads = await fetchLeadsFallback(row.id)
+        setModalData({ report: row, leads })
+      } catch {
+        setError('\uB9C8\uAC10\uBCF4\uACE0 \uC0C1\uC138\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.')
+      }
     }
   }
 
@@ -148,7 +171,7 @@ export default function AdminDailyReport() {
               <div>{countOf(row, 'manual_call_count', 'total_call_count')}</div>
               <div>{formatDateTime(row.submitted_at)}</div>
               <div>
-                <button type="button" className="admin-home-tm-edit" onClick={() => openModal(row.id)}>
+                <button type="button" className="admin-home-tm-edit" onClick={() => openModal(row)}>
                   {'\uBAA8\uB2EC \uBCF4\uAE30'}
                 </button>
               </div>
