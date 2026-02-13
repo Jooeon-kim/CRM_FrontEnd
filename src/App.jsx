@@ -19,6 +19,7 @@ import TmCalendar from './Pages/TmCalendar'
 import TmWaiting from './Pages/TmWaiting'
 import TmAvailable from './Pages/TmAvailable'
 import TmAssignedToday from './Pages/TmAssignedToday'
+import TmDailyReport from './Pages/TmDailyReport'
 
 function RequireAdmin({ children }) {
   const { isAuthenticated, isAdmin } = useSelector((state) => state.auth)
@@ -55,6 +56,7 @@ function App() {
         <Route path="reserved" element={<TmReserved />} />
         <Route path="calendar" element={<TmCalendar />} />
         <Route path="assigned-today" element={<TmAssignedToday />} />
+        <Route path="daily-report" element={<TmDailyReport />} />
       </Route>
       <Route
         path="/admin"

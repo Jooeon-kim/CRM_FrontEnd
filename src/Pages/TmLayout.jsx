@@ -8,7 +8,6 @@ export default function TmLayout() {
   const dispatch = useDispatch()
   const { status, user } = useSelector((state) => state.auth)
   const location = useLocation()
-  const [closingReport, setClosingReport] = useState(false)
   const [todayCount, setTodayCount] = useState(0)
   const [assignedTodayCount, setAssignedTodayCount] = useState(0)
 
@@ -67,34 +66,13 @@ export default function TmLayout() {
             ? '예약'
             : location.pathname.includes('/main/assigned-today')
               ? '당일배정DB'
+              : location.pathname.includes('/main/daily-report')
+                ? '마감보고'
             : location.pathname.includes('/main/calendar')
               ? '캘린더'
               : '배정 완료 DB'
 
   const calendarLabel = useMemo(() => '캘린더', [])
-
-  const handleCloseReport = async () => {
-    if (!user?.id) return
-    try {
-      setClosingReport(true)
-      const res = await api.post('/tm/reports/close', { tmId: user.id })
-      const summary = res.data?.summary || {}
-      alert(
-        [
-          `${user?.username || 'TM'} 마감보고 저장 완료`,
-          `전체 콜 횟수: ${summary.totalCallCount || 0}번`,
-          `부재중: ${summary.missedCount || 0}건`,
-          `예약완료: ${summary.reservedCount || 0}건`,
-          `당일내원: ${summary.visitTodayCount || 0}건`,
-          `익일내원: ${summary.visitNextdayCount || 0}건`,
-        ].join('\n')
-      )
-    } catch (err) {
-      alert('마감보고 저장에 실패했습니다.')
-    } finally {
-      setClosingReport(false)
-    }
-  }
 
   return (
     <div className="admin-page">
@@ -109,17 +87,9 @@ export default function TmLayout() {
             {user?.username ? `${user.username}님` : '담당자님'} 환영합니다
           </span>
           <button
-            className="admin-profile-button"
-            type="button"
-            onClick={handleCloseReport}
-            disabled={closingReport}
-          >
-            {closingReport ? '마감 저장 중...' : '마감보고'}
-          </button>
-          <button
             className="admin-logout"
             onClick={() => dispatch(logout())}
-            disabled={status === 'loading' || closingReport}
+            disabled={status === 'loading'}
           >
             로그아웃
           </button>
@@ -185,6 +155,12 @@ export default function TmLayout() {
             >
               <span>{calendarLabel}</span>
               {todayCount ? <span className="calendar-badge">오늘 예약 {todayCount}명</span> : null}
+            </NavLink>
+            <NavLink
+              to="/main/daily-report"
+              className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+            >
+              마감보고
             </NavLink>
           </nav>
         </aside>

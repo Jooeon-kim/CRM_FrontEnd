@@ -1,11 +1,13 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import api from '../apiClient'
 
-const METRIC_META = {
-  MISSED: { key: 'missed_count', label: '\uBD80\uC7AC\uC911' },
-  RESERVED: { key: 'reserved_count', label: '\uC608\uC57D\uC644\uB8CC' },
-  VISIT_TODAY: { key: 'visit_today_count', label: '\uB2F9\uC77C\uB0B4\uC6D0' },
-  VISIT_NEXTDAY: { key: 'visit_nextday_count', label: '\uC775\uC77C\uB0B4\uC6D0' },
+const DAY_LABELS = ['\uC77C', '\uC6D4', '\uD654', '\uC218', '\uBAA9', '\uAE08', '\uD1A0']
+
+const metricLabels = {
+  MISSED: '\uBD80\uC7AC\uC911',
+  RESERVED: '\uB2F9\uC77C \uC608\uC57D',
+  VISIT_TODAY: '\uB2F9\uC77C \uB0B4\uC6D0',
+  VISIT_NEXTDAY: '\uC775\uC77C \uB0B4\uC6D0',
 }
 
 const toDateKey = (value) => {
@@ -29,23 +31,20 @@ const formatDateTime = (value) => {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`
 }
 
-const formatPhone = (value) => {
-  if (!value) return '-'
-  let digits = String(value).replace(/\D/g, '')
-  if (digits.startsWith('82')) digits = `0${digits.slice(2)}`
-  if (digits.length === 11) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
-  if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
-  return String(value)
+const formatReportTitle = (dateKey, tmName) => {
+  const date = new Date(`${dateKey}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return ''
+  return `<${date.getMonth() + 1}\uC6D4 ${date.getDate()}\uC77C (${DAY_LABELS[date.getDay()]}\uC694\uC77C) ${tmName || ''} \uB9C8\uAC10\uBCF4\uACE0>`
 }
+
+const countOf = (row, manualKey, autoKey) => row?.[manualKey] ?? row?.[autoKey] ?? 0
 
 export default function AdminDailyReport() {
   const [date, setDate] = useState(toDateKey())
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [detail, setDetail] = useState(null)
-  const [detailRows, setDetailRows] = useState([])
-  const [detailLoading, setDetailLoading] = useState(false)
+  const [modalData, setModalData] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -56,7 +55,6 @@ export default function AdminDailyReport() {
         setReports(res.data?.reports || [])
       } catch (err) {
         setError('\uB9C8\uAC10\uBCF4\uACE0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.')
-        setReports([])
       } finally {
         setLoading(false)
       }
@@ -64,52 +62,34 @@ export default function AdminDailyReport() {
     load()
   }, [date])
 
-  const totalSummary = useMemo(() => {
+  const summary = useMemo(() => {
     return reports.reduce(
       (acc, row) => ({
-        total_call_count: acc.total_call_count + Number(row.total_call_count || 0),
-        missed_count: acc.missed_count + Number(row.missed_count || 0),
-        reserved_count: acc.reserved_count + Number(row.reserved_count || 0),
-        visit_today_count: acc.visit_today_count + Number(row.visit_today_count || 0),
-        visit_nextday_count: acc.visit_nextday_count + Number(row.visit_nextday_count || 0),
+        total: acc.total + Number(countOf(row, 'manual_call_count', 'total_call_count') || 0),
+        reserved: acc.reserved + Number(countOf(row, 'manual_reserved_count', 'reserved_count') || 0),
+        visitToday: acc.visitToday + Number(countOf(row, 'manual_visit_today_count', 'visit_today_count') || 0),
+        visitNextday: acc.visitNextday + Number(countOf(row, 'manual_visit_nextday_count', 'visit_nextday_count') || 0),
+        done: acc.done + (row.is_submitted ? 1 : 0),
       }),
-      {
-        total_call_count: 0,
-        missed_count: 0,
-        reserved_count: 0,
-        visit_today_count: 0,
-        visit_nextday_count: 0,
-      }
+      { total: 0, reserved: 0, visitToday: 0, visitNextday: 0, done: 0 }
     )
   }, [reports])
 
-  const openDetail = async (report, metricType) => {
+  const openModal = async (reportId) => {
     try {
-      setDetailLoading(true)
-      setDetailRows([])
-      setDetail({
-        reportId: report.id,
-        metricType,
-        label: METRIC_META[metricType]?.label || metricType,
-        tmName: report.tm_name || '-',
-      })
-      const res = await api.get(`/admin/reports/${report.id}/leads`, {
-        params: { metric: metricType },
-      })
-      setDetailRows(res.data?.leads || [])
+      const res = await api.get(`/admin/reports/${reportId}/full`)
+      setModalData(res.data || null)
     } catch (err) {
-      setDetailRows([])
-    } finally {
-      setDetailLoading(false)
+      setError('\uB9C8\uAC10\uBCF4\uACE0 \uC0C1\uC138\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.')
     }
   }
 
   return (
-    <div className="db-list">
+    <div className="db-list daily-report-page">
       <div className="db-list-header">
         <div>
           <h1>{'TM \uB9C8\uAC10\uBCF4\uACE0'}</h1>
-          <span className="db-list-count">{`${reports.length}\uBA85 \uC81C\uCD9C`}</span>
+          <span className="db-list-count">{`${reports.length}\uAC74`}</span>
         </div>
         <div className="db-list-actions">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -118,24 +98,24 @@ export default function AdminDailyReport() {
 
       <div className="admin-home-grid">
         <div className="admin-home-card">
-          <div className="admin-home-card-title">{'\uC804\uCCB4 \uCF5C \uD69F\uC218'}</div>
-          <div className="admin-home-card-value">{totalSummary.total_call_count}</div>
+          <div className="admin-home-card-title">{'\uCD1D \uC81C\uCD9C'}</div>
+          <div className="admin-home-card-value">{summary.done}</div>
         </div>
         <div className="admin-home-card">
-          <div className="admin-home-card-title">{'\uBD80\uC7AC\uC911'}</div>
-          <div className="admin-home-card-value">{totalSummary.missed_count}</div>
+          <div className="admin-home-card-title">{'\uB2F9\uC77C \uC608\uC57D'}</div>
+          <div className="admin-home-card-value">{summary.reserved}</div>
         </div>
         <div className="admin-home-card">
-          <div className="admin-home-card-title">{'\uC608\uC57D\uC644\uB8CC'}</div>
-          <div className="admin-home-card-value">{totalSummary.reserved_count}</div>
+          <div className="admin-home-card-title">{'\uB2F9\uC77C \uB0B4\uC6D0'}</div>
+          <div className="admin-home-card-value">{summary.visitToday}</div>
         </div>
         <div className="admin-home-card">
-          <div className="admin-home-card-title">{'\uB2F9\uC77C\uB0B4\uC6D0'}</div>
-          <div className="admin-home-card-value">{totalSummary.visit_today_count}</div>
+          <div className="admin-home-card-title">{'\uC775\uC77C \uB0B4\uC6D0'}</div>
+          <div className="admin-home-card-value">{summary.visitNextday}</div>
         </div>
         <div className="admin-home-card">
-          <div className="admin-home-card-title">{'\uC775\uC77C\uB0B4\uC6D0'}</div>
-          <div className="admin-home-card-value">{totalSummary.visit_nextday_count}</div>
+          <div className="admin-home-card-title">{'\uB2F9\uC77C \uCF5C'}</div>
+          <div className="admin-home-card-value">{summary.total}</div>
         </div>
       </div>
 
@@ -148,106 +128,75 @@ export default function AdminDailyReport() {
 
       {!loading && reports.length > 0 ? (
         <div className="db-list-table">
-          <div className="db-list-row db-list-head">
+          <div className="db-list-row db-list-head daily-report-row-admin">
             <div>TM</div>
-            <div>{'\uC804\uCCB4 \uCF5C'}</div>
-            <div>{'\uBD80\uC7AC\uC911'}</div>
-            <div>{'\uC608\uC57D\uC644\uB8CC'}</div>
-            <div>{'\uB2F9\uC77C\uB0B4\uC6D0'}</div>
-            <div>{'\uC775\uC77C\uB0B4\uC6D0'}</div>
+            <div>{'\uC0C1\uD0DC'}</div>
+            <div>{'\uB2F9\uC77C \uC608\uC57D'}</div>
+            <div>{'\uB2F9\uC77C \uB0B4\uC6D0'}</div>
+            <div>{'\uC775\uC77C \uB0B4\uC6D0'}</div>
+            <div>{'\uB2F9\uC77C \uCF5C'}</div>
             <div>{'\uC81C\uCD9C\uC2DC\uAC04'}</div>
+            <div>{'\uC0C1\uC138'}</div>
           </div>
           {reports.map((row) => (
-            <div className="db-list-row" key={row.id}>
+            <div key={row.id} className="db-list-row daily-report-row-admin">
               <div>{row.tm_name || '-'}</div>
-              <div>{row.total_call_count || 0}</div>
-              <div>
-                <button
-                  type="button"
-                  className="admin-home-tm-edit"
-                  disabled={!row.missed_count}
-                  onClick={() => openDetail(row, 'MISSED')}
-                >
-                  {row.missed_count || 0}
-                </button>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  className="admin-home-tm-edit"
-                  disabled={!row.reserved_count}
-                  onClick={() => openDetail(row, 'RESERVED')}
-                >
-                  {row.reserved_count || 0}
-                </button>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  className="admin-home-tm-edit"
-                  disabled={!row.visit_today_count}
-                  onClick={() => openDetail(row, 'VISIT_TODAY')}
-                >
-                  {row.visit_today_count || 0}
-                </button>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  className="admin-home-tm-edit"
-                  disabled={!row.visit_nextday_count}
-                  onClick={() => openDetail(row, 'VISIT_NEXTDAY')}
-                >
-                  {row.visit_nextday_count || 0}
-                </button>
-              </div>
+              <div>{row.is_submitted ? '\uC644\uB8CC' : '\uC9C4\uD589\uC911'}</div>
+              <div>{countOf(row, 'manual_reserved_count', 'reserved_count')}</div>
+              <div>{countOf(row, 'manual_visit_today_count', 'visit_today_count')}</div>
+              <div>{countOf(row, 'manual_visit_nextday_count', 'visit_nextday_count')}</div>
+              <div>{countOf(row, 'manual_call_count', 'total_call_count')}</div>
               <div>{formatDateTime(row.submitted_at)}</div>
+              <div>
+                <button type="button" className="admin-home-tm-edit" onClick={() => openModal(row.id)}>
+                  {'\uBAA8\uB2EC \uBCF4\uAE30'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
       ) : null}
 
-      {detail ? (
-        <div className="db-list">
-          <div className="db-list-header">
-            <div>
-              <h1>
-                {detail.tmName} - {detail.label}
-              </h1>
-              <span className="db-list-count">{`${detailRows.length}\uAC74`}</span>
+      {modalData ? (
+        <div className="tm-lead-modal">
+          <div className="tm-lead-backdrop" onClick={() => setModalData(null)} />
+          <div className="tm-lead-card daily-report-modal">
+            <div className="tm-lead-header">
+              <h3>{formatReportTitle(modalData.report?.report_date, modalData.report?.tm_name)}</h3>
+              <button type="button" onClick={() => setModalData(null)}>{'\uB2EB\uAE30'}</button>
             </div>
-            <div className="db-list-actions">
-              <button type="button" className="db-list-export" onClick={() => setDetail(null)}>
-                {'\uB2EB\uAE30'}
-              </button>
-            </div>
-          </div>
 
-          {detailLoading ? <div className="db-list-empty">{'\uC0C1\uC138 \uBD88\uB7EC\uC624\uB294 \uC911...'}</div> : null}
-          {!detailLoading && detailRows.length === 0 ? (
-            <div className="db-list-empty">{'\uD45C\uC2DC\uD560 \uACE0\uAC1D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.'}</div>
-          ) : null}
+            <pre className="daily-report-preview">
+{[
+  `1. \uB2F9\uC77C \uC608\uC57D: ${countOf(modalData.report, 'manual_reserved_count', 'reserved_count')}\uBA85`,
+  `2. \uB2F9\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_today_count', 'visit_today_count')}\uBA85`,
+  `3. \uC775\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_nextday_count', 'visit_nextday_count')}\uBA85`,
+  `4. \uB2F9\uC77C \uCF5C \uAC2F\uC218: ${countOf(modalData.report, 'manual_call_count', 'total_call_count')}\uBA85`,
+  '',
+  `- DB CRM \uAE30\uC785: ${modalData.report?.check_db_crm ? '(\uC644\uB8CC)' : '(\uC9C4\uD589\uC911)'}`,
+  `- \uC6D0\uB0B4 CRM \uAE30\uC785: ${modalData.report?.check_inhouse_crm ? '(\uC644\uB8CC)' : '(\uC9C4\uD589\uC911)'}`,
+  `- \uC2E4\uC801\uC2DC\uD2B8\uAE30\uC785: ${modalData.report?.check_sheet ? '(\uC644\uB8CC)' : '(\uC9C4\uD589\uC911)'}`,
+].join('\n')}
+            </pre>
 
-          {!detailLoading && detailRows.length > 0 ? (
-            <div className="db-list-table">
-              <div className="db-list-row db-list-head">
-                <div>{'\uACE0\uAC1D\uBA85'}</div>
-                <div>{'\uC5F0\uB77D\uCC98'}</div>
-                <div>{'\uC0C1\uD0DC'}</div>
-                <div>{'\uC608\uC57D\uC77C\uC2DC'}</div>
-                <div>{'\uCD5C\uADFC\uBA54\uBAA8'}</div>
-              </div>
-              {detailRows.map((row) => (
-                <div className="db-list-row" key={row.id}>
-                  <div>{row.name_snapshot || '-'}</div>
-                  <div>{formatPhone(row.phone_snapshot)}</div>
-                  <div>{row.status_snapshot || '-'}</div>
-                  <div>{formatDateTime(row.reservation_at_snapshot)}</div>
-                  <div>{row.memo_snapshot || '-'}</div>
+            <div className="daily-report-metrics">
+              {Object.entries(metricLabels).map(([metricKey, label]) => (
+                <div key={metricKey} className="daily-report-metric-box">
+                  <div className="daily-report-metric-title">{`${label} (${(modalData.leads?.[metricKey] || []).length}\uAC74)`}</div>
+                  <div className="daily-report-metric-list">
+                    {(modalData.leads?.[metricKey] || []).slice(0, 10).map((lead) => (
+                      <div key={`${metricKey}-${lead.lead_id}`} className="daily-report-metric-item">
+                        {lead.name_snapshot || '-'} / {lead.phone_snapshot || '-'} / {lead.status_snapshot || '-'}
+                      </div>
+                    ))}
+                    {(modalData.leads?.[metricKey] || []).length > 10 ? (
+                      <div className="daily-report-metric-item">{`\uC678 ${(modalData.leads?.[metricKey] || []).length - 10}\uAC74`}</div>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>
-          ) : null}
+          </div>
         </div>
       ) : null}
     </div>

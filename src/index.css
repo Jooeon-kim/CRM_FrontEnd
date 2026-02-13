@@ -2215,3 +2215,140 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+.daily-report-page {
+  gap: 1.2rem;
+}
+
+.daily-report-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) 1fr;
+  gap: 1rem;
+}
+
+.daily-report-form {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.daily-report-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.daily-report-form input[type='number'] {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+}
+
+.daily-report-checks {
+  border-top: 1px dashed rgba(15, 23, 42, 0.15);
+  margin-top: 0.4rem;
+  padding-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.daily-report-checks label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.daily-report-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.daily-report-preview {
+  margin: 0;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  padding: 1rem;
+  white-space: pre-wrap;
+  line-height: 1.65;
+  font-size: 0.95rem;
+  min-height: 280px;
+}
+
+.daily-report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.daily-report-row {
+  grid-template-columns: 1.2fr 0.8fr 1.2fr 0.8fr;
+}
+
+.daily-report-row-admin {
+  grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1.2fr 0.8fr;
+}
+
+.daily-report-modal {
+  max-width: 1080px;
+  width: min(1080px, 96vw);
+  max-height: 86vh;
+  overflow: auto;
+}
+
+.daily-report-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 0.8rem;
+}
+
+.daily-report-metric-box {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #f8fafc;
+}
+
+.daily-report-metric-title {
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+}
+
+.daily-report-metric-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.daily-report-metric-item {
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .daily-report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-report-row {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-report-row-admin {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-report-metrics {
+    grid-template-columns: 1fr;
+  }
+}
