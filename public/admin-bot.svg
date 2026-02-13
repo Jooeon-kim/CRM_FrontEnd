@@ -1,0 +1,49 @@
+<svg width="360" height="360" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Admin mascot bot">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="cream" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffef9"/>
+      <stop offset="1" stop-color="#f1efe6"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d6d3d1"/>
+      <stop offset="1" stop-color="#78716c"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="360" height="360" rx="24" fill="url(#bg)"/>
+  <ellipse cx="180" cy="322" rx="86" ry="12" fill="#cbd5e1"/>
+
+  <rect x="104" y="56" width="152" height="96" rx="16" fill="url(#cream)" stroke="#0f172a" stroke-width="3"/>
+  <circle cx="90" cy="92" r="14" fill="url(#gold)" stroke="#0f172a" stroke-width="3"/>
+  <rect x="89" y="92" width="15" height="8" rx="4" fill="#b45309"/>
+  <circle cx="270" cy="84" r="13" fill="url(#metal)" stroke="#0f172a" stroke-width="3"/>
+  <rect x="252" y="80" width="16" height="8" rx="4" fill="#a8a29e"/>
+
+  <path d="M145 109c8-12 22-12 30 0" fill="none" stroke="#0f172a" stroke-width="7" stroke-linecap="round"/>
+  <path d="M185 109c8-12 22-12 30 0" fill="none" stroke="#0f172a" stroke-width="7" stroke-linecap="round"/>
+  <path d="M168 124c6 9 18 9 24 0" fill="none" stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
+
+  <rect x="129" y="168" width="102" height="92" rx="16" fill="url(#cream)" stroke="#0f172a" stroke-width="3"/>
+  <circle cx="180" cy="214" r="24" fill="#fef08a" stroke="#0f172a" stroke-width="3"/>
+  <rect x="176" y="200" width="8" height="27" rx="4" fill="#292524"/>
+
+  <rect x="90" y="179" width="42" height="18" rx="9" transform="rotate(-18 90 179)" fill="url(#cream)" stroke="#0f172a" stroke-width="3"/>
+  <rect x="71" y="187" width="36" height="18" rx="9" transform="rotate(-28 71 187)" fill="url(#metal)" stroke="#0f172a" stroke-width="3"/>
+  <circle cx="58" cy="203" r="11" fill="#44403c" stroke="#0f172a" stroke-width="3"/>
+
+  <rect x="228" y="179" width="42" height="18" rx="9" transform="rotate(18 228 179)" fill="url(#cream)" stroke="#0f172a" stroke-width="3"/>
+  <rect x="254" y="188" width="36" height="18" rx="9" transform="rotate(28 254 188)" fill="url(#metal)" stroke="#0f172a" stroke-width="3"/>
+  <circle cx="301" cy="208" r="11" fill="#44403c" stroke="#0f172a" stroke-width="3"/>
+
+  <rect x="145" y="255" width="28" height="39" rx="10" fill="url(#cream)" stroke="#0f172a" stroke-width="3"/>
+  <rect x="161" y="255" width="28" height="39" rx="10" fill="url(#cream)" stroke="#0f172a" stroke-width="3"/>
+  <rect x="136" y="291" width="43" height="20" rx="10" fill="url(#metal)" stroke="#0f172a" stroke-width="3"/>
+  <rect x="181" y="291" width="43" height="20" rx="10" fill="url(#metal)" stroke="#0f172a" stroke-width="3"/>
+</svg>

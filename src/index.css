@@ -484,20 +484,17 @@ input {
   border-right: 1px solid var(--panel-border);
   background: #ffffff;
   padding: 1.5rem 1rem;
-  display: flex;
-  flex-direction: column;
 }
 
 .admin-nav {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  flex: 1;
 }
 
 .admin-sidebar-mascot {
-  margin-top: auto;
-  padding-top: 1rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
   display: flex;
   justify-content: center;
 }
