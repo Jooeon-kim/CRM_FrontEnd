@@ -167,7 +167,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     setPhoneEvents([])
     setModalOpen(true)
     try {
-      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'], detailed: 1 } })
+      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'], detailed: 1, leadId: lead.id } })
       if (Array.isArray(res.data)) {
         setMemos(res.data || [])
         setPhoneEvents([])
@@ -258,7 +258,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
       try {
         const [memosRes, dbRes] = await Promise.all([
-          api.get('/tm/memos', { params: { phone: leadPhone, detailed: 1 } }),
+          api.get('/tm/memos', { params: { phone: leadPhone, detailed: 1, leadId } }),
           api.get('/dbdata', {
             params: {
               tm: user.id,
