@@ -418,6 +418,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             >
               <div className="tm-available-cell">
                 {isAvailableNow(row) ? <span className="tm-available-badge">상담가능</span> : null}
+                <span>{row['상담가능시간'] || '-'}</span>
               </div>
               {visibleColumns.map((key) => {
                 const cell =
