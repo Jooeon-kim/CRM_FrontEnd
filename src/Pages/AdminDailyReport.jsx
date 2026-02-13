@@ -208,8 +208,6 @@ export default function AdminDailyReport() {
 
             <pre className="daily-report-preview">
 {[
-  `${formatReportTitle(modalData.report?.report_date, modalData.report?.tm_name)}`,
-  '',
   `1. \uB2F9\uC77C \uC608\uC57D: ${countOf(modalData.report, 'manual_reserved_count', 'reserved_count')}\uBA85`,
   `2. \uB2F9\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_today_count', 'visit_today_count')}\uBA85`,
   `3. \uC775\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_nextday_count', 'visit_nextday_count')}\uBA85`,
