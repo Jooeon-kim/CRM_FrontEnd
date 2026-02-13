@@ -220,8 +220,18 @@ export default function DbList() {
   }
 
   const tmOptions = Array.from(
-    new Set(rows.map((row) => row.tm).filter(Boolean))
-  )
+    new Set(
+      rows
+        .map((row) => row.tm)
+        .filter((tm) => tm !== null && tm !== undefined && String(tm) !== '')
+    )
+  ).sort((a, b) => {
+    const aNum = Number(a)
+    const bNum = Number(b)
+    if (aNum === 0) return -1
+    if (bNum === 0) return 1
+    return String(a).localeCompare(String(b), 'ko')
+  })
 
   const statusOptions = ['대기', '예약', '부재중', '리콜대기', '실패', '무효', '예약부도', '내원완료']
 
@@ -355,7 +365,9 @@ export default function DbList() {
             <option value="all">전체</option>
             {tmOptions.map((tm) => (
               <option key={tm} value={tm}>
-                {tm}
+                {String(tm) === '0'
+                  ? '보류'
+                  : agents.find((agent) => String(agent.id) === String(tm))?.name || tm}
               </option>
             ))}
           </select>
