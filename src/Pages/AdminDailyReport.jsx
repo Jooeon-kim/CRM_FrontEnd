@@ -5,6 +5,7 @@ const DAY_LABELS = ['\uC77C', '\uC6D4', '\uD654', '\uC218', '\uBAA9', '\uAE08', 
 
 const metricLabels = {
   MISSED: '\uBD80\uC7AC\uC911',
+  FAILED: '\uC2E4\uD328',
   RESERVED: '\uB2F9\uC77C \uC608\uC57D',
   VISIT_TODAY: '\uB2F9\uC77C \uB0B4\uC6D0',
   VISIT_NEXTDAY: '\uC775\uC77C \uB0B4\uC6D0',
@@ -66,17 +67,18 @@ export default function AdminDailyReport() {
     return reports.reduce(
       (acc, row) => ({
         total: acc.total + Number(countOf(row, 'manual_call_count', 'total_call_count') || 0),
+        failed: acc.failed + Number(countOf(row, 'manual_failed_count', 'failed_count') || 0),
         reserved: acc.reserved + Number(countOf(row, 'manual_reserved_count', 'reserved_count') || 0),
         visitToday: acc.visitToday + Number(countOf(row, 'manual_visit_today_count', 'visit_today_count') || 0),
         visitNextday: acc.visitNextday + Number(countOf(row, 'manual_visit_nextday_count', 'visit_nextday_count') || 0),
         done: acc.done + (row.is_submitted ? 1 : 0),
       }),
-      { total: 0, reserved: 0, visitToday: 0, visitNextday: 0, done: 0 }
+      { total: 0, failed: 0, reserved: 0, visitToday: 0, visitNextday: 0, done: 0 }
     )
   }, [reports])
 
   const fetchLeadsFallback = async (reportId) => {
-    const metrics = ['MISSED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
+    const metrics = ['MISSED', 'FAILED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
     const results = await Promise.all(
       metrics.map((metric) =>
         api
@@ -89,7 +91,7 @@ export default function AdminDailyReport() {
         acc[metric] = rows
         return acc
       },
-      { MISSED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
+      { MISSED: [], FAILED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
     )
   }
 
@@ -125,6 +127,10 @@ export default function AdminDailyReport() {
           <div className="admin-home-card-value">{summary.done}</div>
         </div>
         <div className="admin-home-card">
+          <div className="admin-home-card-title">{'\uC2E4\uD328'}</div>
+          <div className="admin-home-card-value">{summary.failed}</div>
+        </div>
+        <div className="admin-home-card">
           <div className="admin-home-card-title">{'\uB2F9\uC77C \uC608\uC57D'}</div>
           <div className="admin-home-card-value">{summary.reserved}</div>
         </div>
@@ -154,6 +160,7 @@ export default function AdminDailyReport() {
           <div className="db-list-row db-list-head daily-report-row-admin">
             <div>TM</div>
             <div>{'\uC0C1\uD0DC'}</div>
+            <div>{'\uC2E4\uD328'}</div>
             <div>{'\uB2F9\uC77C \uC608\uC57D'}</div>
             <div>{'\uB2F9\uC77C \uB0B4\uC6D0'}</div>
             <div>{'\uC775\uC77C \uB0B4\uC6D0'}</div>
@@ -165,6 +172,7 @@ export default function AdminDailyReport() {
             <div key={row.id} className="db-list-row daily-report-row-admin">
               <div>{row.tm_name || '-'}</div>
               <div>{row.is_submitted ? '\uC644\uB8CC' : '\uC9C4\uD589\uC911'}</div>
+              <div>{countOf(row, 'manual_failed_count', 'failed_count')}</div>
               <div>{countOf(row, 'manual_reserved_count', 'reserved_count')}</div>
               <div>{countOf(row, 'manual_visit_today_count', 'visit_today_count')}</div>
               <div>{countOf(row, 'manual_visit_nextday_count', 'visit_nextday_count')}</div>
@@ -191,6 +199,7 @@ export default function AdminDailyReport() {
 
             <pre className="daily-report-preview">
 {[
+  `0. \uC2E4\uD328: ${countOf(modalData.report, 'manual_failed_count', 'failed_count')}\uBA85`,
   `1. \uB2F9\uC77C \uC608\uC57D: ${countOf(modalData.report, 'manual_reserved_count', 'reserved_count')}\uBA85`,
   `2. \uB2F9\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_today_count', 'visit_today_count')}\uBA85`,
   `3. \uC775\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_nextday_count', 'visit_nextday_count')}\uBA85`,

@@ -6,6 +6,7 @@ const DAY_LABELS = ['\uC77C', '\uC6D4', '\uD654', '\uC218', '\uBAA9', '\uAE08', 
 
 const metricLabels = {
   MISSED: '\uBD80\uC7AC\uC911',
+  FAILED: '\uC2E4\uD328',
   RESERVED: '\uB2F9\uC77C \uC608\uC57D',
   VISIT_TODAY: '\uB2F9\uC77C \uB0B4\uC6D0',
   VISIT_NEXTDAY: '\uC775\uC77C \uB0B4\uC6D0',
@@ -168,7 +169,7 @@ export default function TmDailyReport() {
       setModalData(res.data || null)
     } catch (err) {
       try {
-        const metrics = ['MISSED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
+        const metrics = ['MISSED', 'FAILED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
         const results = await Promise.all(
           metrics.map((metric) =>
             api
@@ -181,7 +182,7 @@ export default function TmDailyReport() {
             acc[metric] = rows
             return acc
           },
-          { MISSED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
+          { MISSED: [], FAILED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
         )
         setModalData({ report: row, leads })
       } catch {
@@ -312,6 +313,7 @@ export default function TmDailyReport() {
             </div>
             <pre className="daily-report-preview">
 {[
+  `0. \uC2E4\uD328: ${modalData.report?.manual_failed_count ?? modalData.report?.failed_count ?? 0}\uBA85`,
   `1. \uB2F9\uC77C \uC608\uC57D: ${modalData.report?.manual_reserved_count ?? modalData.report?.reserved_count ?? 0}\uBA85`,
   `2. \uB2F9\uC77C \uB0B4\uC6D0: ${modalData.report?.manual_visit_today_count ?? modalData.report?.visit_today_count ?? 0}\uBA85`,
   `3. \uC775\uC77C \uB0B4\uC6D0: ${modalData.report?.manual_visit_nextday_count ?? modalData.report?.visit_nextday_count ?? 0}\uBA85`,
