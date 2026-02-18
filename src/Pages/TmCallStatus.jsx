@@ -220,7 +220,7 @@ export default function TmCallStatus() {
     acc[status] = filteredRows.filter((row) => {
       const state = String(row['상태'] || '').trim()
       if (!state) return status === '대기'
-      return state.includes(status)
+      return state === status
     }).length
     return acc
   }, {})
