@@ -30,6 +30,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const [statusFilterLocal, setStatusFilterLocal] = useState('all')
   const [eventFilter, setEventFilter] = useState('all')
   const [regionFilter, setRegionFilter] = useState('all')
+  const [inboundSort, setInboundSort] = useState('desc')
   const [callMin, setCallMin] = useState('')
   const [missMin, setMissMin] = useState('')
   const [noShowMin, setNoShowMin] = useState('')
@@ -70,7 +71,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     }
 
     load()
-  }, [user?.id, statusFilter])
+  }, [user?.id, statusFilter, assignedTodayOnly])
 
   const formatDateTime = (value) => {
     if (!value) return '-'
@@ -299,9 +300,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0
       if (Number.isNaN(aTime)) return 1
       if (Number.isNaN(bTime)) return -1
-      return bTime - aTime
+      return inboundSort === 'asc' ? aTime - bTime : bTime - aTime
     })
-  }, [rows])
+  }, [rows, inboundSort])
 
   const filterOptions = useMemo(() => {
     const events = new Set()
@@ -443,6 +444,15 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             ))}
           </select>
         </label>
+        {assignedTodayOnly ? (
+          <label>
+            인입날짜 정렬
+            <select value={inboundSort} onChange={(e) => setInboundSort(e.target.value)}>
+              <option value="desc">내림차순</option>
+              <option value="asc">오름차순</option>
+            </select>
+          </label>
+        ) : null}
         <label>
           콜횟수 이상
           <input
