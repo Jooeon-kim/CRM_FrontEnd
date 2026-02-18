@@ -683,6 +683,15 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
               >
                 현재시간기입
               </button>
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({
+                  ...prev,
+                  memo: prev.memo ? `${prev.memo}/문자보냄` : '/문자보냄',
+                }))}
+              >
+                문자보냄
+              </button>
               <button type="button" onClick={() => setModalOpen(false)}>취소</button>
               <button type="button" onClick={handleSave} disabled={saving}>
                 {saving ? '저장 중...' : '저장'}
