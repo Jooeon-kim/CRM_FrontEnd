@@ -2369,6 +2369,9 @@ input {
   border-radius: 10px;
   padding: 0.75rem;
   background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .daily-report-metric-title {
@@ -2379,6 +2382,9 @@ input {
 .daily-report-metric-list {
   display: grid;
   gap: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
 }
 
 .daily-report-metric-item {

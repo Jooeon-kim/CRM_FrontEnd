@@ -224,14 +224,11 @@ export default function AdminDailyReport() {
                 <div key={metricKey} className="daily-report-metric-box">
                   <div className="daily-report-metric-title">{`${label} (${(modalData.leads?.[metricKey] || []).length}\uAC74)`}</div>
                   <div className="daily-report-metric-list">
-                    {(modalData.leads?.[metricKey] || []).slice(0, 10).map((lead) => (
+                    {(modalData.leads?.[metricKey] || []).map((lead) => (
                       <div key={`${metricKey}-${lead.lead_id}`} className="daily-report-metric-item">
                         {lead.name_snapshot || '-'} / {lead.phone_snapshot || '-'} / {lead.status_snapshot || '-'}
                       </div>
                     ))}
-                    {(modalData.leads?.[metricKey] || []).length > 10 ? (
-                      <div className="daily-report-metric-item">{`\uC678 ${(modalData.leads?.[metricKey] || []).length - 10}\uAC74`}</div>
-                    ) : null}
                   </div>
                 </div>
               ))}
