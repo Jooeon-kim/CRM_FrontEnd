@@ -81,16 +81,30 @@ export default function TmDailyReport() {
     setReports(res.data || [])
   }
 
-  const loadDraftForDate = async (targetDate) => {
+  const loadDraftForDate = async (targetDate, options = {}) => {
+    const { preferLiveCounts = false } = options
     const draftRes = await api.post('/tm/reports/draft', { reportDate: targetDate, tmId: user?.id })
     const row = draftRes.data?.report
     setReport(row || null)
     if (row) {
+      const reservedCount = preferLiveCounts
+        ? (row.reserved_count ?? row.manual_reserved_count ?? 0)
+        : (row.manual_reserved_count ?? row.reserved_count ?? 0)
+      const visitTodayCount = preferLiveCounts
+        ? (row.visit_today_count ?? row.manual_visit_today_count ?? 0)
+        : (row.manual_visit_today_count ?? row.visit_today_count ?? 0)
+      const visitNextdayCount = preferLiveCounts
+        ? (row.visit_nextday_count ?? row.manual_visit_nextday_count ?? 0)
+        : (row.manual_visit_nextday_count ?? row.visit_nextday_count ?? 0)
+      const callCount = preferLiveCounts
+        ? (row.total_call_count ?? row.manual_call_count ?? 0)
+        : (row.manual_call_count ?? row.total_call_count ?? 0)
+
       setForm({
-        reservedCount: row.manual_reserved_count ?? row.reserved_count ?? 0,
-        visitTodayCount: row.manual_visit_today_count ?? row.visit_today_count ?? 0,
-        visitNextdayCount: row.manual_visit_nextday_count ?? row.visit_nextday_count ?? 0,
-        callCount: row.manual_call_count ?? row.total_call_count ?? 0,
+        reservedCount,
+        visitTodayCount,
+        visitNextdayCount,
+        callCount,
         checkDbCrm: Boolean(row.check_db_crm),
         checkInhouseCrm: Boolean(row.check_inhouse_crm),
         checkSheet: Boolean(row.check_sheet),
@@ -103,7 +117,7 @@ export default function TmDailyReport() {
       try {
         setLoading(true)
         setError('')
-        await Promise.all([loadDraftForDate(date), loadList()])
+        await Promise.all([loadDraftForDate(date, { preferLiveCounts: true }), loadList()])
       } catch (err) {
         setError('\uB9C8\uAC10\uBCF4\uACE0 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.')
       } finally {
