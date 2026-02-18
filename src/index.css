@@ -859,7 +859,7 @@ input {
 .db-list-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.45rem;
 }
 
 .db-list-checkbox {
@@ -877,22 +877,22 @@ input {
 .tm-db-search input {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;
-  padding: 0.45rem 0.7rem;
+  padding: 0.4rem 0.6rem;
   background: #ffffff;
-  width: 240px;
+  width: 210px;
 }
 
 .tm-db-filters {
   display: grid;
-  grid-template-columns: repeat(6, minmax(160px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  gap: 0.5rem;
   align-items: end;
 }
 
 .tm-db-filters label {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.25rem;
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -901,7 +901,7 @@ input {
 .tm-db-filters input {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;
-  padding: 0.45rem 0.6rem;
+  padding: 0.38rem 0.5rem;
   background: #ffffff;
 }
 
@@ -955,20 +955,20 @@ input {
 
 .db-list-filters {
   display: grid;
-  grid-template-columns: repeat(6, minmax(140px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(6, minmax(125px, 1fr));
+  gap: 0.5rem;
   align-items: end;
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--bg);
-  padding: 0.6rem 0;
+  padding: 0.45rem 0;
 }
 
 .db-list-filters label {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.25rem;
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -977,7 +977,7 @@ input {
 .db-list-filters select {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 10px;
-  padding: 0.45rem 0.6rem;
+  padding: 0.38rem 0.5rem;
   background: #ffffff;
 }
 
