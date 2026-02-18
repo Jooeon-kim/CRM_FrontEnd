@@ -379,7 +379,7 @@ export default function TmCallStatus() {
                 <div className="tm-call-label">거주지</div>
               </div>
             </div>
-            <div className="tm-call-legend">
+            <div className="tm-call-legend tm-call-legend-scroll">
               {regionEntries.map(([region, count], idx) => (
                 <div className="tm-call-legend-row" key={region}>
                   <span

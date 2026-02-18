@@ -313,7 +313,6 @@ export default function TmDailyReport() {
             </div>
             <pre className="daily-report-preview">
 {[
-  `0. \uC2E4\uD328: ${modalData.report?.manual_failed_count ?? modalData.report?.failed_count ?? 0}\uBA85`,
   `1. \uB2F9\uC77C \uC608\uC57D: ${modalData.report?.manual_reserved_count ?? modalData.report?.reserved_count ?? 0}\uBA85`,
   `2. \uB2F9\uC77C \uB0B4\uC6D0: ${modalData.report?.manual_visit_today_count ?? modalData.report?.visit_today_count ?? 0}\uBA85`,
   `3. \uC775\uC77C \uB0B4\uC6D0: ${modalData.report?.manual_visit_nextday_count ?? modalData.report?.visit_nextday_count ?? 0}\uBA85`,
@@ -327,16 +326,13 @@ export default function TmDailyReport() {
             <div className="daily-report-metrics">
               {Object.entries(metricLabels).map(([metricKey, label]) => (
                 <div key={metricKey} className="daily-report-metric-box">
-                  <div className="daily-report-metric-title">{label}</div>
+                  <div className="daily-report-metric-title">{`${label} (${(modalData.leads?.[metricKey] || []).length}\uAC74)`}</div>
                   <div className="daily-report-metric-list">
-                    {(modalData.leads?.[metricKey] || []).slice(0, 8).map((lead) => (
+                    {(modalData.leads?.[metricKey] || []).map((lead) => (
                       <div key={`${metricKey}-${lead.lead_id}`} className="daily-report-metric-item">
-                        {lead.name_snapshot || '-'} / {lead.phone_snapshot || '-'}
+                        {lead.name_snapshot || '-'} / {lead.phone_snapshot || '-'} / {lead.status_snapshot || '-'}
                       </div>
                     ))}
-                    {(modalData.leads?.[metricKey] || []).length > 8 ? (
-                      <div className="daily-report-metric-item">{`\uC678 ${(modalData.leads?.[metricKey] || []).length - 8}\uAC74`}</div>
-                    ) : null}
                   </div>
                 </div>
               ))}
