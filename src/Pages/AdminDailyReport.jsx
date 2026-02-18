@@ -211,7 +211,7 @@ export default function AdminDailyReport() {
   `1. \uB2F9\uC77C \uC608\uC57D: ${countOf(modalData.report, 'manual_reserved_count', 'reserved_count')}\uBA85`,
   `2. \uB2F9\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_today_count', 'visit_today_count')}\uBA85`,
   `3. \uC775\uC77C \uB0B4\uC6D0: ${countOf(modalData.report, 'manual_visit_nextday_count', 'visit_nextday_count')}\uBA85`,
-  `4. \uB2F9\uC77C \uCF5C \uAC2F\uC218: ${countOf(modalData.report, 'manual_call_count', 'total_call_count')}\uBA85`,
+  `4. \uB2F9\uC77C \uCF5C \uAC2F\uC218: ${countOf(modalData.report, 'manual_call_count', 'total_call_count')}\uAC1C`,
   '',
   `- DB CRM \uAE30\uC785: ${modalData.report?.check_db_crm ? '(\uC644\uB8CC)' : '(\uC9C4\uD589\uC911)'}`,
   `- \uC6D0\uB0B4 CRM \uAE30\uC785: ${modalData.report?.check_inhouse_crm ? '(\uC644\uB8CC)' : '(\uC9C4\uD589\uC911)'}`,
