@@ -27,6 +27,7 @@ export default function DbList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [nameQuery, setNameQuery] = useState('')
   const [phoneQuery, setPhoneQuery] = useState('')
+  const [eventQuery, setEventQuery] = useState('')
   const [callMin, setCallMin] = useState('')
   const [missMin, setMissMin] = useState('')
   const [regionQuery, setRegionQuery] = useState('')
@@ -239,6 +240,7 @@ export default function DbList() {
   const normalizedMemo = memoQuery.trim().toLowerCase()
   const normalizedName = nameQuery.trim().toLowerCase()
   const normalizedPhone = normalizePhoneDigits(phoneQuery)
+  const normalizedEvent = eventQuery.trim().toLowerCase()
   const callMinNum = Number(callMin)
   const missMinNum = Number(missMin)
 
@@ -268,6 +270,9 @@ export default function DbList() {
     const phoneOk =
       !normalizedPhone ||
       normalizePhoneDigits(row['연락처']).includes(normalizedPhone)
+    const eventOk =
+      !normalizedEvent ||
+      String(row['이벤트'] || '').toLowerCase().includes(normalizedEvent)
     const regionOk =
       !normalizedRegion ||
       String(row['거주지'] || '').toLowerCase().includes(normalizedRegion)
@@ -276,7 +281,7 @@ export default function DbList() {
       String(row['최근메모내용'] || '').toLowerCase().includes(normalizedMemo)
     const assignedOk = !assignedTodayOnly || isAssignedToday(row['배정날짜'])
 
-    return tmOk && statusOk && callOk && missOk && nameOk && phoneOk && regionOk && memoOk && assignedOk
+    return tmOk && statusOk && callOk && missOk && nameOk && phoneOk && eventOk && regionOk && memoOk && assignedOk
   })
 
   const handleReset = () => {
@@ -284,6 +289,7 @@ export default function DbList() {
     setStatusFilter('all')
     setNameQuery('')
     setPhoneQuery('')
+    setEventQuery('')
     setCallMin('')
     setMissMin('')
     setRegionQuery('')
@@ -300,6 +306,7 @@ export default function DbList() {
           status: statusFilter,
           callMin,
           missMin,
+          event: eventQuery,
           region: regionQuery,
           memo: memoQuery,
         },
@@ -385,6 +392,15 @@ export default function DbList() {
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          이벤트
+          <input
+            type="text"
+            placeholder="검색"
+            value={eventQuery}
+            onChange={(e) => setEventQuery(e.target.value)}
+          />
         </label>
         <label>
           콜횟수 ≥
