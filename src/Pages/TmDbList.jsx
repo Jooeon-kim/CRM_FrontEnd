@@ -35,6 +35,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const [missMin, setMissMin] = useState('')
   const [noShowMin, setNoShowMin] = useState('')
   const [form, setForm] = useState({
+    name: '',
     status: '',
     region: '',
     memo: '',
@@ -163,6 +164,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const openModal = async (lead) => {
     setActiveLead(lead)
     setForm({
+      name: lead['이름'] || '',
       status: '',
       region: lead['거주지'] || '',
       memo: '',
@@ -222,6 +224,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     try {
       setSaving(true)
       await api.post(`/tm/leads/${leadId}/update`, {
+        name: form.name,
         status: form.status,
         region: form.region,
         memo: form.memo,
@@ -232,6 +235,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       const nowIso = new Date().toISOString()
       const nextLead = {
         ...activeLead,
+        이름: form.name,
         상태: form.status,
         거주지: form.region,
         예약_내원일시: reservationAt || activeLead['예약_내원일시'],
@@ -636,6 +640,15 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 </div>
 
                 <div className="tm-lead-form">
+                  <label>
+                    고객 이름
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    />
+                  </label>
+
                   <label>
                     상태
                     <select value={form.status} onChange={(e) => handleStatusChange(e.target.value)}>

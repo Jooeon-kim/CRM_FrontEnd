@@ -38,6 +38,7 @@ export default function DbList() {
   const [memos, setMemos] = useState([])
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
+    name: '',
     status: '',
     region: '',
     memo: '',
@@ -161,6 +162,7 @@ export default function DbList() {
     setActiveLead(lead)
     const { date, time } = splitDateTime(lead['예약_내원일시'])
     setForm({
+      name: lead['이름'] || '',
       status: lead['상태'] || '',
       region: lead['거주지'] || '',
       memo: '',
@@ -190,6 +192,7 @@ export default function DbList() {
     try {
       setSaving(true)
       await api.post(`/admin/leads/${activeLead.id}/update`, {
+        name: form.name,
         status: form.status,
         region: form.region,
         memo: form.memo,
@@ -202,6 +205,7 @@ export default function DbList() {
           row.id === activeLead.id
             ? {
                 ...row,
+                이름: form.name,
                 상태: form.status,
                 거주지: form.region,
                 예약_내원일시: reservationAt || row['예약_내원일시'],
@@ -535,6 +539,15 @@ export default function DbList() {
                 </div>
 
                 <div className="tm-lead-form">
+                  <label>
+                    고객 이름
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    />
+                  </label>
+
                   <label>
                     담당 TM
                     <select
