@@ -375,14 +375,6 @@ export default function TmCallStatus() {
       <div className="tm-call-header">
         <h1>TM 콜 현황</h1>
         <div className="db-list-actions">
-          <label className="db-list-checkbox">
-            <input
-              type="checkbox"
-              checked={assignedTodayOnly}
-              onChange={(e) => setAssignedTodayOnly(e.target.checked)}
-            />
-            당일배정DB
-          </label>
           <span className="db-list-count">{filteredRows.length}건</span>
         </div>
       </div>
