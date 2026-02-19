@@ -436,7 +436,12 @@ export default function TmCallStatus() {
               onClick={() => openModal(row)}
             >
               {visibleColumns.map((key) => (
-                <div key={key}>{formatCell(key, row[key])}</div>
+                <div
+                  key={key}
+                  className={key === '최근메모내용' ? 'db-list-cell-memo' : ''}
+                >
+                  {formatCell(key, row[key])}
+                </div>
               ))}
             </div>
           ))}
