@@ -194,7 +194,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       setForm((prev) => ({
         ...prev,
         status: value,
-        memo: prev.memo ? `${prev.memo}${missCount}차부재` : `${missCount}차부재`,
+        memo: prev.memo ? `${prev.memo} ${missCount}차부재` : `${missCount}차부재`,
       }))
       return
     }
@@ -710,6 +710,19 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 }))}
               >
                 문자보냄
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const myTmName = user?.username || user?.name || ''
+                  if (!myTmName) return
+                  setForm((prev) => ({
+                    ...prev,
+                    memo: prev.memo ? `${prev.memo}/${myTmName}` : `/${myTmName}`,
+                  }))
+                }}
+              >
+                /본인TM이름
               </button>
               <button type="button" onClick={() => setModalOpen(false)}>취소</button>
               <button type="button" onClick={handleSave} disabled={saving}>
