@@ -19,6 +19,8 @@ export default function Admin() {
 
   const pageTitle = location.pathname.includes('/admin/tm-assign')
     ? 'TM배정'
+    : location.pathname.includes('/admin/tm-reassign')
+      ? 'TM변경'
     : location.pathname.includes('/admin/tm-call')
       ? 'TM콜현황'
       : location.pathname.includes('/admin/db-list')
@@ -136,6 +138,14 @@ export default function Admin() {
               }
             >
               TM콜현황
+            </NavLink>
+            <NavLink
+              to="/admin/tm-reassign"
+              className={({ isActive }) =>
+                `admin-nav-item${isActive ? ' active' : ''}`
+              }
+            >
+              TM변경
             </NavLink>
             <NavLink
               to="/admin/db-list"
