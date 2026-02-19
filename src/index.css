@@ -52,9 +52,6 @@ input {
   align-items: center;
   justify-content: center;
   padding: 4rem clamp(1.5rem, 4vw, 5rem);
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.45), rgba(30, 41, 59, 0.3)),
-    url('/background.jpg') center / cover no-repeat;
 }
 
 .login-panel {
