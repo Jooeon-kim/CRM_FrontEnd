@@ -107,6 +107,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     return digits
   }
 
+  const getAssignedDateValue = (row) =>
+    row?.['배정날짜'] || row?.assigned_at || row?.assigned_date || row?.tm_assigned_at || ''
+
   const parseKoreanRange = (value) => {
     if (!value) return null
     const parts = String(value).replace(/\s+/g, ' ').split('~').map((part) => part.trim())
@@ -141,7 +144,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   }
 
   const isAssignedToday = (lead) => {
-    const value = lead?.['배정날짜']
+    const value = getAssignedDateValue(lead)
     if (!value) return false
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return false
@@ -153,7 +156,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     )
   }
 
-  const visibleColumns = ['인입날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', '최근메모내용', '콜횟수']
+  const visibleColumns = assignedTodayOnly
+    ? ['배정날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', '최근메모내용', '콜횟수']
+    : ['인입날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', '최근메모내용', '콜횟수']
 
   const openModal = async (lead) => {
     setActiveLead(lead)
@@ -295,14 +300,20 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   const filteredRows = useMemo(() => {
     return [...rows].sort((a, b) => {
-      const aTime = new Date(a?.['인입날짜']).getTime()
-      const bTime = new Date(b?.['인입날짜']).getTime()
+      const aBase = assignedTodayOnly
+        ? getAssignedDateValue(a)
+        : a?.['인입날짜']
+      const bBase = assignedTodayOnly
+        ? getAssignedDateValue(b)
+        : b?.['인입날짜']
+      const aTime = new Date(aBase).getTime()
+      const bTime = new Date(bBase).getTime()
       if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0
       if (Number.isNaN(aTime)) return 1
       if (Number.isNaN(bTime)) return -1
       return inboundSort === 'asc' ? aTime - bTime : bTime - aTime
     })
-  }, [rows, inboundSort])
+  }, [rows, inboundSort, assignedTodayOnly])
 
   const filterOptions = useMemo(() => {
     const events = new Set()
@@ -363,11 +374,13 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     const headers = visibleColumns.map((col) => col)
     const lines = [headers.join(',')]
     filteredList.forEach((row) => {
-      const values = visibleColumns.map((col) => {
-        const raw =
-          col === '연락처'
-            ? formatPhone(row[col])
-            : col === '인입날짜' || col === '예약_내원일시'
+        const values = visibleColumns.map((col) => {
+          const raw =
+            col === '연락처'
+              ? formatPhone(row[col])
+            : col === '배정날짜'
+              ? formatDateTime(getAssignedDateValue(row))
+            : col === '인입날짜' || col === '배정날짜' || col === '예약_내원일시'
               ? formatDateTime(row[col])
               : row[col] ?? ''
         const safe = String(raw ?? '').replace(/"/g, '""')
@@ -446,7 +459,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         </label>
         {assignedTodayOnly ? (
           <label>
-            인입날짜 정렬
+            배정날짜 정렬
             <select value={inboundSort} onChange={(e) => setInboundSort(e.target.value)}>
               <option value="desc">내림차순</option>
               <option value="asc">오름차순</option>
@@ -514,7 +527,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 const cell =
                   key === '연락처'
                     ? formatPhone(row[key])
-                    : key === '인입날짜' || key === '예약_내원일시'
+                    : key === '배정날짜'
+                      ? formatDateTime(getAssignedDateValue(row))
+                    : key === '인입날짜' || key === '배정날짜' || key === '예약_내원일시'
                       ? formatDateTime(row[key])
                       : row[key] ?? '-'
                 return (
