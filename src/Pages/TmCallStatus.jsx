@@ -24,6 +24,8 @@ export default function TmCallStatus() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [assignedTodayOnly, setAssignedTodayOnly] = useState(false)
+  const [assignedDateFrom, setAssignedDateFrom] = useState('')
+  const [assignedDateTo, setAssignedDateTo] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [activeLead, setActiveLead] = useState(null)
   const [memos, setMemos] = useState([])
@@ -134,6 +136,46 @@ export default function TmCallStatus() {
     )
   }
 
+  const toDateKey = (value) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    const yyyy = date.getFullYear()
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  const getAssignedDateValue = (row) =>
+    row?.['배정날짜'] || row?.assigned_at || row?.assigned_date || row?.tm_assigned_at || ''
+
+  const applyQuickRange = (mode) => {
+    const today = new Date()
+    const todayKey = toDateKey(today)
+    if (mode === 'today') {
+      setAssignedDateFrom(todayKey)
+      setAssignedDateTo(todayKey)
+      return
+    }
+    if (mode === 'yesterday') {
+      const d = new Date(today)
+      d.setDate(d.getDate() - 1)
+      const key = toDateKey(d)
+      setAssignedDateFrom(key)
+      setAssignedDateTo(key)
+      return
+    }
+    if (mode === 'last7') {
+      const start = new Date(today)
+      start.setDate(start.getDate() - 6)
+      setAssignedDateFrom(toDateKey(start))
+      setAssignedDateTo(todayKey)
+      return
+    }
+    setAssignedDateFrom('')
+    setAssignedDateTo('')
+  }
+
   const splitDateTime = (value) => {
     if (!value) return { date: '', time: '' }
     const date = new Date(value)
@@ -145,6 +187,11 @@ export default function TmCallStatus() {
     const min = String(date.getMinutes()).padStart(2, '0')
     return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${min}` }
   }
+
+  const nonAdminAgents = useMemo(
+    () => agents.filter((agent) => !agent.isAdmin),
+    [agents]
+  )
 
   const openModal = async (lead) => {
     setActiveLead(lead)
@@ -209,11 +256,27 @@ export default function TmCallStatus() {
     }
   }
 
+  const dateFilteredRows = useMemo(() => {
+    let base = rows
+    if (assignedTodayOnly) {
+      base = base.filter((row) => isAssignedToday(getAssignedDateValue(row)))
+    }
+    if (assignedDateFrom || assignedDateTo) {
+      base = base.filter((row) => {
+        const key = toDateKey(getAssignedDateValue(row))
+        if (!key) return false
+        if (assignedDateFrom && key < assignedDateFrom) return false
+        if (assignedDateTo && key > assignedDateTo) return false
+        return true
+      })
+    }
+    return base
+  }, [rows, assignedTodayOnly, assignedDateFrom, assignedDateTo])
+
   const filteredRows = useMemo(() => {
-    const base = activeTm === 'all' ? rows : rows.filter((row) => String(row.tm) === String(activeTm))
-    if (!assignedTodayOnly) return base
-    return base.filter((row) => isAssignedToday(row['배정날짜']))
-  }, [rows, activeTm, assignedTodayOnly])
+    if (activeTm === 'all') return dateFilteredRows
+    return dateFilteredRows.filter((row) => String(row.tm) === String(activeTm))
+  }, [dateFilteredRows, activeTm])
 
   const statusBuckets = ['대기', '부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
   const statusCounts = statusBuckets.reduce((acc, status) => {
@@ -276,6 +339,21 @@ export default function TmCallStatus() {
   const regionEntries = Object.entries(regionCounts).sort((a, b) => b[1] - a[1])
   const regionTotal = regionEntries.reduce((sum, [, count]) => sum + count, 0)
 
+  const tmAssignedEntries = useMemo(() => {
+    const validTmIds = new Set(nonAdminAgents.map((agent) => String(agent.id)))
+    const counts = {}
+    dateFilteredRows.forEach((row) => {
+      const tmId = String(row.tm ?? '')
+      if (!validTmIds.has(tmId)) return
+      counts[tmId] = (counts[tmId] || 0) + 1
+    })
+    return nonAdminAgents
+      .map((agent) => [agent.name, counts[String(agent.id)] || 0])
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+  }, [dateFilteredRows, nonAdminAgents])
+  const tmAssignedTotal = tmAssignedEntries.reduce((sum, [, count]) => sum + count, 0)
+
   const chartStops = () => {
     if (totalCount === 0) return 'conic-gradient(#e2e8f0 0deg, #e2e8f0 360deg)'
     let current = 0
@@ -307,6 +385,29 @@ export default function TmCallStatus() {
           </label>
           <span className="db-list-count">{filteredRows.length}건</span>
         </div>
+      </div>
+
+      <div className="db-list-filters">
+        <label>
+          배정 시작일
+          <input
+            type="date"
+            value={assignedDateFrom}
+            onChange={(e) => setAssignedDateFrom(e.target.value)}
+          />
+        </label>
+        <label>
+          배정 종료일
+          <input
+            type="date"
+            value={assignedDateTo}
+            onChange={(e) => setAssignedDateTo(e.target.value)}
+          />
+        </label>
+        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('today')}>오늘</button>
+        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('yesterday')}>어제</button>
+        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('last7')}>최근7일</button>
+        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('reset')}>날짜 초기화</button>
       </div>
 
       <div className="tm-call-charts">
@@ -396,6 +497,36 @@ export default function TmCallStatus() {
             </div>
           </div>
         </div>
+
+        <div className="tm-call-box">
+          <div className="tm-call-box-title">TM 배정 DB 비율</div>
+          <div className="tm-call-box-body">
+            <div
+              className="tm-call-donut"
+              style={{ background: buildDonut(tmAssignedEntries, tmAssignedTotal, eventPalette) }}
+            >
+              <div className="tm-call-donut-center">
+                <div className="tm-call-total">{tmAssignedTotal}</div>
+                <div className="tm-call-label">배정 DB</div>
+              </div>
+            </div>
+            <div className="tm-call-legend">
+              {tmAssignedEntries.map(([tmName, count], idx) => (
+                <div className="tm-call-legend-row" key={tmName}>
+                  <span
+                    className="tm-call-legend-dot"
+                    style={{ background: eventPalette[idx % eventPalette.length] }}
+                  />
+                  <span className="tm-call-legend-name">{tmName}</span>
+                  <span className="tm-call-legend-count">{count}건</span>
+                  <span className="tm-call-legend-percent">
+                    {tmAssignedTotal ? Math.round((count / tmAssignedTotal) * 100) : 0}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="tm-call-tabs">
@@ -406,7 +537,7 @@ export default function TmCallStatus() {
         >
           전체
         </button>
-        {agents.map((agent) => (
+        {nonAdminAgents.map((agent) => (
           <button
             key={agent.id}
             className={`tm-call-tab${String(activeTm) === String(agent.id) ? ' active' : ''}`}
