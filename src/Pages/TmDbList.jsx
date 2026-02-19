@@ -191,7 +191,11 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     if (!activeLead) return
     if (value === '부재중') {
       const missCount = Number(activeLead['부재중_횟수'] || 0) + 1
-      setForm((prev) => ({ ...prev, status: value, memo: `${missCount}차부재` }))
+      setForm((prev) => ({
+        ...prev,
+        status: value,
+        memo: prev.memo ? `${prev.memo}${missCount}차부재` : `${missCount}차부재`,
+      }))
       return
     }
     if (value === '예약부도') {
