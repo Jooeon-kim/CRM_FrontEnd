@@ -89,8 +89,6 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const [eventFilter, setEventFilter] = useState('all')
   const [regionFilter, setRegionFilter] = useState('all')
   const [inboundSort, setInboundSort] = useState('desc')
-  const [assignedDateFrom, setAssignedDateFrom] = useState('')
-  const [assignedDateTo, setAssignedDateTo] = useState('')
   const [callMin, setCallMin] = useState('')
   const [missMin, setMissMin] = useState('')
   const [noShowMin, setNoShowMin] = useState('')
@@ -187,42 +185,6 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   const getAssignedDateValue = (row) =>
     row?.['배정날짜'] || row?.assigned_at || row?.assigned_date || row?.tm_assigned_at || ''
-
-  const toDateKey = (value) => {
-    const date = parseDateTimeLocal(value)
-    if (!date) return ''
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
-  }
-
-  const applyAssignedQuickRange = (mode) => {
-    const today = new Date()
-    const todayKey = toDateKey(today)
-    if (mode === 'today') {
-      setAssignedDateFrom(todayKey)
-      setAssignedDateTo(todayKey)
-      return
-    }
-    if (mode === 'yesterday') {
-      const d = new Date(today)
-      d.setDate(d.getDate() - 1)
-      const key = toDateKey(d)
-      setAssignedDateFrom(key)
-      setAssignedDateTo(key)
-      return
-    }
-    if (mode === 'last7') {
-      const start = new Date(today)
-      start.setDate(start.getDate() - 6)
-      setAssignedDateFrom(toDateKey(start))
-      setAssignedDateTo(todayKey)
-      return
-    }
-    setAssignedDateFrom('')
-    setAssignedDateTo('')
-  }
 
   const parseKoreanRange = (value) => {
     if (!value) return null
@@ -583,15 +545,11 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       const emptyStatus = !row['상태'] || String(row['상태']).trim().length === 0
       const passEmptyStatus = !onlyEmptyStatus || emptyStatus
       const passAvailable = !onlyAvailable || isAvailableNow(row)
-      const assignedDateKey = toDateKey(getAssignedDateValue(row))
-      const passAssignedDate =
-        !assignedTodayOnly ||
-        ((!assignedDateFrom || assignedDateKey >= assignedDateFrom) &&
-          (!assignedDateTo || assignedDateKey <= assignedDateTo))
+      const passAssignedToday = true
       if (!passStatus || !passEvent || !passRegion || !passCall || !passMiss || !passNoShow) {
         return false
       }
-      if (!passEmptyStatus || !passAvailable || !passAssignedDate) {
+      if (!passEmptyStatus || !passAvailable || !passAssignedToday) {
         return false
       }
       if (!term) return true
@@ -606,7 +564,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         memo.includes(term)
       )
     })
-  }, [filteredRows, searchTerm, statusFilterLocal, eventFilter, regionFilter, callMin, missMin, noShowMin, onlyEmptyStatus, onlyAvailable, assignedTodayOnly, assignedDateFrom, assignedDateTo])
+  }, [filteredRows, searchTerm, statusFilterLocal, eventFilter, regionFilter, callMin, missMin, noShowMin, onlyEmptyStatus, onlyAvailable, assignedTodayOnly])
 
   const getRecallUrgency = (row) => {
     if ((row?.['상태'] || '') !== '리콜대기') return ''
@@ -721,34 +679,6 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
               <option value="asc">오름차순</option>
             </select>
           </label>
-        ) : null}
-        {assignedTodayOnly ? (
-          <label>
-            배정 시작일
-            <input
-              type="date"
-              value={assignedDateFrom}
-              onChange={(e) => setAssignedDateFrom(e.target.value)}
-            />
-          </label>
-        ) : null}
-        {assignedTodayOnly ? (
-          <label>
-            배정 종료일
-            <input
-              type="date"
-              value={assignedDateTo}
-              onChange={(e) => setAssignedDateTo(e.target.value)}
-            />
-          </label>
-        ) : null}
-        {assignedTodayOnly ? (
-          <div className="tm-db-quick-filters">
-            <button type="button" className="db-list-reset" onClick={() => applyAssignedQuickRange('today')}>오늘</button>
-            <button type="button" className="db-list-reset" onClick={() => applyAssignedQuickRange('yesterday')}>어제</button>
-            <button type="button" className="db-list-reset" onClick={() => applyAssignedQuickRange('last7')}>최근7일</button>
-            <button type="button" className="db-list-reset" onClick={() => applyAssignedQuickRange('all')}>전체</button>
-          </div>
         ) : null}
         <label>
           콜횟수 이상
