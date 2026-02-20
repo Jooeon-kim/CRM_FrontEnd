@@ -5,11 +5,11 @@ const DAY_LABELS = ['\uC77C', '\uC6D4', '\uD654', '\uC218', '\uBAA9', '\uAE08', 
 
 const metricLabels = {
   MISSED: '\uBD80\uC7AC\uC911',
+  RECALL_WAIT: '\uB9AC\uCF5C\uB300\uAE30',
   FAILED: '\uC2E4\uD328',
   RESERVED: '\uB2F9\uC77C \uC608\uC57D',
   VISIT_TODAY: '\uB2F9\uC77C \uB0B4\uC6D0',
   VISIT_NEXTDAY: '\uC775\uC77C \uB0B4\uC6D0',
-  RECALL_WAIT: '\uB9AC\uCF5C\uB300\uAE30',
 }
 
 const toDateKey = (value) => {
@@ -21,10 +21,42 @@ const toDateKey = (value) => {
   return `${yyyy}-${mm}-${dd}`
 }
 
+const parseUtcDateTime = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const sql = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (sql) {
+    const date = new Date(Date.UTC(
+      Number(sql[1]),
+      Number(sql[2]) - 1,
+      Number(sql[3]),
+      Number(sql[4]),
+      Number(sql[5]),
+      Number(sql[6] || '0')
+    ))
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  const isoNoTz = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/)
+  if (isoNoTz) {
+    const date = new Date(Date.UTC(
+      Number(isoNoTz[1]),
+      Number(isoNoTz[2]) - 1,
+      Number(isoNoTz[3]),
+      Number(isoNoTz[4]),
+      Number(isoNoTz[5]),
+      Number(isoNoTz[6] || '0')
+    ))
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 const formatDateTime = (value) => {
   if (!value) return '-'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return String(value)
+  const date = parseUtcDateTime(value)
+  if (!date) return String(value)
   const yyyy = date.getFullYear()
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
@@ -88,7 +120,7 @@ export default function AdminDailyReport() {
   }, [reports])
 
   const fetchLeadsFallback = async (reportId) => {
-    const metrics = ['MISSED', 'FAILED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY', 'RECALL_WAIT']
+    const metrics = ['MISSED', 'RECALL_WAIT', 'FAILED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
     const results = await Promise.all(
       metrics.map((metric) =>
         api
@@ -101,7 +133,7 @@ export default function AdminDailyReport() {
         acc[metric] = rows
         return acc
       },
-      { MISSED: [], FAILED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [], RECALL_WAIT: [] }
+      { MISSED: [], RECALL_WAIT: [], FAILED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
     )
   }
 
