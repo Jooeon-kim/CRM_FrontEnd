@@ -1,7 +1,8 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import api from '../apiClient'
 
-const weekLabels = ['??, '??, '??, '??, '紐?, '湲?, '??]
+const weekLabels = ['일', '월', '화', '수', '목', '금', '토']
+const calendarStatuses = new Set(['예약', '내원완료', '예약부도'])
 
 const formatPhone = (value) => {
   if (!value) return '-'
@@ -55,9 +56,14 @@ const formatTime = (value) => {
   return `${hh}:${mm}`
 }
 
-
-
-const calendarStatuses = new Set(['예약', '내원완료', '예약부도'])
+const normalizePhoneDigits = (value) => {
+  if (!value) return ''
+  let digits = String(value).replace(/\D/g, '')
+  if (digits.startsWith('82')) {
+    digits = `0${digits.slice(2)}`
+  }
+  return digits
+}
 
 export default function AdminCalendar() {
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -80,14 +86,16 @@ export default function AdminCalendar() {
           api.get('/dbdata'),
           api.get('/tm/agents'),
         ])
-        setReservations((dbRes.data || []).filter((row) => {
-          const status = String(row['상태'] || '').trim()
-          return calendarStatuses.has(status) && Boolean(row['예약_내원일시'])
-        }))
+        setReservations(
+          (dbRes.data || []).filter((row) => {
+            const status = String(row['상태'] || '').trim()
+            return calendarStatuses.has(status) && Boolean(row['예약_내원일시'])
+          })
+        )
         setAgents(tmRes.data || [])
         setError('')
       } catch (err) {
-        setError('?덉빟 ?곗씠?곕? 遺덈윭?ㅼ? 紐삵뻽?듬땲??')
+        setError('예약 데이터를 불러오지 못했습니다.')
       } finally {
         setLoading(false)
       }
@@ -114,7 +122,7 @@ export default function AdminCalendar() {
     const month = currentMonth.getMonth()
     const year = currentMonth.getFullYear()
     return reservations.filter((item) => {
-      const date = parseDateTime(item['?덉빟_?댁썝?쇱떆'])
+      const date = parseDateTime(item['예약_내원일시'])
       return (
         !!date &&
         date.getFullYear() === year &&
@@ -131,9 +139,9 @@ export default function AdminCalendar() {
       if (!passTm) return false
       if (!term) return true
 
-      const name = String(item['?대쫫'] || '').toLowerCase()
-      const event = String(item['?대깽??] || '').toLowerCase()
-      const phone = normalizePhoneDigits(item['?곕씫泥?])
+      const name = String(item['이름'] || '').toLowerCase()
+      const event = String(item['이벤트'] || '').toLowerCase()
+      const phone = normalizePhoneDigits(item['연락처'])
       return (
         name.includes(term) ||
         event.includes(term) ||
@@ -145,7 +153,7 @@ export default function AdminCalendar() {
   const reservationsByDate = useMemo(() => {
     const map = new Map()
     filteredReservations.forEach((item) => {
-      const date = parseDateTime(item['?덉빟_?댁썝?쇱떆'])
+      const date = parseDateTime(item['예약_내원일시'])
       if (!date) return
       const key = formatDateKey(date)
       const list = map.get(key) || []
@@ -154,8 +162,8 @@ export default function AdminCalendar() {
     })
     map.forEach((list, key) => {
       list.sort((a, b) => {
-        const ta = parseDateTime(a['?덉빟_?댁썝?쇱떆'])?.getTime() ?? Number.MAX_SAFE_INTEGER
-        const tb = parseDateTime(b['?덉빟_?댁썝?쇱떆'])?.getTime() ?? Number.MAX_SAFE_INTEGER
+        const ta = parseDateTime(a['예약_내원일시'])?.getTime() ?? Number.MAX_SAFE_INTEGER
+        const tb = parseDateTime(b['예약_내원일시'])?.getTime() ?? Number.MAX_SAFE_INTEGER
         return ta - tb
       })
       map.set(key, list)
@@ -183,13 +191,13 @@ export default function AdminCalendar() {
     <div className="tm-calendar">
       <div className="tm-calendar-header">
         <div>
-          <h1>罹섎┛??/h1>
-          <p>?꾩껜 ?덉빟 ?몄썝???좎쭨蹂꾨줈 ?뺤씤?섏꽭??</p>
+          <h1>캘린더</h1>
+          <p>전체 예약 인원을 날짜별로 확인하세요.</p>
         </div>
         <div className="tm-assign-controls">
           <div className="tm-assign-filter">
             <select value={tmFilter} onChange={(e) => setTmFilter(e.target.value)}>
-              <option value="all">?꾩껜 TM</option>
+              <option value="all">전체 TM</option>
               {agents
                 .filter((agent) => !agent.isAdmin)
                 .map((agent) => (
@@ -202,17 +210,17 @@ export default function AdminCalendar() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="?대쫫, ?꾪솕踰덊샇, ?대깽??寃??
+              placeholder="이름, 전화번호, 이벤트 검색"
             />
           </div>
         </div>
         <div className="tm-calendar-nav">
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
-            ?댁쟾
+            이전
           </button>
           <div className="tm-calendar-month">{monthLabel}</div>
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}>
-            ?ㅼ쓬
+            다음
           </button>
         </div>
       </div>
@@ -220,7 +228,7 @@ export default function AdminCalendar() {
       {error ? <div className="db-list-error">{error}</div> : null}
 
       {loading ? (
-        <div className="db-list-empty">遺덈윭?ㅻ뒗 以?..</div>
+        <div className="db-list-empty">불러오는 중...</div>
       ) : (
         <div className="tm-calendar-grid">
           {weekLabels.map((label) => (
@@ -241,7 +249,7 @@ export default function AdminCalendar() {
                 }}
               >
                 <div className="tm-calendar-date">{date.getDate()}</div>
-                {count ? <div className="tm-calendar-count">{count}紐?/div> : null}
+                {count ? <div className="tm-calendar-count">{count}명</div> : null}
               </button>
             )
           })}
@@ -254,46 +262,46 @@ export default function AdminCalendar() {
           <div className="tm-calendar-card">
             <div className="tm-calendar-card-header">
               <div>
-                <h3>{selectedDate} ?덉빟 紐⑸줉</h3>
-                <p>?쒓컙 ?대Ⅸ?쒖쑝濡??뺣젹?⑸땲??</p>
+                <h3>{selectedDate} 예약 목록</h3>
+                <p>시간 이른순으로 정렬됩니다.</p>
               </div>
-              <button type="button" onClick={() => setSelectedDate('')}>?リ린</button>
+              <button type="button" onClick={() => setSelectedDate('')}>닫기</button>
             </div>
             {selectedReservations.length === 0 ? (
-              <div className="tm-calendar-empty">?덉빟???놁뒿?덈떎.</div>
+              <div className="tm-calendar-empty">예약이 없습니다.</div>
             ) : (
               <div className="tm-calendar-list">
                 {selectedReservations.map((item) => (
                   <div key={item.id} className="tm-calendar-row admin-calendar-row">
-                    <div className="tm-calendar-time">{formatTime(item['?덉빟_?댁썝?쇱떆'])}</div>
+                    <div className="tm-calendar-time">{formatTime(item['예약_내원일시'])}</div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">?대쫫</div>
-                      <div className="tm-calendar-value">{item['?대쫫'] || '-'}</div>
+                      <div className="tm-calendar-label">이름</div>
+                      <div className="tm-calendar-value">{item['이름'] || '-'}</div>
                     </div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">?꾪솕踰덊샇</div>
-                      <div className="tm-calendar-value">{formatPhone(item['?곕씫泥?])}</div>
+                      <div className="tm-calendar-label">전화번호</div>
+                      <div className="tm-calendar-value">{formatPhone(item['연락처'])}</div>
                     </div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">?대깽??/div>
-                      <div className="tm-calendar-value">{item['?대깽??] || '-'}</div>
+                      <div className="tm-calendar-label">이벤트</div>
+                      <div className="tm-calendar-value">{item['이벤트'] || '-'}</div>
                     </div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">嫄곗＜吏</div>
-                      <div className="tm-calendar-value">{item['嫄곗＜吏'] || '-'}</div>
+                      <div className="tm-calendar-label">거주지</div>
+                      <div className="tm-calendar-value">{item['거주지'] || '-'}</div>
                     </div>
                     <div className="tm-calendar-cell-info tm-calendar-memo">
-                      <div className="tm-calendar-label">硫붾え</div>
-                      <div className="tm-calendar-value" title={item['理쒓렐硫붾え?댁슜'] || ''}>
-                        {item['理쒓렐硫붾え?댁슜'] || '-'}
+                      <div className="tm-calendar-label">메모</div>
+                      <div className="tm-calendar-value" title={item['최근메모내용'] || ''}>
+                        {item['최근메모내용'] || '-'}
                       </div>
                     </div>
                     <div className="tm-calendar-cell-info tm-calendar-call">
-                      <div className="tm-calendar-label">肄쒗슏??/div>
-                      <div className="tm-calendar-value">{item['肄쒗슏??] ?? 0}??/div>
+                      <div className="tm-calendar-label">콜횟수</div>
+                      <div className="tm-calendar-value">{item['콜횟수'] ?? 0}회</div>
                     </div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">?대떦TM</div>
+                      <div className="tm-calendar-label">담당TM</div>
                       <div className="tm-calendar-value">{tmMap.get(String(item.tm)) || item.tm || '-'}</div>
                     </div>
                   </div>
@@ -306,4 +314,3 @@ export default function AdminCalendar() {
     </div>
   )
 }
-

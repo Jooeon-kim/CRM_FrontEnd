@@ -1,9 +1,10 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import api from '../apiClient'
 
-const weekLabels = ['??, '??, '??, '??, '紐?, '湲?, '??]
-const statusOptions = ['遺?ъ쨷', '由ъ퐳?湲?, '?덉빟', '臾댄슚', '?덉빟遺??, '?댁썝?꾨즺']
+const weekLabels = ['일', '월', '화', '수', '목', '금', '토']
+const statusOptions = ['부재중', '리콜대기', '예약', '무효', '예약부도', '내원완료']
+const calendarStatuses = new Set(['예약', '내원완료', '예약부도'])
 
 const buildTimes = () => {
   const times = []
@@ -50,9 +51,17 @@ const formatTime = (value) => {
   return `${hh}:${mm}`
 }
 
-
-
-const calendarStatuses = new Set(['예약', '내원완료', '예약부도'])
+const formatDateTime = (value) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const hh = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+}
 
 export default function TmCalendar() {
   const { user } = useSelector((state) => state.auth)
@@ -84,13 +93,15 @@ export default function TmCalendar() {
         const res = await api.get('/dbdata', {
           params: { tm: user.id },
         })
-        setReservations((res.data || []).filter((row) => {
-          const status = String(row['상태'] || '').trim()
-          return calendarStatuses.has(status) && Boolean(row['예약_내원일시'])
-        }))
+        setReservations(
+          (res.data || []).filter((row) => {
+            const status = String(row['상태'] || '').trim()
+            return calendarStatuses.has(status) && Boolean(row['예약_내원일시'])
+          })
+        )
         setError('')
       } catch (err) {
-        setError('?덉빟 ?곗씠?곕? 遺덈윭?ㅼ? 紐삵뻽?듬땲??')
+        setError('예약 데이터를 불러오지 못했습니다.')
       } finally {
         setLoading(false)
       }
@@ -109,7 +120,7 @@ export default function TmCalendar() {
     const month = currentMonth.getMonth()
     const year = currentMonth.getFullYear()
     return reservations.filter((item) => {
-      const date = new Date(item['?덉빟_?댁썝?쇱떆'])
+      const date = new Date(item['예약_내원일시'])
       return (
         !Number.isNaN(date.getTime()) &&
         date.getFullYear() === year &&
@@ -121,7 +132,7 @@ export default function TmCalendar() {
   const reservationsByDate = useMemo(() => {
     const map = new Map()
     monthReservations.forEach((item) => {
-      const date = new Date(item['?덉빟_?댁썝?쇱떆'])
+      const date = new Date(item['예약_내원일시'])
       if (Number.isNaN(date.getTime())) return
       const key = formatDateKey(date)
       const list = map.get(key) || []
@@ -130,8 +141,8 @@ export default function TmCalendar() {
     })
     map.forEach((list, key) => {
       list.sort((a, b) => {
-        const ta = new Date(a['?덉빟_?댁썝?쇱떆']).getTime()
-        const tb = new Date(b['?덉빟_?댁썝?쇱떆']).getTime()
+        const ta = new Date(a['예약_내원일시']).getTime()
+        const tb = new Date(b['예약_내원일시']).getTime()
         return ta - tb
       })
       map.set(key, list)
@@ -159,8 +170,8 @@ export default function TmCalendar() {
     setSelectedDate('')
     setActiveLead(lead)
     setForm({
-      status: lead['?곹깭'] || '',
-      region: lead['嫄곗＜吏'] || '',
+      status: lead['상태'] || '',
+      region: lead['거주지'] || '',
       memo: '',
       date: '',
       time: '',
@@ -168,7 +179,7 @@ export default function TmCalendar() {
     setMemos([])
     setModalOpen(true)
     try {
-      const res = await api.get('/tm/memos', { params: { phone: lead['?곕씫泥?] } })
+      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'] } })
       setMemos(res.data || [])
     } catch {
       setMemos([])
@@ -177,16 +188,16 @@ export default function TmCalendar() {
 
   const handleStatusChange = (value) => {
     if (!activeLead) return
-    if (value === '遺?ъ쨷') {
-      const missCount = Number(activeLead['遺?ъ쨷_?잛닔'] || 0) + 1
-      setForm((prev) => ({ ...prev, status: value, memo: `${missCount}李⑤??? }))
+    if (value === '부재중') {
+      const missCount = Number(activeLead['부재중_횟수'] || 0) + 1
+      setForm((prev) => ({ ...prev, status: value, memo: `${missCount}차부재` }))
       return
     }
-    if (value === '?덉빟遺??) {
-      const reservationText = activeLead['?덉빟_?댁썝?쇱떆']
-        ? formatDateTime(activeLead['?덉빟_?댁썝?쇱떆'])
+    if (value === '예약부도') {
+      const reservationText = activeLead['예약_내원일시']
+        ? formatDateTime(activeLead['예약_내원일시'])
         : ''
-      const memo = reservationText ? `?덉빟遺??${reservationText}` : '?덉빟遺??
+      const memo = reservationText ? `예약부도 ${reservationText}` : '예약부도'
       setForm((prev) => ({ ...prev, status: value, memo }))
       return
     }
@@ -196,10 +207,10 @@ export default function TmCalendar() {
   const handleSave = async () => {
     if (!activeLead || !user?.id) return
     if (!form.status) return
-    if (form.status === '?덉빟' && (!form.date || !form.time)) return
+    if (form.status === '예약' && (!form.date || !form.time)) return
 
     const reservationAt =
-      form.status === '?덉빟' ? `${form.date} ${form.time}:00` : null
+      form.status === '예약' ? `${form.date} ${form.time}:00` : null
 
     try {
       setSaving(true)
@@ -209,55 +220,55 @@ export default function TmCalendar() {
         memo: form.memo,
         tmId: user.id,
         reservationAt,
-        phone: activeLead['?곕씫泥?] || '',
+        phone: activeLead['연락처'] || '',
       })
       setReservations((prev) => {
         const updated = prev.map((row) =>
           row.id === activeLead.id
             ? {
                 ...row,
-                ?곹깭: form.status,
-                嫄곗＜吏: form.region,
-                ?덉빟_?댁썝?쇱떆: reservationAt || row['?덉빟_?댁썝?쇱떆'],
-                肄쒗슏?? (Number(row['肄쒗슏??] || 0) + (['遺?ъ쨷', '由ъ퐳?湲?, '?덉빟', '?덉빟遺??].includes(form.status) ? 1 : 0)),
-                遺?ъ쨷_?잛닔: form.status === '遺?ъ쨷' ? Number(row['遺?ъ쨷_?잛닔'] || 0) + 1 : row['遺?ъ쨷_?잛닔'],
-                ?덉빟遺???잛닔: form.status === '?덉빟遺?? ? Number(row['?덉빟遺???잛닔'] || 0) + 1 : row['?덉빟遺???잛닔'],
-                理쒓렐硫붾え?댁슜: form.memo || row['理쒓렐硫붾え?댁슜'],
-                理쒓렐硫붾え?쒓컙: form.memo ? new Date().toISOString() : row['理쒓렐硫붾え?쒓컙'],
+                상태: form.status,
+                거주지: form.region,
+                예약_내원일시: reservationAt || row['예약_내원일시'],
+                콜횟수: (Number(row['콜횟수'] || 0) + (['부재중', '리콜대기', '예약', '예약부도'].includes(form.status) ? 1 : 0)),
+                부재중_횟수: form.status === '부재중' ? Number(row['부재중_횟수'] || 0) + 1 : row['부재중_횟수'],
+                예약부도_횟수: form.status === '예약부도' ? Number(row['예약부도_횟수'] || 0) + 1 : row['예약부도_횟수'],
+                최근메모내용: form.memo || row['최근메모내용'],
+                최근메모시간: form.memo ? new Date().toISOString() : row['최근메모시간'],
               }
             : row
         )
-        if (form.status !== '?덉빟') {
+        if (form.status !== '예약') {
           return updated.filter((row) => row.id !== activeLead.id)
         }
         return updated
       })
       setModalOpen(false)
     } catch (err) {
-      setError('??μ뿉 ?ㅽ뙣?덉뒿?덈떎.')
+      setError('저장에 실패했습니다.')
     } finally {
       setSaving(false)
     }
   }
 
   if (!user?.id) {
-    return <div className="db-list">TM ?뺣낫媛 ?놁뒿?덈떎.</div>
+    return <div className="db-list">TM 정보가 없습니다.</div>
   }
 
   return (
     <div className="tm-calendar">
       <div className="tm-calendar-header">
         <div>
-          <h1>罹섎┛??/h1>
-          <p>?덉빟 ?몄썝???좎쭨蹂꾨줈 ?뺤씤?섏꽭??</p>
+          <h1>캘린더</h1>
+          <p>예약 인원을 날짜별로 확인하세요.</p>
         </div>
         <div className="tm-calendar-nav">
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
-            ?댁쟾
+            이전
           </button>
           <div className="tm-calendar-month">{monthLabel}</div>
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}>
-            ?ㅼ쓬
+            다음
           </button>
         </div>
       </div>
@@ -265,7 +276,7 @@ export default function TmCalendar() {
       {error ? <div className="db-list-error">{error}</div> : null}
 
       {loading ? (
-        <div className="db-list-empty">遺덈윭?ㅻ뒗 以?..</div>
+        <div className="db-list-empty">불러오는 중...</div>
       ) : (
         <div className="tm-calendar-grid">
           {weekLabels.map((label) => (
@@ -286,7 +297,7 @@ export default function TmCalendar() {
                 }}
               >
                 <div className="tm-calendar-date">{date.getDate()}</div>
-                {count ? <div className="tm-calendar-count">{count}紐?/div> : null}
+                {count ? <div className="tm-calendar-count">{count}명</div> : null}
               </button>
             )
           })}
@@ -299,13 +310,13 @@ export default function TmCalendar() {
           <div className="tm-calendar-card">
             <div className="tm-calendar-card-header">
               <div>
-                <h3>{selectedDate} ?덉빟 紐⑸줉</h3>
-                <p>?쒓컙 ?대Ⅸ?쒖쑝濡??뺣젹?⑸땲??</p>
+                <h3>{selectedDate} 예약 목록</h3>
+                <p>시간 이른순으로 정렬됩니다.</p>
               </div>
-              <button type="button" onClick={() => setSelectedDate('')}>?リ린</button>
+              <button type="button" onClick={() => setSelectedDate('')}>닫기</button>
             </div>
             {selectedReservations.length === 0 ? (
-              <div className="tm-calendar-empty">?덉빟???놁뒿?덈떎.</div>
+              <div className="tm-calendar-empty">예약이 없습니다.</div>
             ) : (
               <div className="tm-calendar-list">
                 {selectedReservations.map((item) => (
@@ -314,32 +325,32 @@ export default function TmCalendar() {
                     className="tm-calendar-row db-list-click"
                     onClick={() => openModal(item)}
                   >
-                    <div className="tm-calendar-time">{formatTime(item['?덉빟_?댁썝?쇱떆'])}</div>
+                    <div className="tm-calendar-time">{formatTime(item['예약_내원일시'])}</div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">?대쫫</div>
-                      <div className="tm-calendar-value">{item['?대쫫'] || '-'}</div>
+                      <div className="tm-calendar-label">이름</div>
+                      <div className="tm-calendar-value">{item['이름'] || '-'}</div>
                     </div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">?꾪솕踰덊샇</div>
-                      <div className="tm-calendar-value">{formatPhone(item['?곕씫泥?])}</div>
+                      <div className="tm-calendar-label">전화번호</div>
+                      <div className="tm-calendar-value">{formatPhone(item['연락처'])}</div>
                     </div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">?대깽??/div>
-                      <div className="tm-calendar-value">{item['?대깽??] || '-'}</div>
+                      <div className="tm-calendar-label">이벤트</div>
+                      <div className="tm-calendar-value">{item['이벤트'] || '-'}</div>
                     </div>
                     <div className="tm-calendar-cell-info">
-                      <div className="tm-calendar-label">嫄곗＜吏</div>
-                      <div className="tm-calendar-value">{item['嫄곗＜吏'] || '-'}</div>
+                      <div className="tm-calendar-label">거주지</div>
+                      <div className="tm-calendar-value">{item['거주지'] || '-'}</div>
                     </div>
                     <div className="tm-calendar-cell-info tm-calendar-memo">
-                      <div className="tm-calendar-label">硫붾え</div>
-                      <div className="tm-calendar-value" title={item['理쒓렐硫붾え?댁슜'] || ''}>
-                        {item['理쒓렐硫붾え?댁슜'] || '-'}
+                      <div className="tm-calendar-label">메모</div>
+                      <div className="tm-calendar-value" title={item['최근메모내용'] || ''}>
+                        {item['최근메모내용'] || '-'}
                       </div>
                     </div>
                     <div className="tm-calendar-cell-info tm-calendar-call">
-                      <div className="tm-calendar-label">肄쒗슏??/div>
-                      <div className="tm-calendar-value">{item['肄쒗슏??] ?? 0}??/div>
+                      <div className="tm-calendar-label">콜횟수</div>
+                      <div className="tm-calendar-value">{item['콜횟수'] ?? 0}회</div>
                     </div>
                   </div>
                 ))}
@@ -354,35 +365,35 @@ export default function TmCalendar() {
           <div className="tm-lead-backdrop" onClick={() => setModalOpen(false)} />
           <div className="tm-lead-card">
             <div className="tm-lead-header">
-              <h3>怨좉컼 ?곷떞 湲곕줉</h3>
-              <button type="button" onClick={() => setModalOpen(false)}>?リ린</button>
+              <h3>고객 상담 기록</h3>
+              <button type="button" onClick={() => setModalOpen(false)}>닫기</button>
             </div>
 
             <div className="tm-lead-top">
               <div className="tm-lead-summary-card">
-                <div className="tm-lead-summary-label">?몄엯?좎쭨</div>
-                <div className="tm-lead-summary-value">{formatDateTime(activeLead['?몄엯?좎쭨'])}</div>
+                <div className="tm-lead-summary-label">인입날짜</div>
+                <div className="tm-lead-summary-value">{formatDateTime(activeLead['인입날짜'])}</div>
               </div>
               <div className="tm-lead-summary-card">
-                <div className="tm-lead-summary-label">?곷떞媛?μ떆媛?/div>
-                <div className="tm-lead-summary-value">{activeLead['?곷떞媛?μ떆媛?] || '-'}</div>
+                <div className="tm-lead-summary-label">상담가능시간</div>
+                <div className="tm-lead-summary-value">{activeLead['상담가능시간'] || '-'}</div>
               </div>
               <div className="tm-lead-summary-card">
-                <div className="tm-lead-summary-label">?대깽??/div>
-                <div className="tm-lead-summary-value">{activeLead['?대깽??] || '-'}</div>
+                <div className="tm-lead-summary-label">이벤트</div>
+                <div className="tm-lead-summary-value">{activeLead['이벤트'] || '-'}</div>
               </div>
               <div className="tm-lead-summary-card">
-                <div className="tm-lead-summary-label">嫄곗＜吏</div>
-                <div className="tm-lead-summary-value">{activeLead['嫄곗＜吏'] || '-'}</div>
+                <div className="tm-lead-summary-label">거주지</div>
+                <div className="tm-lead-summary-value">{activeLead['거주지'] || '-'}</div>
               </div>
             </div>
 
             <div className="tm-lead-body">
               <div className="tm-lead-left">
                 <div className="tm-lead-memos">
-                  <div className="tm-lead-memos-title">理쒓렐 硫붾え</div>
+                  <div className="tm-lead-memos-title">최근 메모</div>
                   {memos.length === 0 ? (
-                    <div className="tm-lead-memos-empty">硫붾え媛 ?놁뒿?덈떎.</div>
+                    <div className="tm-lead-memos-empty">메모가 없습니다.</div>
                   ) : (
                     <div className="tm-lead-memos-list">
                       {memos.map((memo, idx) => (
@@ -399,27 +410,27 @@ export default function TmCalendar() {
               <div className="tm-lead-right">
                 <div className="tm-lead-summary">
                   <div className="tm-lead-identity">
-                    <div className="tm-lead-identity-label">怨좉컼 ?뺣낫</div>
-                    <div className="tm-lead-identity-name">{activeLead['?대쫫'] || '-'}</div>
-                    <div className="tm-lead-identity-phone">{formatPhone(activeLead['?곕씫泥?])}</div>
+                    <div className="tm-lead-identity-label">고객 정보</div>
+                    <div className="tm-lead-identity-name">{activeLead['이름'] || '-'}</div>
+                    <div className="tm-lead-identity-phone">{formatPhone(activeLead['연락처'])}</div>
                   </div>
                 </div>
 
                 <div className="tm-lead-form">
                   <label>
-                    ?곹깭
+                    상태
                     <select value={form.status} onChange={(e) => handleStatusChange(e.target.value)}>
-                      <option value="">?좏깮</option>
+                      <option value="">선택</option>
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>{status}</option>
                       ))}
                     </select>
                   </label>
 
-                  {form.status === '?덉빟' ? (
+                  {form.status === '예약' ? (
                     <div className="tm-lead-reservation">
                       <label>
-                        ?덉빟 ?좎쭨
+                        예약 날짜
                         <input
                           type="date"
                           value={form.date}
@@ -427,12 +438,12 @@ export default function TmCalendar() {
                         />
                       </label>
                       <label>
-                        ?덉빟 ?쒓컙
+                        예약 시간
                         <select
                           value={form.time}
                           onChange={(e) => setForm({ ...form, time: e.target.value })}
                         >
-                          <option value="">?쒓컙 ?좏깮</option>
+                          <option value="">시간 선택</option>
                           {timeOptions.map((time) => (
                             <option key={time} value={time}>{time}</option>
                           ))}
@@ -442,7 +453,7 @@ export default function TmCalendar() {
                   ) : null}
 
                   <label>
-                    嫄곗＜吏
+                    거주지
                     <input
                       type="text"
                       value={form.region}
@@ -451,7 +462,7 @@ export default function TmCalendar() {
                   </label>
 
                   <label>
-                    ?곷떞 硫붾え
+                    상담 메모
                     <textarea
                       value={form.memo}
                       onChange={(e) => setForm({ ...form, memo: e.target.value })}
@@ -470,20 +481,20 @@ export default function TmCalendar() {
                   memo: prev.memo ? `${prev.memo}\n${formatDateTime(new Date())}` : formatDateTime(new Date()),
                 }))}
               >
-                ?꾩옱?쒓컙湲곗엯
+                현재시간기입
               </button>
               <button
                 type="button"
                 onClick={() => setForm((prev) => ({
                   ...prev,
-                  memo: prev.memo ? `${prev.memo}/臾몄옄蹂대깂` : '/臾몄옄蹂대깂',
+                  memo: prev.memo ? `${prev.memo}/문자보냄` : '/문자보냄',
                 }))}
               >
-                臾몄옄蹂대깂
+                문자보냄
               </button>
-              <button type="button" onClick={() => setModalOpen(false)}>痍⑥냼</button>
+              <button type="button" onClick={() => setModalOpen(false)}>취소</button>
               <button type="button" onClick={handleSave} disabled={saving}>
-                {saving ? '???以?..' : '???}
+                {saving ? '저장 중...' : '저장'}
               </button>
             </div>
           </div>
@@ -492,4 +503,3 @@ export default function TmCalendar() {
     </div>
   )
 }
-
