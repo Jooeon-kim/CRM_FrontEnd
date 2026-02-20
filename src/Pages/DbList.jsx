@@ -70,23 +70,33 @@ export default function DbList() {
 
   if (loading) return <div className="db-list">불러오는 중...</div>
 
-  const parseUtcDateTime = (value) => {
+  const parseDateTimeLocal = (value) => {
     if (!value) return null
     if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
     const raw = String(value).trim()
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+    if (iso) {
+      const local = new Date(
+        Number(iso[1]),
+        Number(iso[2]) - 1,
+        Number(iso[3]),
+        Number(iso[4]),
+        Number(iso[5]),
+        Number(iso[6] || '0')
+      )
+      return Number.isNaN(local.getTime()) ? null : local
+    }
     const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
     if (plain) {
-      const utcDate = new Date(
-        Date.UTC(
-          Number(plain[1]),
-          Number(plain[2]) - 1,
-          Number(plain[3]),
-          Number(plain[4]),
-          Number(plain[5]),
-          Number(plain[6] || '0')
-        )
+      const local = new Date(
+        Number(plain[1]),
+        Number(plain[2]) - 1,
+        Number(plain[3]),
+        Number(plain[4]),
+        Number(plain[5]),
+        Number(plain[6] || '0')
       )
-      return Number.isNaN(utcDate.getTime()) ? null : utcDate
+      return Number.isNaN(local.getTime()) ? null : local
     }
     const parsed = new Date(raw)
     return Number.isNaN(parsed.getTime()) ? null : parsed
@@ -104,9 +114,9 @@ export default function DbList() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
-  const formatUtcDateTime = (value) => {
+  const formatReservationDateTime = (value) => {
     if (!value) return ''
-    const date = parseUtcDateTime(value)
+    const date = parseDateTimeLocal(value)
     if (!date) return String(value)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
@@ -157,7 +167,7 @@ export default function DbList() {
 
   const formatCell = (key, value) => {
     if (key === '예약_내원일시') {
-      return value ? formatUtcDateTime(value) : '-'
+      return value ? formatReservationDateTime(value) : '-'
     }
     if (key === '인입날짜' || key === '콜_날짜시간' || key === '최근메모시간') {
       return value ? formatDateTime(value) : '-'
@@ -185,7 +195,7 @@ export default function DbList() {
 
   const splitDateTime = (value) => {
     if (!value) return { date: '', time: '' }
-    const date = parseUtcDateTime(value)
+    const date = parseDateTimeLocal(value)
     if (!date || Number.isNaN(date.getTime())) return { date: '', time: '' }
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
