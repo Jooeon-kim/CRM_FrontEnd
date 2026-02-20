@@ -1066,6 +1066,11 @@ input {
   background: #fffbeb;
 }
 
+.tm-recall-hour {
+  border-left: 4px solid #22c55e;
+  background: #ecfdf5;
+}
+
 .tm-available {
   background: #dcfce7;
   color: #166534;
@@ -1300,8 +1305,10 @@ input {
 
 .tm-lead-recall-quick {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.4rem;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .tm-lead-recall-after {
@@ -1326,6 +1333,8 @@ input {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
+  height: 34px;
+  white-space: nowrap;
 }
 
 .tm-lead-recall-quick select {
@@ -1336,6 +1345,7 @@ input {
   padding: 0.32rem 0.5rem;
   font-size: 0.78rem;
   font-weight: 600;
+  height: 34px;
 }
 
 .tm-lead-recall-preview {

@@ -92,7 +92,7 @@ export default function TmLayout() {
     const loadRecallDue = async () => {
       if (!user?.id) return
       try {
-        const res = await api.get('/tm/recalls', { params: { mode: 'all' } })
+        const res = await api.get('/tm/recalls', { params: { mode: 'all', tmId: user.id } })
         const list = res.data || []
         const now = new Date()
         const count = list.filter((row) => {

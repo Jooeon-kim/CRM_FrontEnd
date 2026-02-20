@@ -539,6 +539,13 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     if ((row?.['상태'] || '') !== '리콜대기') return ''
     const dueAt = parseDateTimeLocal(row?.['리콜_예정일시'])
     if (!dueAt) return ''
+    const now = new Date()
+    const isSameHour =
+      dueAt.getFullYear() === now.getFullYear() &&
+      dueAt.getMonth() === now.getMonth() &&
+      dueAt.getDate() === now.getDate() &&
+      dueAt.getHours() === now.getHours()
+    if (isSameHour) return 'hour'
     const diff = dueAt.getTime() - Date.now()
     if (diff <= 0) return 'due'
     if (diff <= 1000 * 60 * 60) return 'soon'
@@ -688,7 +695,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
           </div>
           {filteredList.map((row, index) => (
                <div
-                 className={`db-list-row db-list-click tm-db-row${hasRecallColumn ? ' tm-db-row-recall' : ''}${isAvailableNow(row) ? ' tm-available-row' : ''}${getRecallUrgency(row) === 'due' ? ' tm-recall-due' : ''}${getRecallUrgency(row) === 'soon' ? ' tm-recall-soon' : ''}`}
+                 className={`db-list-row db-list-click tm-db-row${hasRecallColumn ? ' tm-db-row-recall' : ''}${isAvailableNow(row) ? ' tm-available-row' : ''}${getRecallUrgency(row) === 'hour' ? ' tm-recall-hour' : ''}${getRecallUrgency(row) === 'due' ? ' tm-recall-due' : ''}${getRecallUrgency(row) === 'soon' ? ' tm-recall-soon' : ''}`}
                  key={index}
                  onClick={() => openModal(row)}
                >
