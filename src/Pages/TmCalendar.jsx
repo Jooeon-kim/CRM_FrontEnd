@@ -318,11 +318,12 @@ export default function TmCalendar() {
             const key = formatDateKey(date)
             const count = (reservationsByDate.get(key) || []).length
             const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
+            const isToday = key === formatDateKey(new Date())
             return (
               <button
                 type="button"
                 key={key}
-                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-outside'}${count ? ' has-reservation' : ''}`}
+                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-outside'}${count ? ' has-reservation' : ''}${isToday ? ' is-today' : ''}`}
                 onClick={() => {
                   if (!count) return
                   setSelectedDate(key)
