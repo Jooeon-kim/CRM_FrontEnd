@@ -1304,6 +1304,19 @@ input {
   gap: 0.4rem;
 }
 
+.tm-lead-recall-after {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.tm-lead-recall-after span {
+  font-size: 0.82rem;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
 .tm-lead-recall-quick button {
   border: 1px solid rgba(59, 130, 246, 0.35);
   background: #eff6ff;
@@ -1313,6 +1326,16 @@ input {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.tm-lead-recall-quick select {
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: #ffffff;
+  color: #1d4ed8;
+  border-radius: 8px;
+  padding: 0.32rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .tm-lead-recall-preview {

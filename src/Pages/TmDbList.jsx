@@ -17,6 +17,7 @@ const buildTimes = () => {
 }
 
 const timeOptions = buildTimes()
+const recallHourOptions = Array.from({ length: 12 }, (_, idx) => String(idx + 1))
 
 const parseDateTimeLocal = (value) => {
   if (!value) return null
@@ -51,26 +52,16 @@ const parseDateTimeLocal = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-const toDateInputValue = (value) => {
+const toDateTimeValue = (value) => {
   const date = parseDateTimeLocal(value)
-  if (!date) return ''
+  if (!date) return null
   const yyyy = date.getFullYear()
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
-
-const toTimeInputValue = (value) => {
-  const date = parseDateTimeLocal(value)
-  if (!date) return ''
   const hh = String(date.getHours()).padStart(2, '0')
-  const mm = String(date.getMinutes()).padStart(2, '0')
-  return `${hh}:${mm}`
-}
-
-const buildDateTimeString = (dateValue, timeValue) => {
-  if (!dateValue || !timeValue) return null
-  return `${dateValue} ${timeValue}:00`
+  const mi = String(date.getMinutes()).padStart(2, '0')
+  const ss = String(date.getSeconds()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
 }
 
 export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAvailable = false, assignedTodayOnly = false }) {
@@ -96,8 +87,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     memo: '',
     date: '',
     time: '',
-    recallDate: '',
-    recallTime: '',
+    recallHours: '1',
+    recallAt: null,
   })
   const [memos, setMemos] = useState([])
   const [phoneEvents, setPhoneEvents] = useState([])
@@ -231,8 +222,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       memo: '',
       date: '',
       time: '',
-      recallDate: toDateInputValue(lead['리콜_예정일시']),
-      recallTime: toTimeInputValue(lead['리콜_예정일시']),
+      recallHours: '1',
+      recallAt: toDateTimeValue(lead['리콜_예정일시']),
     })
     setMemos([])
     setPhoneEvents([])
@@ -275,7 +266,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     }
     if (value === '리콜대기') {
       setForm((prev) => {
-        if (prev.recallDate && prev.recallTime) {
+        if (prev.recallAt) {
           return { ...prev, status: value }
         }
         const base = new Date()
@@ -283,8 +274,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         return {
           ...prev,
           status: value,
-          recallDate: toDateInputValue(base),
-          recallTime: toTimeInputValue(base),
+          recallHours: prev.recallHours || '1',
+          recallAt: toDateTimeValue(base),
         }
       })
       return
@@ -292,23 +283,31 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     setForm((prev) => ({ ...prev, status: value }))
   }
 
-  const applyRecallQuick = (type) => {
+  const applyRecallAfterHours = (hours) => {
     const now = new Date()
+    const offset = Number(hours)
     const target = new Date(now)
-    if (type === 'tomorrow') {
-      target.setDate(target.getDate() + 1)
-    } else {
-      const hours = Number(type)
-      if (!Number.isNaN(hours) && hours > 0) {
-        target.setHours(target.getHours() + hours)
-      }
+    if (!Number.isNaN(offset) && offset > 0) {
+      target.setHours(target.getHours() + offset)
     }
     target.setSeconds(0, 0)
     setForm((prev) => ({
       ...prev,
       status: '리콜대기',
-      recallDate: toDateInputValue(target),
-      recallTime: toTimeInputValue(target),
+      recallHours: String(hours),
+      recallAt: toDateTimeValue(target),
+    }))
+  }
+
+  const applyRecallTomorrow = () => {
+    const now = new Date()
+    const target = new Date(now)
+    target.setDate(target.getDate() + 1)
+    target.setSeconds(0, 0)
+    setForm((prev) => ({
+      ...prev,
+      status: '리콜대기',
+      recallAt: toDateTimeValue(target),
     }))
   }
 
@@ -316,7 +315,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     if (!activeLead || !user?.id) return
     const hasStatusChange = Boolean(form.status)
     if (hasStatusChange && form.status === '예약' && (!form.date || !form.time)) return
-    if (hasStatusChange && form.status === '리콜대기' && (!form.recallDate || !form.recallTime)) return
+    if (hasStatusChange && form.status === '리콜대기' && !form.recallAt) return
 
     const leadId = activeLead.id
     const leadPhone = activeLead['연락처'] || ''
@@ -326,7 +325,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         : undefined
     const recallAt =
       hasStatusChange
-        ? (form.status === '리콜대기' ? buildDateTimeString(form.recallDate, form.recallTime) : undefined)
+        ? (form.status === '리콜대기' ? form.recallAt : undefined)
         : undefined
 
     try {
@@ -384,8 +383,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         memo: '',
         date: '',
         time: '',
-        recallDate: prev.recallDate,
-        recallTime: prev.recallTime,
+        recallHours: prev.recallHours,
+        recallAt: prev.recallAt,
       }))
 
       try {
@@ -885,35 +884,24 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                   {form.status === '리콜대기' ? (
                     <div className="tm-lead-recall">
                       <div className="tm-lead-recall-quick">
-                        <button type="button" onClick={() => applyRecallQuick('1')}>1시간 후</button>
-                        <button type="button" onClick={() => applyRecallQuick('2')}>2시간 후</button>
-                        <button type="button" onClick={() => applyRecallQuick('3')}>3시간 후</button>
-                        <button type="button" onClick={() => applyRecallQuick('tomorrow')}>내일 같은시간</button>
-                      </div>
-                      <div className="tm-lead-reservation">
-                        <label>
-                          리콜 날짜
-                          <input
-                            type="date"
-                            value={form.recallDate}
-                            onChange={(e) => setForm({ ...form, recallDate: e.target.value })}
-                          />
-                        </label>
-                        <label>
-                          리콜 시간
+                        <label className="tm-lead-recall-after">
                           <select
-                            value={form.recallTime}
-                            onChange={(e) => setForm({ ...form, recallTime: e.target.value })}
+                            value={form.recallHours}
+                            onChange={(e) => {
+                              const selected = e.target.value
+                              applyRecallAfterHours(selected)
+                            }}
                           >
-                            <option value="">시간 선택</option>
-                            {timeOptions.map((time) => (
-                              <option key={time} value={time}>{time}</option>
+                            {recallHourOptions.map((hour) => (
+                              <option key={hour} value={hour}>{hour}</option>
                             ))}
                           </select>
+                          <span>시간 후</span>
                         </label>
+                        <button type="button" onClick={applyRecallTomorrow}>내일</button>
                       </div>
                       <div className="tm-lead-recall-preview">
-                        설정된 리콜시간: {form.recallDate && form.recallTime ? `${form.recallDate} ${form.recallTime}` : '-'}
+                        설정된 리콜시간: {form.recallAt ? formatDateTime(form.recallAt) : '-'}
                       </div>
                     </div>
                   ) : null}

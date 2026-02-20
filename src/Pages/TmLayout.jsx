@@ -4,6 +4,38 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import api from '../apiClient'
 import { logout } from '../store/authSlice'
 
+const parseLocalDateTime = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+  if (iso) {
+    const date = new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3]),
+      Number(iso[4]),
+      Number(iso[5]),
+      Number(iso[6] || '0')
+    )
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  const local = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (local) {
+    const date = new Date(
+      Number(local[1]),
+      Number(local[2]) - 1,
+      Number(local[3]),
+      Number(local[4]),
+      Number(local[5]),
+      Number(local[6] || '0')
+    )
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 export default function TmLayout() {
   const dispatch = useDispatch()
   const { status, user } = useSelector((state) => state.auth)
@@ -60,9 +92,20 @@ export default function TmLayout() {
     const loadRecallDue = async () => {
       if (!user?.id) return
       try {
-        const res = await api.get('/tm/recalls', { params: { mode: 'due' } })
+        const res = await api.get('/tm/recalls', { params: { mode: 'all' } })
         const list = res.data || []
-        setRecallDueCount(list.length || 0)
+        const now = new Date()
+        const count = list.filter((row) => {
+          const dueAt = parseLocalDateTime(row?.['리콜_예정일시'])
+          if (!dueAt) return false
+          return (
+            dueAt.getFullYear() === now.getFullYear() &&
+            dueAt.getMonth() === now.getMonth() &&
+            dueAt.getDate() === now.getDate() &&
+            dueAt.getHours() === now.getHours()
+          )
+        }).length
+        setRecallDueCount(count || 0)
       } catch {
         setRecallDueCount(0)
       }
@@ -152,7 +195,7 @@ export default function TmLayout() {
               }
             >
               <span>리콜대기</span>
-              {recallDueCount ? <span className="calendar-badge">도래 {recallDueCount}건</span> : null}
+              {recallDueCount ? <span className="calendar-badge">하이라이트 {recallDueCount}건</span> : null}
             </NavLink>
             <NavLink
               to="/main/reserved"
