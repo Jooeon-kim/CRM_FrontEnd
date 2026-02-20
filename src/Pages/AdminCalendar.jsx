@@ -31,6 +31,18 @@ const parseDateTime = (value) => {
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
 
   const raw = String(value).trim()
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+  if (iso) {
+    const local = new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3]),
+      Number(iso[4]),
+      Number(iso[5]),
+      Number(iso[6] || '0')
+    )
+    return Number.isNaN(local.getTime()) ? null : local
+  }
   const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/)
   if (m) {
     const year = Number(m[1])

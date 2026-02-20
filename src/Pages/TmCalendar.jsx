@@ -42,10 +42,42 @@ const formatDateKey = (date) => {
   return `${yyyy}-${mm}-${dd}`
 }
 
+const parseDateTime = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+  if (iso) {
+    const local = new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3]),
+      Number(iso[4]),
+      Number(iso[5]),
+      Number(iso[6] || '0')
+    )
+    return Number.isNaN(local.getTime()) ? null : local
+  }
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/)
+  if (m) {
+    const local = new Date(
+      Number(m[1]),
+      Number(m[2]) - 1,
+      Number(m[3]),
+      Number(m[4]),
+      Number(m[5]),
+      Number(m[6] || '0')
+    )
+    return Number.isNaN(local.getTime()) ? null : local
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 const formatTime = (value) => {
   if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
+  const date = parseDateTime(value)
+  if (!date) return ''
   const hh = String(date.getHours()).padStart(2, '0')
   const mm = String(date.getMinutes()).padStart(2, '0')
   return `${hh}:${mm}`
@@ -53,8 +85,8 @@ const formatTime = (value) => {
 
 const formatDateTime = (value) => {
   if (!value) return '-'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return String(value)
+  const date = parseDateTime(value)
+  if (!date) return String(value)
   const yyyy = date.getFullYear()
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
@@ -120,9 +152,9 @@ export default function TmCalendar() {
     const month = currentMonth.getMonth()
     const year = currentMonth.getFullYear()
     return reservations.filter((item) => {
-      const date = new Date(item['예약_내원일시'])
+      const date = parseDateTime(item['예약_내원일시'])
       return (
-        !Number.isNaN(date.getTime()) &&
+        !!date &&
         date.getFullYear() === year &&
         date.getMonth() === month
       )
@@ -132,8 +164,8 @@ export default function TmCalendar() {
   const reservationsByDate = useMemo(() => {
     const map = new Map()
     monthReservations.forEach((item) => {
-      const date = new Date(item['예약_내원일시'])
-      if (Number.isNaN(date.getTime())) return
+      const date = parseDateTime(item['예약_내원일시'])
+      if (!date) return
       const key = formatDateKey(date)
       const list = map.get(key) || []
       list.push(item)
@@ -141,8 +173,8 @@ export default function TmCalendar() {
     })
     map.forEach((list, key) => {
       list.sort((a, b) => {
-        const ta = new Date(a['예약_내원일시']).getTime()
-        const tb = new Date(b['예약_내원일시']).getTime()
+        const ta = parseDateTime(a['예약_내원일시'])?.getTime() ?? Number.MAX_SAFE_INTEGER
+        const tb = parseDateTime(b['예약_내원일시'])?.getTime() ?? Number.MAX_SAFE_INTEGER
         return ta - tb
       })
       map.set(key, list)
