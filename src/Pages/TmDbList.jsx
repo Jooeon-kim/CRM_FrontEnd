@@ -402,7 +402,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       const emptyStatus = !row['상태'] || String(row['상태']).trim().length === 0
       const passEmptyStatus = !onlyEmptyStatus || emptyStatus
       const passAvailable = !onlyAvailable || isAvailableNow(row)
-      const passAssignedToday = !assignedTodayOnly || isAssignedToday(row)
+      const passAssignedToday = true
       if (!passStatus || !passEvent || !passRegion || !passCall || !passMiss || !passNoShow) {
         return false
       }
