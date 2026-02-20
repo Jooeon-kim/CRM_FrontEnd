@@ -213,19 +213,21 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   const handleSave = async () => {
     if (!activeLead || !user?.id) return
-    if (!form.status) return
-    if (form.status === '예약' && (!form.date || !form.time)) return
+    const hasStatusChange = Boolean(form.status)
+    if (hasStatusChange && form.status === '예약' && (!form.date || !form.time)) return
 
     const leadId = activeLead.id
     const leadPhone = activeLead['연락처'] || ''
     const reservationAt =
-      form.status === '예약' ? `${form.date} ${form.time}:00` : null
+      hasStatusChange
+        ? (form.status === '예약' ? `${form.date} ${form.time}:00` : null)
+        : undefined
 
     try {
       setSaving(true)
       await api.post(`/tm/leads/${leadId}/update`, {
+        status: hasStatusChange ? form.status : undefined,
         name: form.name,
-        status: form.status,
         region: form.region,
         memo: form.memo,
         tmId: user.id,
@@ -233,15 +235,19 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         phone: leadPhone,
       })
       const nowIso = new Date().toISOString()
+      const nextStatus = hasStatusChange ? form.status : activeLead['상태']
+      const nextReservationAt = hasStatusChange
+        ? (reservationAt || activeLead['예약_내원일시'])
+        : activeLead['예약_내원일시']
       const nextLead = {
         ...activeLead,
         이름: form.name,
-        상태: form.status,
+        상태: nextStatus,
         거주지: form.region,
-        예약_내원일시: reservationAt || activeLead['예약_내원일시'],
-        콜횟수: (Number(activeLead['콜횟수'] || 0) + (['부재중', '리콜대기', '예약', '실패', '예약부도'].includes(form.status) ? 1 : 0)),
-        부재중_횟수: form.status === '부재중' ? Number(activeLead['부재중_횟수'] || 0) + 1 : activeLead['부재중_횟수'],
-        예약부도_횟수: form.status === '예약부도' ? Number(activeLead['예약부도_횟수'] || 0) + 1 : activeLead['예약부도_횟수'],
+        예약_내원일시: nextReservationAt,
+        콜횟수: (Number(activeLead['콜횟수'] || 0) + (hasStatusChange && ['부재중', '리콜대기', '예약', '실패', '예약부도'].includes(form.status) ? 1 : 0)),
+        부재중_횟수: hasStatusChange && form.status === '부재중' ? Number(activeLead['부재중_횟수'] || 0) + 1 : activeLead['부재중_횟수'],
+        예약부도_횟수: hasStatusChange && form.status === '예약부도' ? Number(activeLead['예약부도_횟수'] || 0) + 1 : activeLead['예약부도_횟수'],
         최근메모내용: form.memo || activeLead['최근메모내용'],
         최근메모시간: form.memo ? nowIso : activeLead['최근메모시간'],
       }
