@@ -4,7 +4,13 @@ import api from '../apiClient'
 
 const weekLabels = ['일', '월', '화', '수', '목', '금', '토']
 const statusOptions = ['부재중', '리콜대기', '예약', '무효', '예약부도', '내원완료']
-const calendarStatuses = new Set(['예약', '내원완료', '예약부도'])
+const isCalendarStatus = (value) => {
+  const status = String(value || '').replace(/\s+/g, '').trim()
+  if (!status) return false
+  if (status.includes('예약부도')) return true
+  if (status.includes('내원완료')) return true
+  return status === '예약'
+}
 
 const buildTimes = () => {
   const times = []
@@ -128,7 +134,7 @@ export default function TmCalendar() {
         setReservations(
           (res.data || []).filter((row) => {
             const status = String(row['상태'] || '').trim()
-            return calendarStatuses.has(status) && Boolean(row['예약_내원일시'])
+            return isCalendarStatus(status) && Boolean(row['예약_내원일시'])
           })
         )
         setError('')
