@@ -44,6 +44,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   })
   const [memos, setMemos] = useState([])
   const [phoneEvents, setPhoneEvents] = useState([])
+  const [editingMemoId, setEditingMemoId] = useState(null)
+  const [editingMemoContent, setEditingMemoContent] = useState('')
+  const [editingMemoSaving, setEditingMemoSaving] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -173,6 +176,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     })
     setMemos([])
     setPhoneEvents([])
+    setEditingMemoId(null)
+    setEditingMemoContent('')
     setModalOpen(true)
     try {
       const res = await api.get('/tm/memos', { params: { phone: lead['연락처'], detailed: 1, leadId: lead.id } })
@@ -309,6 +314,41 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       setError('저장에 실패했습니다.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const startEditMemo = (memo) => {
+    setEditingMemoId(memo.id)
+    setEditingMemoContent(memo.memo_content || '')
+  }
+
+  const cancelEditMemo = () => {
+    setEditingMemoId(null)
+    setEditingMemoContent('')
+  }
+
+  const submitEditMemo = async () => {
+    if (!editingMemoId || !user?.id) return
+    const nextContent = String(editingMemoContent || '').trim()
+    if (!nextContent) return
+    try {
+      setEditingMemoSaving(true)
+      await api.patch(`/tm/memos/${editingMemoId}`, {
+        memoContent: nextContent,
+        tmId: user.id,
+      })
+      setMemos((prev) =>
+        prev.map((memo) =>
+          String(memo.id) === String(editingMemoId)
+            ? { ...memo, memo_content: nextContent }
+            : memo
+        )
+      )
+      cancelEditMemo()
+    } catch {
+      setError('메모 수정에 실패했습니다.')
+    } finally {
+      setEditingMemoSaving(false)
     }
   }
 
@@ -609,11 +649,38 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                       {memos.map((memo, idx) => (
                         <div key={idx} className="tm-lead-memo">
                           <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
-                          <div className="tm-lead-memo-content">{memo.memo_content}</div>
+                          {String(editingMemoId) === String(memo.id) ? (
+                            <div className="tm-lead-memo-edit">
+                              <textarea
+                                value={editingMemoContent}
+                                onChange={(e) => setEditingMemoContent(e.target.value)}
+                                rows="3"
+                              />
+                              <div className="tm-lead-memo-edit-actions">
+                                <button type="button" onClick={cancelEditMemo} disabled={editingMemoSaving}>
+                                  취소
+                                </button>
+                                <button type="button" onClick={submitEditMemo} disabled={editingMemoSaving}>
+                                  {editingMemoSaving ? '저장 중...' : '저장'}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="tm-lead-memo-content">{memo.memo_content}</div>
+                          )}
                           {memo.tm_id && String(memo.tm_id) !== String(user?.id) ? (
                             <div className="tm-lead-memo-time">
                               작성 TM: {memo.tm_name || memo.tm_id}
                             </div>
+                          ) : null}
+                          {memo.id && memo.tm_id && String(memo.tm_id) === String(user?.id) && String(editingMemoId) !== String(memo.id) ? (
+                            <button
+                              type="button"
+                              className="tm-lead-memo-edit-trigger"
+                              onClick={() => startEditMemo(memo)}
+                            >
+                              메모수정
+                            </button>
                           ) : null}
                         </div>
                       ))}

@@ -1314,6 +1314,47 @@ input {
   color: var(--muted);
 }
 
+.tm-lead-memo-edit {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.tm-lead-memo-edit textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  resize: vertical;
+  background: #ffffff;
+}
+
+.tm-lead-memo-edit-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.tm-lead-memo-edit-actions button,
+.tm-lead-memo-edit-trigger {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 7px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.tm-lead-memo-edit-actions button:last-child {
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #1d4ed8;
+}
+
+.tm-lead-memo-edit-trigger {
+  margin-top: 0.25rem;
+  align-self: flex-end;
+}
+
 .tm-lead-actions {
   display: flex;
   justify-content: flex-end;
