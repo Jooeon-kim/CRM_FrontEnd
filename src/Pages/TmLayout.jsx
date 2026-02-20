@@ -54,10 +54,12 @@ export default function TmLayout() {
         const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
         const countByDate = new Map()
         list.forEach((item) => {
+          const itemStatus = String(item['상태'] || item.status || '').trim()
+          if (itemStatus !== '예약') return
           const reservationValue = item['예약_내원일시'] || item.reservation_at || item.reservationAt
           if (!reservationValue) return
-          const date = new Date(reservationValue)
-          if (Number.isNaN(date.getTime())) return
+          const date = parseLocalDateTime(reservationValue)
+          if (!date) return
           const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
           const current = countByDate.get(key) || 0
           countByDate.set(key, current + 1)
