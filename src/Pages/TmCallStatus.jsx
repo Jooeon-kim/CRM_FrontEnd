@@ -49,6 +49,56 @@ const parseDateTimeLocal = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
+const normalizeRegionForChart = (value) => {
+  const raw = String(value || '').trim()
+  if (!raw) return '미지정'
+  const compact = raw.replace(/\s+/g, '').toLowerCase()
+
+  const isSeoul = [
+    '서울',
+    '강남',
+    '서초',
+    '방배',
+    '송파',
+    '잠실',
+    '강동',
+    '강서',
+    '마포',
+    '용산',
+    '성동',
+    '광진',
+    '동작',
+    '관악',
+    '은평',
+    '노원',
+    '도봉',
+    '강북',
+    '중랑',
+    '종로',
+    '중구',
+    '동대문',
+    '성북',
+    '서대문',
+    '양천',
+    '영등포',
+    '금천',
+    '구로',
+  ].some((keyword) => compact.includes(keyword))
+  if (isSeoul) return '서울'
+
+  const isSuwon = ['수원', '영통', '권선', '팔달', '장안', '광교'].some((keyword) =>
+    compact.includes(keyword)
+  )
+  if (isSuwon) return '수원'
+
+  const isYongin = ['용인', '수지', '기흥', '처인', '죽전', '동백'].some((keyword) =>
+    compact.includes(keyword)
+  )
+  if (isYongin) return '용인'
+
+  return raw
+}
+
 export default function TmCallStatus() {
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
@@ -364,7 +414,7 @@ export default function TmCallStatus() {
   }
 
   const regionCounts = filteredRows.reduce((acc, row) => {
-    const region = String(row['거주지'] || '미지정').trim() || '미지정'
+    const region = normalizeRegionForChart(row['거주지'])
     acc[region] = (acc[region] || 0) + 1
     return acc
   }, {})
