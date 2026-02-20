@@ -21,32 +21,32 @@ const toDateKey = (value) => {
   return `${yyyy}-${mm}-${dd}`
 }
 
-const parseUtcDateTime = (value) => {
+const parseDateTimeLocal = (value) => {
   if (!value) return null
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
   const raw = String(value).trim()
-  const sql = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
-  if (sql) {
-    const date = new Date(Date.UTC(
-      Number(sql[1]),
-      Number(sql[2]) - 1,
-      Number(sql[3]),
-      Number(sql[4]),
-      Number(sql[5]),
-      Number(sql[6] || '0')
-    ))
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+  if (iso) {
+    const date = new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3]),
+      Number(iso[4]),
+      Number(iso[5]),
+      Number(iso[6] || '0')
+    )
     return Number.isNaN(date.getTime()) ? null : date
   }
-  const isoNoTz = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/)
-  if (isoNoTz) {
-    const date = new Date(Date.UTC(
-      Number(isoNoTz[1]),
-      Number(isoNoTz[2]) - 1,
-      Number(isoNoTz[3]),
-      Number(isoNoTz[4]),
-      Number(isoNoTz[5]),
-      Number(isoNoTz[6] || '0')
-    ))
+  const local = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (local) {
+    const date = new Date(
+      Number(local[1]),
+      Number(local[2]) - 1,
+      Number(local[3]),
+      Number(local[4]),
+      Number(local[5]),
+      Number(local[6] || '0')
+    )
     return Number.isNaN(date.getTime()) ? null : date
   }
   const parsed = new Date(raw)
@@ -55,7 +55,7 @@ const parseUtcDateTime = (value) => {
 
 const formatDateTime = (value) => {
   if (!value) return '-'
-  const date = parseUtcDateTime(value)
+  const date = parseDateTimeLocal(value)
   if (!date) return String(value)
   const yyyy = date.getFullYear()
   const mm = String(date.getMonth() + 1).padStart(2, '0')
