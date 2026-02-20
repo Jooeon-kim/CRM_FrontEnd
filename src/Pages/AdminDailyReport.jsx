@@ -9,6 +9,7 @@ const metricLabels = {
   RESERVED: '\uB2F9\uC77C \uC608\uC57D',
   VISIT_TODAY: '\uB2F9\uC77C \uB0B4\uC6D0',
   VISIT_NEXTDAY: '\uC775\uC77C \uB0B4\uC6D0',
+  RECALL_WAIT: '\uB9AC\uCF5C\uB300\uAE30',
 }
 
 const toDateKey = (value) => {
@@ -87,7 +88,7 @@ export default function AdminDailyReport() {
   }, [reports])
 
   const fetchLeadsFallback = async (reportId) => {
-    const metrics = ['MISSED', 'FAILED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY']
+    const metrics = ['MISSED', 'FAILED', 'RESERVED', 'VISIT_TODAY', 'VISIT_NEXTDAY', 'RECALL_WAIT']
     const results = await Promise.all(
       metrics.map((metric) =>
         api
@@ -100,7 +101,7 @@ export default function AdminDailyReport() {
         acc[metric] = rows
         return acc
       },
-      { MISSED: [], FAILED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [] }
+      { MISSED: [], FAILED: [], RESERVED: [], VISIT_TODAY: [], VISIT_NEXTDAY: [], RECALL_WAIT: [] }
     )
   }
 
@@ -189,7 +190,7 @@ export default function AdminDailyReport() {
               <div>{formatDateTime(row.submitted_at)}</div>
               <div>
                 <button type="button" className="admin-home-tm-edit" onClick={() => openModal(row)}>
-                  {'\uBAA8\uB2EC \uBCF4\uAE30'}
+                  {'\uC0C1\uC138\uBCF4\uAE30'}
                 </button>
               </div>
             </div>
@@ -226,7 +227,10 @@ export default function AdminDailyReport() {
                   <div className="daily-report-metric-list">
                     {(modalData.leads?.[metricKey] || []).map((lead) => (
                       <div key={`${metricKey}-${lead.lead_id}`} className="daily-report-metric-item">
-                        {lead.name_snapshot || '-'} / {lead.phone_snapshot || '-'} / {lead.status_snapshot || '-'}
+                        {metricKey === 'RECALL_WAIT'
+                          ? `${lead.name_snapshot || '-'} / ${lead.phone_snapshot || '-'} / ${formatDateTime(lead.recall_at_snapshot)}`
+                          : `${lead.name_snapshot || '-'} / ${lead.phone_snapshot || '-'} / ${lead.status_snapshot || '-'}`
+                        }
                       </div>
                     ))}
                   </div>
