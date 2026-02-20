@@ -262,7 +262,7 @@ export default function TmCalendar() {
                 상태: form.status,
                 거주지: form.region,
                 예약_내원일시: reservationAt || row['예약_내원일시'],
-                콜횟수: (Number(row['콜횟수'] || 0) + (['부재중', '리콜대기', '예약', '예약부도'].includes(form.status) ? 1 : 0)),
+                콜횟수: (Number(row['콜횟수'] || 0) + (['부재중', '리콜대기', '예약'].includes(form.status) ? 1 : 0)),
                 부재중_횟수: form.status === '부재중' ? Number(row['부재중_횟수'] || 0) + 1 : row['부재중_횟수'],
                 예약부도_횟수: form.status === '예약부도' ? Number(row['예약부도_횟수'] || 0) + 1 : row['예약부도_횟수'],
                 최근메모내용: form.memo || row['최근메모내용'],

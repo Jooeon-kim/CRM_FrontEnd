@@ -385,7 +385,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         리콜_예정일시: hasStatusChange && form.status === '리콜대기'
           ? recallAt
           : activeLead['리콜_예정일시'],
-        콜횟수: (Number(activeLead['콜횟수'] || 0) + (hasStatusChange && ['부재중', '리콜대기', '예약', '실패', '예약부도'].includes(form.status) ? 1 : 0)),
+        콜횟수: (Number(activeLead['콜횟수'] || 0) + (hasStatusChange && ['부재중', '리콜대기', '예약', '실패'].includes(form.status) ? 1 : 0)),
         부재중_횟수: hasStatusChange && form.status === '부재중' ? Number(activeLead['부재중_횟수'] || 0) + 1 : activeLead['부재중_횟수'],
         예약부도_횟수: hasStatusChange && form.status === '예약부도' ? Number(activeLead['예약부도_횟수'] || 0) + 1 : activeLead['예약부도_횟수'],
         최근메모내용: form.memo || activeLead['최근메모내용'],
