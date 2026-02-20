@@ -10,6 +10,7 @@ export default function TmLayout() {
   const location = useLocation()
   const [todayCount, setTodayCount] = useState(0)
   const [assignedTodayCount, setAssignedTodayCount] = useState(0)
+  const [recallDueCount, setRecallDueCount] = useState(0)
 
   useEffect(() => {
     const loadToday = async () => {
@@ -52,6 +53,26 @@ export default function TmLayout() {
     }
 
     loadAssignedToday()
+  }, [user?.id])
+
+  useEffect(() => {
+    let timer = null
+    const loadRecallDue = async () => {
+      if (!user?.id) return
+      try {
+        const res = await api.get('/tm/recalls', { params: { mode: 'due' } })
+        const list = res.data || []
+        setRecallDueCount(list.length || 0)
+      } catch {
+        setRecallDueCount(0)
+      }
+    }
+
+    loadRecallDue()
+    timer = setInterval(loadRecallDue, 60 * 1000)
+    return () => {
+      if (timer) clearInterval(timer)
+    }
   }, [user?.id])
 
   const pageTitle = location.pathname.includes('/main/waiting')
@@ -126,9 +147,12 @@ export default function TmLayout() {
             </NavLink>
             <NavLink
               to="/main/recall"
-              className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              className={({ isActive }) =>
+                `admin-nav-item${isActive ? ' active' : ''}${recallDueCount ? ' calendar-alert' : ''}`
+              }
             >
-              리콜대기
+              <span>리콜대기</span>
+              {recallDueCount ? <span className="calendar-badge">도래 {recallDueCount}건</span> : null}
             </NavLink>
             <NavLink
               to="/main/reserved"

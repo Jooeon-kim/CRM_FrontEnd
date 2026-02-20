@@ -1101,7 +1101,7 @@ input {
   box-shadow: 0 22px 48px rgba(15, 23, 42, 0.24), 0 4px 14px rgba(15, 23, 42, 0.1);
   padding: 1.1rem 1.3rem 1.2rem;
   width: min(980px, 96vw);
-  max-height: 85vh;
+  max-height: 92vh;
   overflow: auto;
   display: flex;
   flex-direction: column;
