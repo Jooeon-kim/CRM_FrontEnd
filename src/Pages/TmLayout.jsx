@@ -195,7 +195,7 @@ export default function TmLayout() {
               }
             >
               <span>리콜대기</span>
-              {recallDueCount ? <span className="calendar-badge">하이라이트 {recallDueCount}건</span> : null}
+              {recallDueCount ? <span className="calendar-badge">{recallDueCount}건</span> : null}
             </NavLink>
             <NavLink
               to="/main/reserved"
