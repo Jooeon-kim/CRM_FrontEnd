@@ -70,10 +70,44 @@ export default function DbList() {
 
   if (loading) return <div className="db-list">불러오는 중...</div>
 
+  const parseUtcDateTime = (value) => {
+    if (!value) return null
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+    const raw = String(value).trim()
+    const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+    if (plain) {
+      const utcDate = new Date(
+        Date.UTC(
+          Number(plain[1]),
+          Number(plain[2]) - 1,
+          Number(plain[3]),
+          Number(plain[4]),
+          Number(plain[5]),
+          Number(plain[6] || '0')
+        )
+      )
+      return Number.isNaN(utcDate.getTime()) ? null : utcDate
+    }
+    const parsed = new Date(raw)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
   const formatDateTime = (value) => {
     if (!value) return ''
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return String(value)
+    const yyyy = date.getFullYear()
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    const hh = String(date.getHours()).padStart(2, '0')
+    const min = String(date.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+  }
+
+  const formatUtcDateTime = (value) => {
+    if (!value) return ''
+    const date = parseUtcDateTime(value)
+    if (!date) return String(value)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
@@ -122,7 +156,10 @@ export default function DbList() {
   ]
 
   const formatCell = (key, value) => {
-    if (key === '인입날짜' || key === '콜_날짜시간' || key === '예약_내원일시' || key === '최근메모시간') {
+    if (key === '예약_내원일시') {
+      return value ? formatUtcDateTime(value) : '-'
+    }
+    if (key === '인입날짜' || key === '콜_날짜시간' || key === '최근메모시간') {
       return value ? formatDateTime(value) : '-'
     }
     if (key === '연락처') {
@@ -148,8 +185,8 @@ export default function DbList() {
 
   const splitDateTime = (value) => {
     if (!value) return { date: '', time: '' }
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return { date: '', time: '' }
+    const date = parseUtcDateTime(value)
+    if (!date || Number.isNaN(date.getTime())) return { date: '', time: '' }
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
