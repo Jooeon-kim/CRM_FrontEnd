@@ -2163,7 +2163,7 @@ input {
   z-index: 1;
   background: #ffffff;
   border-radius: 16px;
-  width: min(980px, 96vw);
+  width: min(1180px, 97vw);
   max-height: 80vh;
   overflow: auto;
   padding: 1.2rem 1.4rem;
