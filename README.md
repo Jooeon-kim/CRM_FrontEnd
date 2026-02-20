@@ -1,16 +1,115 @@
-# React + Vite
+# CRM_FrontEnd
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+샤인유의원 CRM 프론트엔드 프로젝트입니다.  
+TM/관리자 권한에 따라 화면과 기능이 분리되어 있습니다.
 
-Currently, two official plugins are available:
+## 기술 스택
+- React
+- Vite
+- Redux Toolkit
+- Axios
+- React Router
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 실행 방법
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+## 배포
+- Vercel 배포 기준
+- `vercel.json` 설정 포함
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 로그인/권한
+- 로그인 후 권한에 따라 자동 라우팅됩니다.
+- TM 계정: `/main/*`
+- 관리자 계정: `/admin/*`
 
-## Expanding the ESLint configuration
+## 사용자 메뉴얼 (관리자 / TM)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+아래는 실제 운영 시 사용하는 화면 기준 사용법입니다.
+
+## TM 사용법
+
+### 1) 배정 완료 DB (`/main`)
+- 본인에게 배정된 DB 목록 확인
+- 행 클릭 시 CRUD 모달 오픈
+- 상태/메모/예약일시/리콜대기 시간 수정 가능
+
+### 2) 대기 (`/main/waiting`)
+- 상태값이 비어있는 DB 조회
+
+### 3) 상담가능 (`/main/available`)
+- 상담 가능 시간 조건에 맞는 DB 조회
+
+### 4) 부재중 (`/main/missed`)
+- 부재중 상태 DB 조회/후속 처리
+
+### 5) 리콜대기 (`/main/recall`)
+- 리콜대기 상태 DB 확인
+- 리콜 예정 시간대 하이라이트 확인
+
+### 6) 예약 (`/main/reserved`)
+- 예약 상태 DB 조회
+
+### 7) 캘린더 (`/main/calendar`)
+- 예약/내원완료/예약부도 일정 확인
+
+### 8) 당일배정DB (`/main/assigned-today`)
+- 당일 배정된 DB만 조회
+
+### 9) 마감보고 (`/main/daily-report`)
+- 임시저장/최종제출
+- 마감보고 목록 및 상세보기 확인
+- 부재중/리콜대기/실패/당일예약/당일내원/익일내원 상세 목록 확인
+
+## 관리자 사용법
+
+### 1) 관리자 메인 (`/admin`)
+- 전체 지표 확인
+- 메타 동기화 관련 작업 진입
+
+### 2) TM배정 (`/admin/tm-assign`)
+- 신규 DB TM 배정
+- 보류 처리(0) 지원
+
+### 3) TM콜현황 (`/admin/tm-call`)
+- TM별 상태/이벤트/거주지 비율 그래프
+- 배정일자 기반 필터 확인
+- 거주지 그래프는 `서울/수원/용인` 우선 정규화 집계
+
+### 4) TM변경 (`/admin/tm-reassign`)
+- 기존 배정 DB 일괄 TM 재배정
+
+### 5) DB목록 (`/admin/db-list`)
+- 전체 DB 조회/검색/필터
+- 행 클릭 후 상세 수정
+
+### 6) 캘린더 (`/admin/calendar`)
+- 예약/내원완료/예약부도 일정 확인
+- 날짜 클릭 시 해당 날짜 상세 목록 조회
+
+### 7) 마감보고 (`/admin/daily-report`)
+- 날짜별 TM 마감보고 목록
+- 상세보기 모달에서 항목별 상세 DB 확인
+
+## 마감보고 상세 표기 규칙
+- 부재중: `이름 / 전화번호 / n번부재`
+- 리콜대기: `이름 / 전화번호 / 리콜일시`
+- 실패: `이름 / 전화번호`
+- 당일예약: `이름 / 전화번호 / 예약일시`
+- 당일내원: `이름 / 전화번호`
+- 익일내원: `이름 / 전화번호`
+
+## 폴더 구조 (핵심)
+```text
+src/
+  Pages/
+  Layout/
+  store/
+  apiClient.js
+```
+
+## 참고
+- 시간 표시는 화면별 정책에 따라 로컬(KST) 기준으로 보정되어 표시됩니다.
+- 실제 저장 시간/형식은 백엔드 및 DB 정책을 따릅니다.
