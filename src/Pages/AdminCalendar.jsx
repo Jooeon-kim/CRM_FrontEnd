@@ -290,6 +290,10 @@ export default function AdminCalendar() {
                       <div className="tm-calendar-label">거주지</div>
                       <div className="tm-calendar-value">{item['거주지'] || '-'}</div>
                     </div>
+                    <div className="tm-calendar-cell-info">
+                      <div className="tm-calendar-label">상태</div>
+                      <div className="tm-calendar-value">{item['상태'] || '-'}</div>
+                    </div>
                     <div className="tm-calendar-cell-info tm-calendar-memo">
                       <div className="tm-calendar-label">메모</div>
                       <div className="tm-calendar-value" title={item['최근메모내용'] || ''}>
