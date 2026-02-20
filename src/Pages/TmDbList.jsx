@@ -64,6 +64,18 @@ const toDateTimeValue = (value) => {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
 }
 
+const toLocalDateTimeString = (value = new Date()) => {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const hh = String(date.getHours()).padStart(2, '0')
+  const mi = String(date.getMinutes()).padStart(2, '0')
+  const ss = String(date.getSeconds()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
+}
+
 export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAvailable = false, assignedTodayOnly = false }) {
   const { user } = useSelector((state) => state.auth)
   const [rows, setRows] = useState([])
@@ -129,6 +141,18 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     if (!value) return '-'
     const date = parseDateTimeLocal(value)
     if (!date) return String(value)
+    const yyyy = date.getFullYear()
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    const hh = String(date.getHours()).padStart(2, '0')
+    const min = String(date.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+  }
+
+  const formatMemoDateTime = (value) => {
+    if (!value) return '-'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return formatDateTime(value)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
@@ -340,7 +364,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         recallAt,
         phone: leadPhone,
       })
-      const nowIso = new Date().toISOString()
+      const nowIso = toLocalDateTimeString(new Date())
       const nextStatus = hasStatusChange ? form.status : activeLead['상태']
       const nextReservationAt = hasStatusChange
         ? (reservationAt || activeLead['예약_내원일시'])
@@ -779,7 +803,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                     <div className="tm-lead-memos-list">
                       {memos.map((memo, idx) => (
                         <div key={idx} className="tm-lead-memo">
-                          <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
+                          <div className="tm-lead-memo-time">{formatMemoDateTime(memo.memo_time)}</div>
                           {String(editingMemoId) === String(memo.id) ? (
                             <div className="tm-lead-memo-edit">
                               <textarea
@@ -939,7 +963,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 type="button"
                 onClick={() => setForm((prev) => ({
                   ...prev,
-                  memo: prev.memo ? `${prev.memo}\n${formatDateTime(new Date())}` : formatDateTime(new Date()),
+                  memo: prev.memo ? `${prev.memo}\n${toLocalDateTimeString(new Date())}` : toLocalDateTimeString(new Date()),
                 }))}
               >
                 현재시간기입
