@@ -65,6 +65,21 @@ const formatDateTime = (value) => {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`
 }
 
+const getMissedLabel = (lead) => {
+  const memo = String(lead?.memo_snapshot || '')
+  const hit = memo.match(/(\d+)\s*차\s*부재/)
+  if (hit) return `${hit[1]}번부재`
+  return '부재중'
+}
+
+const formatMetricItem = (metricKey, lead) => {
+  const base = `${lead.name_snapshot || '-'} / ${lead.phone_snapshot || '-'}`
+  if (metricKey === 'MISSED') return `${base} / ${getMissedLabel(lead)}`
+  if (metricKey === 'RESERVED') return `${base} / ${formatDateTime(lead.reservation_at_snapshot)}`
+  if (metricKey === 'RECALL_WAIT') return `${base} / ${formatDateTime(lead.recall_at_snapshot)}`
+  return base
+}
+
 const formatReportTitle = (dateKey, tmName) => {
   const raw = String(dateKey || '').trim()
   const datePartMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
@@ -259,10 +274,7 @@ export default function AdminDailyReport() {
                   <div className="daily-report-metric-list">
                     {(modalData.leads?.[metricKey] || []).map((lead) => (
                       <div key={`${metricKey}-${lead.lead_id}`} className="daily-report-metric-item">
-                        {metricKey === 'RECALL_WAIT'
-                          ? `${lead.name_snapshot || '-'} / ${lead.phone_snapshot || '-'} / ${formatDateTime(lead.recall_at_snapshot)}`
-                          : `${lead.name_snapshot || '-'} / ${lead.phone_snapshot || '-'} / ${lead.status_snapshot || '-'}`
-                        }
+                        {formatMetricItem(metricKey, lead)}
                       </div>
                     ))}
                   </div>
