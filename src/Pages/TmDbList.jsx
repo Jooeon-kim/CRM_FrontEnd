@@ -335,11 +335,18 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     }))
   }
 
+  const clearRecallSchedule = () => {
+    setForm((prev) => ({
+      ...prev,
+      status: '리콜대기',
+      recallAt: null,
+    }))
+  }
+
   const handleSave = async () => {
     if (!activeLead || !user?.id) return
     const hasStatusChange = Boolean(form.status)
     if (hasStatusChange && form.status === '예약' && (!form.date || !form.time)) return
-    if (hasStatusChange && form.status === '리콜대기' && !form.recallAt) return
 
     const leadId = activeLead.id
     const leadPhone = activeLead['연락처'] || ''
@@ -930,6 +937,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                           <span>시간 후</span>
                         </label>
                         <button type="button" onClick={applyRecallTomorrow}>내일</button>
+                        <button type="button" onClick={clearRecallSchedule}>일정 미설정</button>
                       </div>
                       <div className="tm-lead-recall-preview">
                         설정된 리콜시간: {form.recallAt ? formatDateTime(form.recallAt) : '-'}
