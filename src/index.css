@@ -1311,8 +1311,9 @@ input {
   justify-content: flex-start;
 }
 
-.tm-lead-recall-after {
+.tm-lead-form .tm-lead-recall-after {
   display: inline-flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.35rem;
   margin: 0;
@@ -2254,7 +2255,8 @@ input {
 }
 
 .admin-calendar-row {
-  grid-template-columns: 80px 0.9fr 1fr 0.9fr 0.9fr 1.4fr 0.6fr 0.8fr;
+  grid-template-columns: 80px 0.85fr 0.95fr 0.85fr 0.75fr 0.55fr 1.95fr 0.75fr;
+  gap: 0.55rem;
 }
 
 .tm-calendar-time {
