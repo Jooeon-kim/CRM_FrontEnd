@@ -905,6 +905,13 @@ input {
   background: #ffffff;
 }
 
+.tm-db-quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
 .db-list-export {
   border: none;
   background: #16a34a;
