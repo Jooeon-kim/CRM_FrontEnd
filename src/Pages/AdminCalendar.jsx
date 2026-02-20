@@ -312,10 +312,6 @@ export default function AdminCalendar() {
                         {item['최근메모내용'] || '-'}
                       </div>
                     </div>
-                    <div className="tm-calendar-cell-info tm-calendar-call">
-                      <div className="tm-calendar-label">콜횟수</div>
-                      <div className="tm-calendar-value">{item['콜횟수'] ?? 0}회</div>
-                    </div>
                     <div className="tm-calendar-cell-info">
                       <div className="tm-calendar-label">담당TM</div>
                       <div className="tm-calendar-value">{tmMap.get(String(item.tm)) || item.tm || '-'}</div>

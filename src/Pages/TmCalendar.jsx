@@ -384,10 +384,6 @@ export default function TmCalendar() {
                         {item['최근메모내용'] || '-'}
                       </div>
                     </div>
-                    <div className="tm-calendar-cell-info tm-calendar-call">
-                      <div className="tm-calendar-label">콜횟수</div>
-                      <div className="tm-calendar-value">{item['콜횟수'] ?? 0}회</div>
-                    </div>
                   </div>
                 ))}
               </div>
