@@ -17,6 +17,38 @@ const buildTimes = () => {
 
 const timeOptions = buildTimes()
 
+const parseDateTimeLocal = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+  if (iso) {
+    const local = new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3]),
+      Number(iso[4]),
+      Number(iso[5]),
+      Number(iso[6] || '0')
+    )
+    return Number.isNaN(local.getTime()) ? null : local
+  }
+  const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (plain) {
+    const local = new Date(
+      Number(plain[1]),
+      Number(plain[2]) - 1,
+      Number(plain[3]),
+      Number(plain[4]),
+      Number(plain[5]),
+      Number(plain[6] || '0')
+    )
+    return Number.isNaN(local.getTime()) ? null : local
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 export default function TmCallStatus() {
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
@@ -62,8 +94,8 @@ export default function TmCallStatus() {
 
   const formatDateTime = (value) => {
     if (!value) return ''
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return String(value)
+    const date = parseDateTimeLocal(value)
+    if (!date) return String(value)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
@@ -126,8 +158,8 @@ export default function TmCallStatus() {
 
   const isAssignedToday = (value) => {
     if (!value) return false
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return false
+    const date = parseDateTimeLocal(value)
+    if (!date) return false
     const today = new Date()
     return (
       date.getFullYear() === today.getFullYear() &&
@@ -138,8 +170,8 @@ export default function TmCallStatus() {
 
   const toDateKey = (value) => {
     if (!value) return ''
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return ''
+    const date = parseDateTimeLocal(value)
+    if (!date) return ''
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
@@ -178,8 +210,8 @@ export default function TmCallStatus() {
 
   const splitDateTime = (value) => {
     if (!value) return { date: '', time: '' }
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return { date: '', time: '' }
+    const date = parseDateTimeLocal(value)
+    if (!date) return { date: '', time: '' }
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
