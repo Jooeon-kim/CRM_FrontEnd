@@ -1008,6 +1008,10 @@ input {
   grid-template-columns: 1.15fr 1.1fr 0.9fr 1fr 0.9fr 0.8fr 0.9fr 1.1fr 3fr 0.6fr;
 }
 
+.tm-db-table .tm-db-row.tm-db-row-recall {
+  grid-template-columns: 1.15fr 1.05fr 0.9fr 1fr 0.9fr 0.75fr 0.85fr 1fr 1fr 2.3fr 0.6fr;
+}
+
 .db-list-cell-memo {
   white-space: nowrap;
   overflow: hidden;
@@ -1050,6 +1054,16 @@ input {
 
 .tm-available-row {
   border-left: 4px solid #22c55e;
+}
+
+.tm-recall-due {
+  border-left: 4px solid #ef4444;
+  background: #fff1f2;
+}
+
+.tm-recall-soon {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
 }
 
 .tm-available {
@@ -1277,6 +1291,37 @@ input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.8rem;
+}
+
+.tm-lead-recall {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.tm-lead-recall-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tm-lead-recall-quick button {
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 8px;
+  padding: 0.34rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tm-lead-recall-preview {
+  font-size: 0.82rem;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  padding: 0.4rem 0.55rem;
 }
 
 .tm-lead-memos {

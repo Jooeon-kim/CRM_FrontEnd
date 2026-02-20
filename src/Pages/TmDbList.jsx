@@ -18,6 +18,48 @@ const buildTimes = () => {
 
 const timeOptions = buildTimes()
 
+const parseDateTimeLocal = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (m) {
+    const date = new Date(
+      Number(m[1]),
+      Number(m[2]) - 1,
+      Number(m[3]),
+      Number(m[4]),
+      Number(m[5]),
+      Number(m[6] || '0')
+    )
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const toDateInputValue = (value) => {
+  const date = parseDateTimeLocal(value)
+  if (!date) return ''
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const toTimeInputValue = (value) => {
+  const date = parseDateTimeLocal(value)
+  if (!date) return ''
+  const hh = String(date.getHours()).padStart(2, '0')
+  const mm = String(date.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
+const buildDateTimeString = (dateValue, timeValue) => {
+  if (!dateValue || !timeValue) return null
+  return `${dateValue} ${timeValue}:00`
+}
+
 export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAvailable = false, assignedTodayOnly = false }) {
   const { user } = useSelector((state) => state.auth)
   const [rows, setRows] = useState([])
@@ -41,6 +83,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     memo: '',
     date: '',
     time: '',
+    recallDate: '',
+    recallTime: '',
   })
   const [memos, setMemos] = useState([])
   const [phoneEvents, setPhoneEvents] = useState([])
@@ -79,8 +123,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   const formatDateTime = (value) => {
     if (!value) return '-'
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return String(value)
+    const date = parseDateTimeLocal(value)
+    if (!date) return String(value)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
@@ -161,8 +205,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   }
 
   const visibleColumns = assignedTodayOnly
-    ? ['배정날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', '최근메모내용', '콜횟수']
-    : ['인입날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', '최근메모내용', '콜횟수']
+    ? ['배정날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', ...(statusFilter === '리콜대기' ? ['리콜_예정일시'] : []), '최근메모내용', '콜횟수']
+    : ['인입날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', ...(statusFilter === '리콜대기' ? ['리콜_예정일시'] : []), '최근메모내용', '콜횟수']
+  const hasRecallColumn = visibleColumns.includes('리콜_예정일시')
 
   const openModal = async (lead) => {
     setActiveLead(lead)
@@ -173,6 +218,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       memo: '',
       date: '',
       time: '',
+      recallDate: toDateInputValue(lead['리콜_예정일시']),
+      recallTime: toTimeInputValue(lead['리콜_예정일시']),
     })
     setMemos([])
     setPhoneEvents([])
@@ -213,19 +260,60 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       setForm((prev) => ({ ...prev, status: value, memo }))
       return
     }
+    if (value === '리콜대기') {
+      setForm((prev) => {
+        if (prev.recallDate && prev.recallTime) {
+          return { ...prev, status: value }
+        }
+        const base = new Date()
+        base.setHours(base.getHours() + 1, 0, 0, 0)
+        return {
+          ...prev,
+          status: value,
+          recallDate: toDateInputValue(base),
+          recallTime: toTimeInputValue(base),
+        }
+      })
+      return
+    }
     setForm((prev) => ({ ...prev, status: value }))
+  }
+
+  const applyRecallQuick = (type) => {
+    const now = new Date()
+    const target = new Date(now)
+    if (type === 'tomorrow') {
+      target.setDate(target.getDate() + 1)
+    } else {
+      const hours = Number(type)
+      if (!Number.isNaN(hours) && hours > 0) {
+        target.setHours(target.getHours() + hours)
+      }
+    }
+    target.setSeconds(0, 0)
+    setForm((prev) => ({
+      ...prev,
+      status: '리콜대기',
+      recallDate: toDateInputValue(target),
+      recallTime: toTimeInputValue(target),
+    }))
   }
 
   const handleSave = async () => {
     if (!activeLead || !user?.id) return
     const hasStatusChange = Boolean(form.status)
     if (hasStatusChange && form.status === '예약' && (!form.date || !form.time)) return
+    if (hasStatusChange && form.status === '리콜대기' && (!form.recallDate || !form.recallTime)) return
 
     const leadId = activeLead.id
     const leadPhone = activeLead['연락처'] || ''
     const reservationAt =
       hasStatusChange
         ? (form.status === '예약' ? `${form.date} ${form.time}:00` : null)
+        : undefined
+    const recallAt =
+      hasStatusChange
+        ? (form.status === '리콜대기' ? buildDateTimeString(form.recallDate, form.recallTime) : undefined)
         : undefined
 
     try {
@@ -237,6 +325,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         memo: form.memo,
         tmId: user.id,
         reservationAt,
+        recallAt,
         phone: leadPhone,
       })
       const nowIso = new Date().toISOString()
@@ -250,6 +339,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         상태: nextStatus,
         거주지: form.region,
         예약_내원일시: nextReservationAt,
+        리콜_예정일시: hasStatusChange && form.status === '리콜대기'
+          ? recallAt
+          : activeLead['리콜_예정일시'],
         콜횟수: (Number(activeLead['콜횟수'] || 0) + (hasStatusChange && ['부재중', '리콜대기', '예약', '실패', '예약부도'].includes(form.status) ? 1 : 0)),
         부재중_횟수: hasStatusChange && form.status === '부재중' ? Number(activeLead['부재중_횟수'] || 0) + 1 : activeLead['부재중_횟수'],
         예약부도_횟수: hasStatusChange && form.status === '예약부도' ? Number(activeLead['예약부도_횟수'] || 0) + 1 : activeLead['예약부도_횟수'],
@@ -279,6 +371,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         memo: '',
         date: '',
         time: '',
+        recallDate: prev.recallDate,
+        recallTime: prev.recallTime,
       }))
 
       try {
@@ -353,7 +447,13 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   }
 
   const filteredRows = useMemo(() => {
+    const isRecallPage = statusFilter === '리콜대기'
     return [...rows].sort((a, b) => {
+      if (isRecallPage) {
+        const aRecall = parseDateTimeLocal(a?.['리콜_예정일시'])?.getTime() ?? Number.MAX_SAFE_INTEGER
+        const bRecall = parseDateTimeLocal(b?.['리콜_예정일시'])?.getTime() ?? Number.MAX_SAFE_INTEGER
+        if (aRecall !== bRecall) return aRecall - bRecall
+      }
       const aBase = assignedTodayOnly
         ? getAssignedDateValue(a)
         : a?.['인입날짜']
@@ -367,7 +467,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       if (Number.isNaN(bTime)) return -1
       return inboundSort === 'asc' ? aTime - bTime : bTime - aTime
     })
-  }, [rows, inboundSort, assignedTodayOnly])
+  }, [rows, inboundSort, assignedTodayOnly, statusFilter])
 
   const filterOptions = useMemo(() => {
     const events = new Set()
@@ -422,6 +522,16 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       )
     })
   }, [filteredRows, searchTerm, statusFilterLocal, eventFilter, regionFilter, callMin, missMin, noShowMin, onlyEmptyStatus, onlyAvailable, assignedTodayOnly])
+
+  const getRecallUrgency = (row) => {
+    if ((row?.['상태'] || '') !== '리콜대기') return ''
+    const dueAt = parseDateTimeLocal(row?.['리콜_예정일시'])
+    if (!dueAt) return ''
+    const diff = dueAt.getTime() - Date.now()
+    if (diff <= 0) return 'due'
+    if (diff <= 1000 * 60 * 60) return 'soon'
+    return ''
+  }
 
   const handleExport = () => {
     if (filteredList.length === 0) return
@@ -558,18 +668,18 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         <div className="db-list-empty">표시할 데이터가 없습니다.</div>
       ) : (
         <div className="db-list-table tm-db-table">
-          <div className="db-list-row db-list-head tm-db-row">
+          <div className={`db-list-row db-list-head tm-db-row${hasRecallColumn ? ' tm-db-row-recall' : ''}`}>
             <div></div>
             {visibleColumns.map((key) => (
               <div key={key}>{key}</div>
             ))}
           </div>
           {filteredList.map((row, index) => (
-            <div
-              className={`db-list-row db-list-click tm-db-row${isAvailableNow(row) ? ' tm-available-row' : ''}`}
-              key={index}
-              onClick={() => openModal(row)}
-            >
+               <div
+                 className={`db-list-row db-list-click tm-db-row${hasRecallColumn ? ' tm-db-row-recall' : ''}${isAvailableNow(row) ? ' tm-available-row' : ''}${getRecallUrgency(row) === 'due' ? ' tm-recall-due' : ''}${getRecallUrgency(row) === 'soon' ? ' tm-recall-soon' : ''}`}
+                 key={index}
+                 onClick={() => openModal(row)}
+               >
               <div className="tm-available-cell">
                 {isAvailableNow(row) ? (
                   <span className="tm-available-badge">상담가능</span>
@@ -583,6 +693,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                     ? formatPhone(row[key])
                     : key === '배정날짜'
                       ? formatDateTime(getAssignedDateValue(row))
+                    : key === '리콜_예정일시'
+                      ? formatDateTime(row[key])
                     : key === '인입날짜' || key === '배정날짜' || key === '예약_내원일시'
                       ? formatDateTime(row[key])
                       : row[key] ?? '-'
@@ -754,6 +866,42 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                           ))}
                         </select>
                       </label>
+                    </div>
+                  ) : null}
+
+                  {form.status === '리콜대기' ? (
+                    <div className="tm-lead-recall">
+                      <div className="tm-lead-recall-quick">
+                        <button type="button" onClick={() => applyRecallQuick('1')}>1시간 후</button>
+                        <button type="button" onClick={() => applyRecallQuick('2')}>2시간 후</button>
+                        <button type="button" onClick={() => applyRecallQuick('3')}>3시간 후</button>
+                        <button type="button" onClick={() => applyRecallQuick('tomorrow')}>내일 같은시간</button>
+                      </div>
+                      <div className="tm-lead-reservation">
+                        <label>
+                          리콜 날짜
+                          <input
+                            type="date"
+                            value={form.recallDate}
+                            onChange={(e) => setForm({ ...form, recallDate: e.target.value })}
+                          />
+                        </label>
+                        <label>
+                          리콜 시간
+                          <select
+                            value={form.recallTime}
+                            onChange={(e) => setForm({ ...form, recallTime: e.target.value })}
+                          >
+                            <option value="">시간 선택</option>
+                            {timeOptions.map((time) => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      <div className="tm-lead-recall-preview">
+                        설정된 리콜시간: {form.recallDate && form.recallTime ? `${form.recallDate} ${form.recallTime}` : '-'}
+                      </div>
                     </div>
                   ) : null}
 
