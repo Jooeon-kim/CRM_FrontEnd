@@ -47,11 +47,25 @@ input {
 }
 
 .login-shell {
+  position: relative;
+  isolation: isolate;
   min-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4rem clamp(1.5rem, 4vw, 5rem);
+  background-image: url('/background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.login-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.38), rgba(15, 23, 42, 0.2));
 }
 
 .login-panel {
