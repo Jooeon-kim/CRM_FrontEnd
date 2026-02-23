@@ -432,7 +432,7 @@ export default function TmCalendar() {
           className="tm-add-button"
           onClick={openCreateScheduleModal}
         >
-          일정 기입
+          TM일정기입
         </button>
         <div className="tm-calendar-nav">
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>

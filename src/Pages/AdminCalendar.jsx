@@ -394,7 +394,7 @@ export default function AdminCalendar() {
             className="tm-add-button"
             onClick={openCreateScheduleModal}
           >
-            일정 기입
+            TM일정기입
           </button>
         </div>
         <div className="tm-calendar-nav">
