@@ -1018,6 +1018,10 @@ input {
   font-size: 0.9rem;
 }
 
+.tm-call .db-list-row {
+  grid-template-columns: 0.95fr 0.95fr 0.9fr 0.95fr 0.8fr 0.7fr 0.75fr 4.4fr 0.95fr 1fr 0.75fr 0.95fr 0.5fr;
+}
+
 .db-list-row > div {
   white-space: nowrap;
   overflow: hidden;

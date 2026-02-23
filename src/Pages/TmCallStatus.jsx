@@ -190,6 +190,18 @@ export default function TmCallStatus() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
+  const formatUtcAsKstDateTime = (value) => {
+    if (!value) return ''
+    const kst = toKstDateTimeFromUtc(value)
+    if (!kst) return String(value)
+    const yyyy = kst.getUTCFullYear()
+    const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(kst.getUTCDate()).padStart(2, '0')
+    const hh = String(kst.getUTCHours()).padStart(2, '0')
+    const min = String(kst.getUTCMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+  }
+
   const formatPhone = (value) => {
     if (!value) return '-'
     let digits = String(value).replace(/\D/g, '')
@@ -221,6 +233,9 @@ export default function TmCallStatus() {
   ]
 
   const formatCell = (key, value) => {
+    if (key === '콜_날짜시간') {
+      return value ? formatUtcAsKstDateTime(value) : '-'
+    }
     if (key === '인입날짜' || key === '콜_날짜시간' || key === '예약_내원일시' || key === '최근메모시간') {
       return value ? formatDateTime(value) : '-'
     }
