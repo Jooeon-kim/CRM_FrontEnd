@@ -83,6 +83,31 @@ const normalizePhoneDigits = (value) => {
   return digits
 }
 
+const toDateInput = (date = new Date()) => {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const buildMonthRange = (monthDate) => {
+  const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+  const end = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)
+  return {
+    from: toDateInput(start),
+    to: toDateInput(end),
+  }
+}
+
+const getScheduleTypeLabel = (item) => {
+  const type = String(item?.schedule_type || '').trim()
+  if (type === '기타') {
+    const custom = String(item?.custom_type || '').trim()
+    return custom || '기타'
+  }
+  return type || '-'
+}
+
 export default function AdminCalendar() {
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date()
@@ -95,6 +120,16 @@ export default function AdminCalendar() {
   const [selectedDate, setSelectedDate] = useState('')
   const [tmFilter, setTmFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [schedules, setSchedules] = useState([])
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
+  const [scheduleSaving, setScheduleSaving] = useState(false)
+  const [scheduleForm, setScheduleForm] = useState({
+    date: toDateInput(new Date()),
+    tmId: '',
+    type: '휴무',
+    customType: '',
+    memo: '',
+  })
 
   useEffect(() => {
     const load = async () => {
@@ -121,6 +156,19 @@ export default function AdminCalendar() {
 
     load()
   }, [])
+
+  useEffect(() => {
+    const loadSchedules = async () => {
+      try {
+        const { from, to } = buildMonthRange(currentMonth)
+        const res = await api.get('/tm/schedules', { params: { from, to } })
+        setSchedules(Array.isArray(res.data) ? res.data : [])
+      } catch {
+        setSchedules([])
+      }
+    }
+    loadSchedules()
+  }, [currentMonth])
 
   const tmMap = useMemo(() => {
     const map = new Map()
@@ -189,6 +237,18 @@ export default function AdminCalendar() {
     return map
   }, [filteredReservations])
 
+  const schedulesByDate = useMemo(() => {
+    const map = new Map()
+    schedules.forEach((row) => {
+      const key = String(row.schedule_date || '').slice(0, 10)
+      if (!key) return
+      const list = map.get(key) || []
+      list.push(row)
+      map.set(key, list)
+    })
+    return map
+  }, [schedules])
+
   const calendarCells = useMemo(() => {
     const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
     const startDay = start.getDay()
@@ -204,6 +264,40 @@ export default function AdminCalendar() {
   }, [currentMonth])
 
   const selectedReservations = selectedDate ? reservationsByDate.get(selectedDate) || [] : []
+
+  useEffect(() => {
+    if (!scheduleModalOpen) return
+    if (!scheduleForm.tmId) {
+      const firstTm = agents.find((agent) => !agent.isAdmin)
+      if (firstTm) {
+        setScheduleForm((prev) => ({ ...prev, tmId: String(firstTm.id) }))
+      }
+    }
+  }, [scheduleModalOpen, scheduleForm.tmId, agents])
+
+  const handleScheduleSave = async () => {
+    if (!scheduleForm.date || !scheduleForm.tmId || !scheduleForm.type) return
+    if (scheduleForm.type === '기타' && !scheduleForm.customType.trim()) return
+    try {
+      setScheduleSaving(true)
+      await api.post('/tm/schedules', {
+        tmId: Number(scheduleForm.tmId),
+        scheduleDate: scheduleForm.date,
+        scheduleType: scheduleForm.type,
+        customType: scheduleForm.type === '기타' ? scheduleForm.customType.trim() : '',
+        memo: scheduleForm.memo.trim(),
+      })
+      const { from, to } = buildMonthRange(currentMonth)
+      const res = await api.get('/tm/schedules', { params: { from, to } })
+      setSchedules(Array.isArray(res.data) ? res.data : [])
+      setScheduleModalOpen(false)
+      setScheduleForm((prev) => ({ ...prev, customType: '', memo: '' }))
+    } catch {
+      setError('일정 저장에 실패했습니다.')
+    } finally {
+      setScheduleSaving(false)
+    }
+  }
 
   return (
     <div className="tm-calendar">
@@ -231,6 +325,13 @@ export default function AdminCalendar() {
               placeholder="이름, 전화번호, 이벤트 검색"
             />
           </div>
+          <button
+            type="button"
+            className="tm-add-button"
+            onClick={() => setScheduleModalOpen(true)}
+          >
+            일정 기입
+          </button>
         </div>
         <div className="tm-calendar-nav">
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
@@ -255,6 +356,7 @@ export default function AdminCalendar() {
           {calendarCells.map((date) => {
             const key = formatDateKey(date)
             const count = (reservationsByDate.get(key) || []).length
+            const daySchedules = schedulesByDate.get(key) || []
             const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
             const isToday = key === formatDateKey(new Date())
             return (
@@ -269,6 +371,11 @@ export default function AdminCalendar() {
               >
                 <div className="tm-calendar-date">{date.getDate()}</div>
                 {count ? <div className="tm-calendar-count">{count}명</div> : null}
+                {daySchedules.map((item) => (
+                  <div key={`sch-${item.id}`} className="tm-calendar-schedule-line">
+                    {(item.tm_name || '-') + ' ' + getScheduleTypeLabel(item)}
+                  </div>
+                ))}
               </button>
             )
           })}
@@ -327,6 +434,79 @@ export default function AdminCalendar() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      ) : null}
+
+      {scheduleModalOpen ? (
+        <div className="tm-lead-modal">
+          <div className="tm-lead-backdrop" onClick={() => setScheduleModalOpen(false)} />
+          <div className="tm-lead-card">
+            <div className="tm-lead-header">
+              <h3>일정 기입</h3>
+              <button type="button" onClick={() => setScheduleModalOpen(false)}>닫기</button>
+            </div>
+            <div className="tm-lead-form">
+              <label>
+                날짜
+                <input
+                  type="date"
+                  value={scheduleForm.date}
+                  onChange={(e) => setScheduleForm((prev) => ({ ...prev, date: e.target.value }))}
+                />
+              </label>
+              <label>
+                TM
+                <select
+                  value={scheduleForm.tmId}
+                  onChange={(e) => setScheduleForm((prev) => ({ ...prev, tmId: e.target.value }))}
+                >
+                  <option value="">선택</option>
+                  {agents.filter((agent) => !agent.isAdmin).map((agent) => (
+                    <option key={agent.id} value={agent.id}>{agent.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                유형
+                <select
+                  value={scheduleForm.type}
+                  onChange={(e) => setScheduleForm((prev) => ({ ...prev, type: e.target.value }))}
+                >
+                  <option value="휴무">휴무</option>
+                  <option value="근무">근무</option>
+                  <option value="반차">반차</option>
+                  <option value="교육">교육</option>
+                  <option value="기타">기타</option>
+                </select>
+              </label>
+              {scheduleForm.type === '기타' ? (
+                <label>
+                  기타 입력
+                  <input
+                    type="text"
+                    value={scheduleForm.customType}
+                    onChange={(e) => setScheduleForm((prev) => ({ ...prev, customType: e.target.value }))}
+                    placeholder="유형 입력"
+                  />
+                </label>
+              ) : null}
+              <label>
+                메모
+                <textarea
+                  rows="3"
+                  value={scheduleForm.memo}
+                  onChange={(e) => setScheduleForm((prev) => ({ ...prev, memo: e.target.value }))}
+                  placeholder="특이사항 (선택)"
+                />
+              </label>
+            </div>
+            <div className="tm-lead-actions">
+              <button type="button" onClick={() => setScheduleModalOpen(false)}>취소</button>
+              <button type="button" onClick={handleScheduleSave} disabled={scheduleSaving}>
+                {scheduleSaving ? '저장 중..' : '저장'}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
