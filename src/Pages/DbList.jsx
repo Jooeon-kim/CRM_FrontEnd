@@ -62,7 +62,16 @@ export default function DbList() {
         api.get('/dbdata'),
         api.get('/tm/agents'),
       ])
-      setRows(res.data || [])
+      const normalizedRows = (res.data || []).map((row) => ({
+        ...row,
+        배정날짜:
+          row?.['배정날짜'] ||
+          row?.assigned_at ||
+          row?.assigned_date ||
+          row?.tm_assigned_at ||
+          '',
+      }))
+      setRows(normalizedRows)
       setAgents(tmRes.data || [])
       setError('')
     } catch (err) {
@@ -112,8 +121,8 @@ export default function DbList() {
 
   const formatDateTime = (value) => {
     if (!value) return ''
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return String(value)
+    const date = parseDateTimeLocal(value)
+    if (!date) return String(value)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
@@ -160,6 +169,7 @@ export default function DbList() {
 
   const visibleColumns = [
     '인입날짜',
+    '배정날짜',
     '이름',
     '연락처',
     '이벤트',
@@ -177,7 +187,7 @@ export default function DbList() {
     if (key === '예약_내원일시') {
       return value ? formatReservationDateTime(value) : '-'
     }
-    if (key === '인입날짜' || key === '콜_날짜시간' || key === '최근메모시간') {
+    if (key === '인입날짜' || key === '배정날짜' || key === '콜_날짜시간' || key === '최근메모시간') {
       return value ? formatDateTime(value) : '-'
     }
     if (key === '연락처') {
@@ -312,8 +322,8 @@ export default function DbList() {
 
   const isAssignedToday = (value) => {
     if (!value) return false
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return false
+    const date = parseDateTimeLocal(value)
+    if (!date) return false
     const today = new Date()
     return (
       date.getFullYear() === today.getFullYear() &&
