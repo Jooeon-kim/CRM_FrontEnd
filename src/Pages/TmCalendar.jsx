@@ -594,6 +594,11 @@ export default function TmCalendar() {
                         <div key={idx} className="tm-lead-memo">
                           <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
                           <div className="tm-lead-memo-content">{memo.memo_content}</div>
+                          {memo.tm_id ? (
+                            <div className="tm-lead-memo-time">
+                              작성 TM: {memo.tm_name || memo.tm_id}
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>

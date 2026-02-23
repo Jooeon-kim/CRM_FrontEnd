@@ -875,7 +875,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                           ) : (
                             <div className="tm-lead-memo-content">{memo.memo_content}</div>
                           )}
-                          {memo.tm_id && String(memo.tm_id) !== String(user?.id) ? (
+                          {memo.tm_id ? (
                             <div className="tm-lead-memo-time">
                               작성 TM: {memo.tm_name || memo.tm_id}
                             </div>
