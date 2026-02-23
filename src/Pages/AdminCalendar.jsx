@@ -829,7 +829,7 @@ export default function AdminCalendar() {
                       <div className="tm-lead-memo-content">{row.content}</div>
                       <button
                         type="button"
-                        style={{ marginTop: '6px' }}
+                        style={{ marginTop: '6px', width: 'auto', alignSelf: 'flex-start', padding: '4px 10px' }}
                         onClick={() => openEditCompanySchedule(row)}
                       >
                         수정
