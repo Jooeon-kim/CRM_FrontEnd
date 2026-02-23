@@ -1011,11 +1011,17 @@ input {
 
 .db-list-row {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr 1fr 0.9fr 0.8fr 0.8fr 2.6fr 1fr 1.1fr 0.9fr 1fr 0.6fr;
+  grid-template-columns: 1fr 1fr 0.95fr 1fr 0.9fr 0.75fr 0.8fr 3.2fr 1fr 1.1fr 0.8fr 1fr 0.55fr;
   gap: 0.4rem;
   padding: 0.55rem 0.7rem;
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   font-size: 0.9rem;
+}
+
+.db-list-row > div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tm-db-table .tm-db-row {
