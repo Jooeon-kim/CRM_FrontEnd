@@ -424,7 +424,7 @@ export default function AdminCalendar() {
                 }}
               >
                 <div className="tm-calendar-date">{date.getDate()}</div>
-                {count ? <div className="tm-calendar-count">{count}명</div> : null}
+                {count ? <div className="tm-calendar-count">예약: {count}명</div> : null}
                 {daySchedules.map((item) => (
                   <div
                     key={`sch-${item.id}`}
