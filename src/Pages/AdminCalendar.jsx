@@ -445,9 +445,9 @@ export default function AdminCalendar() {
                     <div className="tm-calendar-date">{date.getDate()}</div>
                     {hasReservationStatus ? (
                       <div className="tm-calendar-status-row">
-                        {statusCounts['예약'] > 0 ? <span className="tm-calendar-status-badge is-reserved">예약: {statusCounts['예약']}명</span> : null}
-                        {statusCounts['예약부도'] > 0 ? <span className="tm-calendar-status-badge is-noshow">예약부도: {statusCounts['예약부도']}명</span> : null}
-                        {statusCounts['내원완료'] > 0 ? <span className="tm-calendar-status-badge is-visited">내원완료: {statusCounts['내원완료']}명</span> : null}
+                        {statusCounts['예약'] > 0 ? <span className="tm-calendar-status-badge is-reserved">예약{statusCounts['예약']}명</span> : null}
+                        {statusCounts['예약부도'] > 0 ? <span className="tm-calendar-status-badge is-noshow">부도{statusCounts['예약부도']}명</span> : null}
+                        {statusCounts['내원완료'] > 0 ? <span className="tm-calendar-status-badge is-visited">완료{statusCounts['내원완료']}명</span> : null}
                       </div>
                     ) : null}
                     {daySchedules.map((item) => (

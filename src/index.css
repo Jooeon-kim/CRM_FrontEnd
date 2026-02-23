@@ -2250,21 +2250,22 @@ input {
   align-items: center;
   gap: 0.25rem;
   flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
+  overflow: hidden;
 }
 
 .tm-calendar-status-badge {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
-  font-size: 0.72rem;
+  max-width: 100%;
+  font-size: 0.64rem;
   font-weight: 700;
-  padding: 0.16rem 0.42rem;
+  padding: 0.1rem 0.3rem;
   border-radius: 999px;
   color: #ffffff;
   border: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tm-calendar-status-badge.is-reserved {
