@@ -2263,6 +2263,7 @@ input {
   font-size: 0.68rem;
   font-weight: 700;
   padding: 0 0.3rem;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

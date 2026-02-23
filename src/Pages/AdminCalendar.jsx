@@ -586,6 +586,7 @@ export default function AdminCalendar() {
               >
                 {isCurrentMonth ? (
                   <>
+                    <div className="tm-calendar-date">{date.getDate()}</div>
                     {dayCompanyBars.length > 0 ? (
                       <div className="tm-calendar-company-bars">
                         {dayCompanyBars.map((bar) => (
@@ -599,7 +600,6 @@ export default function AdminCalendar() {
                         ))}
                       </div>
                     ) : null}
-                    <div className="tm-calendar-date">{date.getDate()}</div>
                     {hasReservationStatus ? (
                       <div className="tm-calendar-status-row">
                         {statusCounts['예약'] > 0 ? <span className="tm-calendar-status-badge is-reserved">예약:{statusCounts['예약']}명</span> : null}
