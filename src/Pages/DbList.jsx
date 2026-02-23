@@ -246,6 +246,9 @@ export default function DbList() {
     if (key === '배정날짜') {
       return value ? formatUtcAsKstDateTime(value) : '-'
     }
+    if (key === '콜_날짜시간') {
+      return value ? formatUtcAsKstDateTime(value) : '-'
+    }
     if (key === '인입날짜' || key === '배정날짜' || key === '콜_날짜시간' || key === '최근메모시간') {
       return value ? formatDateTime(value) : '-'
     }
@@ -430,11 +433,14 @@ export default function DbList() {
         params: {
           tm: tmFilter,
           status: statusFilter,
+          name: nameQuery,
+          phone: phoneQuery,
           callMin,
           missMin,
           event: eventFilter === 'all' ? '' : eventFilter,
           region: regionQuery,
           memo: memoQuery,
+          assignedTodayOnly: assignedTodayOnly ? '1' : '',
         },
       })
       const blob = new Blob([response.data], {
