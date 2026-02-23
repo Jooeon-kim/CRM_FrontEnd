@@ -421,7 +421,8 @@ export default function TmCalendar() {
               }
             : row
         )
-        if (form.status !== '예약') {
+        const keepInCalendar = isCalendarStatus(form.status)
+        if (!keepInCalendar) {
           return updated.filter((row) => row.id !== activeLead.id)
         }
         return updated
