@@ -174,6 +174,19 @@ export default function DbList() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
+  const formatUtcAsKstDateTime = (value) => {
+    if (!value) return ''
+    const utc = parseUtcDateTime(value)
+    if (!utc) return String(value)
+    const kst = new Date(utc.getTime() + 9 * 60 * 60 * 1000)
+    const yyyy = kst.getUTCFullYear()
+    const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(kst.getUTCDate()).padStart(2, '0')
+    const hh = String(kst.getUTCHours()).padStart(2, '0')
+    const min = String(kst.getUTCMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+  }
+
   const formatReservationDateTime = (value) => {
     if (!value) return ''
     const date = parseDateTimeLocal(value)
@@ -229,6 +242,9 @@ export default function DbList() {
   const formatCell = (key, value) => {
     if (key === '예약_내원일시') {
       return value ? formatReservationDateTime(value) : '-'
+    }
+    if (key === '배정날짜') {
+      return value ? formatUtcAsKstDateTime(value) : '-'
     }
     if (key === '인입날짜' || key === '배정날짜' || key === '콜_날짜시간' || key === '최근메모시간') {
       return value ? formatDateTime(value) : '-'
