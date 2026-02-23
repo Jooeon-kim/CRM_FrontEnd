@@ -464,35 +464,39 @@ export default function TmCalendar() {
           ))}
           {calendarCells.map((date) => {
             const key = formatDateKey(date)
-            const count = (reservationsByDate.get(key) || []).length
             const daySchedules = schedulesByDate.get(key) || []
             const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
+            const count = isCurrentMonth ? (reservationsByDate.get(key) || []).length : 0
             const isToday = key === formatDateKey(new Date())
             const isWeekend = date.getDay() === 0 || date.getDay() === 6
             return (
               <button
                 type="button"
                 key={key}
-                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-outside'}${count ? ' has-reservation' : ''}${isToday ? ' is-today' : ''}${isWeekend ? ' is-weekend' : ''}`}
+                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-blank'}${count ? ' has-reservation' : ''}${isToday && isCurrentMonth ? ' is-today' : ''}${isWeekend && isCurrentMonth ? ' is-weekend' : ''}`}
                 onClick={() => {
                   if (!count) return
                   setSelectedDate(key)
                 }}
               >
-                <div className="tm-calendar-date">{date.getDate()}</div>
-                {count ? <div className="tm-calendar-count">예약: {count}명</div> : null}
-                {daySchedules.map((item) => (
-                  <div
-                    key={`sch-${item.id}`}
-                    className={`tm-calendar-schedule-line ${getScheduleClassName(item)}${String(item.tm_id || '') === String(user?.id || '') ? ' is-editable' : ''}`.trim()}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      openEditScheduleModal(item)
-                    }}
-                  >
-                    {(item.tm_name || '-') + ' ' + getScheduleTypeLabel(item)}
-                  </div>
-                ))}
+                {isCurrentMonth ? (
+                  <>
+                    <div className="tm-calendar-date">{date.getDate()}</div>
+                    {count ? <div className="tm-calendar-count">예약: {count}명</div> : null}
+                    {daySchedules.map((item) => (
+                      <div
+                        key={`sch-${item.id}`}
+                        className={`tm-calendar-schedule-line ${getScheduleClassName(item)}${String(item.tm_id || '') === String(user?.id || '') ? ' is-editable' : ''}`.trim()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openEditScheduleModal(item)
+                        }}
+                      >
+                        {(item.tm_name || '-') + ' ' + getScheduleTypeLabel(item)}
+                      </div>
+                    ))}
+                  </>
+                ) : null}
               </button>
             )
           })}

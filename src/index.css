@@ -2192,9 +2192,9 @@ input {
   border-right: none;
 }
 
-.tm-calendar-cell.is-outside {
-  background: #f8fafc;
-  color: rgba(15, 23, 42, 0.35);
+.tm-calendar-cell.is-blank {
+  background: #ffffff;
+  cursor: default;
 }
 
 .tm-calendar-cell.has-reservation {
