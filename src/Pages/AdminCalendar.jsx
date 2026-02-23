@@ -126,6 +126,9 @@ const buildCompanyBarsByDate = (monthDate, rows) => {
     const visibleEnd = srcEnd > monthEnd ? monthEnd : srcEnd
     if (visibleEnd < visibleStart) return
 
+    const dayCount = Math.floor((visibleEnd.getTime() - visibleStart.getTime()) / (24 * 60 * 60 * 1000)) + 1
+    const labelIndex = Math.floor((dayCount - 1) / 2)
+    let dayIndex = 0
     for (const d = new Date(visibleStart); d <= visibleEnd; d.setDate(d.getDate() + 1)) {
       const key = formatDateKey(d)
       const list = map.get(key) || []
@@ -134,8 +137,10 @@ const buildCompanyBarsByDate = (monthDate, rows) => {
         content: String(row.content || '').trim(),
         isStart: isSameDate(d, visibleStart),
         isEnd: isSameDate(d, visibleEnd),
+        showLabel: dayIndex === labelIndex,
       })
       map.set(key, list)
+      dayIndex += 1
     }
   })
 
@@ -606,7 +611,7 @@ export default function AdminCalendar() {
                               if (target) openEditCompanySchedule(target)
                             }}
                           >
-                            {bar.isStart ? (bar.content || '회사일정') : '\u00A0'}
+                            {bar.showLabel ? (bar.content || '회사일정') : '\u00A0'}
                           </div>
                         ))}
                       </div>

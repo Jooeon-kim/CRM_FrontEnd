@@ -2252,12 +2252,14 @@ input {
   flex-direction: column;
   gap: 0.12rem;
   margin-bottom: 0.12rem;
+  margin-left: -1px;
+  margin-right: -1px;
 }
 
 .tm-calendar-company-bar {
   height: 18px;
   line-height: 18px;
-  width: 100%;
+  width: calc(100% + 2px);
   background: #7c3aed;
   color: #ffffff;
   font-size: 0.68rem;
