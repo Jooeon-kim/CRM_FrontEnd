@@ -18,6 +18,7 @@ const buildTimes = () => {
 
 const timeOptions = buildTimes()
 const recallHourOptions = Array.from({ length: 12 }, (_, idx) => String(idx + 1))
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 
 const parseDateTimeLocal = (value) => {
   if (!value) return null
@@ -50,6 +51,52 @@ const parseDateTimeLocal = (value) => {
   }
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const parseUtcDateTime = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (plain) {
+    const utc = new Date(Date.UTC(
+      Number(plain[1]),
+      Number(plain[2]) - 1,
+      Number(plain[3]),
+      Number(plain[4]),
+      Number(plain[5]),
+      Number(plain[6] || '0')
+    ))
+    return Number.isNaN(utc.getTime()) ? null : utc
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const toKstDateTimeFromUtc = (value) => {
+  const utc = parseUtcDateTime(value)
+  if (!utc) return null
+  return new Date(utc.getTime() + KST_OFFSET_MS)
+}
+
+const toKstDateKeyFromUtc = (value) => {
+  const kst = toKstDateTimeFromUtc(value)
+  if (!kst) return ''
+  const yyyy = kst.getUTCFullYear()
+  const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(kst.getUTCDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const formatUtcAsKstDateTime = (value) => {
+  const kst = toKstDateTimeFromUtc(value)
+  if (!kst) return String(value || '-')
+  const yyyy = kst.getUTCFullYear()
+  const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(kst.getUTCDate()).padStart(2, '0')
+  const hh = String(kst.getUTCHours()).padStart(2, '0')
+  const min = String(kst.getUTCMinutes()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
 }
 
 const toDateTimeValue = (value) => {
@@ -222,14 +269,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const isAssignedToday = (lead) => {
     const value = getAssignedDateValue(lead)
     if (!value) return false
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return false
-    const today = new Date()
-    return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    )
+    const todayKst = toKstDateKeyFromUtc(new Date().toISOString())
+    return toKstDateKeyFromUtc(value) === todayKst
   }
 
   const visibleColumns = assignedTodayOnly
@@ -503,8 +544,12 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       const bBase = assignedTodayOnly
         ? getAssignedDateValue(b)
         : b?.['인입날짜']
-      const aTime = new Date(aBase).getTime()
-      const bTime = new Date(bBase).getTime()
+      const aTime = assignedTodayOnly
+        ? (parseUtcDateTime(aBase)?.getTime() ?? Number.NaN)
+        : (parseDateTimeLocal(aBase)?.getTime() ?? Number.NaN)
+      const bTime = assignedTodayOnly
+        ? (parseUtcDateTime(bBase)?.getTime() ?? Number.NaN)
+        : (parseDateTimeLocal(bBase)?.getTime() ?? Number.NaN)
       if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0
       if (Number.isNaN(aTime)) return 1
       if (Number.isNaN(bTime)) return -1
@@ -593,7 +638,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             col === '연락처'
               ? formatPhone(row[col])
             : col === '배정날짜'
-              ? formatDateTime(getAssignedDateValue(row))
+              ? formatUtcAsKstDateTime(getAssignedDateValue(row))
             : col === '인입날짜' || col === '배정날짜' || col === '예약_내원일시'
               ? formatDateTime(row[col])
               : row[col] ?? ''
@@ -742,7 +787,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                   key === '연락처'
                     ? formatPhone(row[key])
                     : key === '배정날짜'
-                      ? formatDateTime(getAssignedDateValue(row))
+                      ? formatUtcAsKstDateTime(getAssignedDateValue(row))
                     : key === '리콜_예정일시'
                       ? formatDateTime(row[key])
                     : key === '인입날짜' || key === '배정날짜' || key === '예약_내원일시'

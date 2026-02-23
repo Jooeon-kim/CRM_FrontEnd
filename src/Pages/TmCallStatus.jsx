@@ -16,6 +16,7 @@ const buildTimes = () => {
 }
 
 const timeOptions = buildTimes()
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 
 const parseDateTimeLocal = (value) => {
   if (!value) return null
@@ -47,6 +48,41 @@ const parseDateTimeLocal = (value) => {
   }
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const parseUtcDateTime = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (plain) {
+    const utc = new Date(Date.UTC(
+      Number(plain[1]),
+      Number(plain[2]) - 1,
+      Number(plain[3]),
+      Number(plain[4]),
+      Number(plain[5]),
+      Number(plain[6] || '0')
+    ))
+    return Number.isNaN(utc.getTime()) ? null : utc
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const toKstDateTimeFromUtc = (value) => {
+  const utc = parseUtcDateTime(value)
+  if (!utc) return null
+  return new Date(utc.getTime() + KST_OFFSET_MS)
+}
+
+const toKstDateKeyFromUtc = (value) => {
+  const kst = toKstDateTimeFromUtc(value)
+  if (!kst) return ''
+  const yyyy = kst.getUTCFullYear()
+  const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(kst.getUTCDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 const normalizeRegionForChart = (value) => {
@@ -208,24 +244,13 @@ export default function TmCallStatus() {
 
   const isAssignedToday = (value) => {
     if (!value) return false
-    const date = parseDateTimeLocal(value)
-    if (!date) return false
-    const today = new Date()
-    return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    )
+    const todayKst = toKstDateKeyFromUtc(new Date().toISOString())
+    return toKstDateKeyFromUtc(value) === todayKst
   }
 
-  const toDateKey = (value) => {
+  const toAssignedDateKey = (value) => {
     if (!value) return ''
-    const date = parseDateTimeLocal(value)
-    if (!date) return ''
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
+    return toKstDateKeyFromUtc(value)
   }
 
   const getAssignedDateValue = (row) =>
@@ -233,7 +258,7 @@ export default function TmCallStatus() {
 
   const applyQuickRange = (mode) => {
     const today = new Date()
-    const todayKey = toDateKey(today)
+    const todayKey = toKstDateKeyFromUtc(today.toISOString())
     if (mode === 'today') {
       setAssignedDateFrom(todayKey)
       setAssignedDateTo(todayKey)
@@ -242,7 +267,7 @@ export default function TmCallStatus() {
     if (mode === 'yesterday') {
       const d = new Date(today)
       d.setDate(d.getDate() - 1)
-      const key = toDateKey(d)
+      const key = toKstDateKeyFromUtc(d.toISOString())
       setAssignedDateFrom(key)
       setAssignedDateTo(key)
       return
@@ -250,7 +275,7 @@ export default function TmCallStatus() {
     if (mode === 'last7') {
       const start = new Date(today)
       start.setDate(start.getDate() - 6)
-      setAssignedDateFrom(toDateKey(start))
+      setAssignedDateFrom(toKstDateKeyFromUtc(start.toISOString()))
       setAssignedDateTo(todayKey)
       return
     }
@@ -345,7 +370,8 @@ export default function TmCallStatus() {
     }
     if (assignedDateFrom || assignedDateTo) {
       base = base.filter((row) => {
-        const key = toDateKey(getAssignedDateValue(row))
+        const key = toAssignedDateKey(getAssignedDateValue(row))
+
         if (!key) return false
         if (assignedDateFrom && key < assignedDateFrom) return false
         if (assignedDateTo && key > assignedDateTo) return false
