@@ -2226,6 +2226,12 @@ input {
   text-overflow: ellipsis;
 }
 
+.tm-calendar-schedule-line.is-off {
+  color: #991b1b;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
 .tm-calendar-schedule-line.is-editable {
   cursor: pointer;
 }

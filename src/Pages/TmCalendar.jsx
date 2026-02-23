@@ -126,6 +126,11 @@ const getScheduleTypeLabel = (item) => {
   return type || '-'
 }
 
+const getScheduleClassName = (item) => {
+  const type = String(item?.schedule_type || '').trim()
+  return type === '휴무' ? 'is-off' : ''
+}
+
 export default function TmCalendar() {
   const { user } = useSelector((state) => state.auth)
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -478,7 +483,7 @@ export default function TmCalendar() {
                 {daySchedules.map((item) => (
                   <div
                     key={`sch-${item.id}`}
-                    className={`tm-calendar-schedule-line${String(item.tm_id || '') === String(user?.id || '') ? ' is-editable' : ''}`}
+                    className={`tm-calendar-schedule-line ${getScheduleClassName(item)}${String(item.tm_id || '') === String(user?.id || '') ? ' is-editable' : ''}`.trim()}
                     onClick={(e) => {
                       e.stopPropagation()
                       openEditScheduleModal(item)
