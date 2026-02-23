@@ -117,6 +117,49 @@ const buildMonthRange = (monthDate) => {
   }
 }
 
+const parseDateOnly = (value) => {
+  const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return null
+  const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+const isSameDate = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate()
+
+const buildCompanyBarsByDate = (monthDate, rows) => {
+  const map = new Map()
+  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)
+
+  ;(rows || []).forEach((row) => {
+    const srcStart = parseDateOnly(row.start_date)
+    const srcEnd = parseDateOnly(row.end_date)
+    if (!srcStart || !srcEnd) return
+    if (srcEnd < srcStart) return
+
+    const visibleStart = srcStart < monthStart ? monthStart : srcStart
+    const visibleEnd = srcEnd > monthEnd ? monthEnd : srcEnd
+    if (visibleEnd < visibleStart) return
+
+    for (const d = new Date(visibleStart); d <= visibleEnd; d.setDate(d.getDate() + 1)) {
+      const key = formatDateKey(d)
+      const list = map.get(key) || []
+      list.push({
+        id: row.id,
+        content: String(row.content || '').trim(),
+        isStart: isSameDate(d, visibleStart),
+        isEnd: isSameDate(d, visibleEnd),
+      })
+      map.set(key, list)
+    }
+  })
+
+  return map
+}
+
 const getScheduleTypeLabel = (item) => {
   const type = String(item?.schedule_type || '').trim()
   if (type === '기타') {
@@ -170,6 +213,7 @@ export default function TmCalendar() {
     customType: '',
     memo: '',
   })
+  const [companySchedules, setCompanySchedules] = useState([])
 
   const loadReservations = async (withLoading = false) => {
     if (!user?.id) return
@@ -201,10 +245,15 @@ export default function TmCalendar() {
     const loadSchedules = async () => {
       try {
         const { from, to } = buildMonthRange(currentMonth)
-        const res = await api.get('/tm/schedules', { params: { from, to } })
-        setSchedules(Array.isArray(res.data) ? res.data : [])
+        const [tmRes, companyRes] = await Promise.all([
+          api.get('/tm/schedules', { params: { from, to } }),
+          api.get('/company/schedules', { params: { from, to } }),
+        ])
+        setSchedules(Array.isArray(tmRes.data) ? tmRes.data : [])
+        setCompanySchedules(Array.isArray(companyRes.data) ? companyRes.data : [])
       } catch {
         setSchedules([])
+        setCompanySchedules([])
       }
     }
     loadSchedules()
@@ -277,6 +326,11 @@ export default function TmCalendar() {
     }
     return cells
   }, [currentMonth])
+
+  const companyBarsByDate = useMemo(
+    () => buildCompanyBarsByDate(currentMonth, companySchedules),
+    [currentMonth, companySchedules]
+  )
 
   const selectedReservations = selectedDate ? reservationsByDate.get(selectedDate) || [] : []
 
@@ -459,6 +513,7 @@ export default function TmCalendar() {
             const daySchedules = schedulesByDate.get(key) || []
             const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
             const dayReservations = isCurrentMonth ? (reservationsByDate.get(key) || []) : []
+            const dayCompanyBars = isCurrentMonth ? (companyBarsByDate.get(key) || []) : []
             const statusCounts = dayReservations.reduce((acc, row) => {
               const statusKey = getReservationStatus(row['상태'])
               if (statusKey) acc[statusKey] = (acc[statusKey] || 0) + 1
@@ -479,6 +534,19 @@ export default function TmCalendar() {
               >
                 {isCurrentMonth ? (
                   <>
+                    {dayCompanyBars.length > 0 ? (
+                      <div className="tm-calendar-company-bars">
+                        {dayCompanyBars.map((bar) => (
+                          <div
+                            key={`company-${bar.id}-${key}`}
+                            className={`tm-calendar-company-bar${bar.isStart ? ' is-start' : ''}${bar.isEnd ? ' is-end' : ''}`}
+                            title={bar.content || '회사일정'}
+                          >
+                            {bar.isStart ? (bar.content || '회사일정') : '\u00A0'}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                     <div className="tm-calendar-date">{date.getDate()}</div>
                     {hasReservationStatus ? (
                       <div className="tm-calendar-status-row">

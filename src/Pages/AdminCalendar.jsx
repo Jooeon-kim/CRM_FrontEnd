@@ -99,6 +99,49 @@ const buildMonthRange = (monthDate) => {
   }
 }
 
+const parseDateOnly = (value) => {
+  const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return null
+  const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+const isSameDate = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate()
+
+const buildCompanyBarsByDate = (monthDate, rows) => {
+  const map = new Map()
+  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)
+
+  ;(rows || []).forEach((row) => {
+    const srcStart = parseDateOnly(row.start_date)
+    const srcEnd = parseDateOnly(row.end_date)
+    if (!srcStart || !srcEnd) return
+    if (srcEnd < srcStart) return
+
+    const visibleStart = srcStart < monthStart ? monthStart : srcStart
+    const visibleEnd = srcEnd > monthEnd ? monthEnd : srcEnd
+    if (visibleEnd < visibleStart) return
+
+    for (const d = new Date(visibleStart); d <= visibleEnd; d.setDate(d.getDate() + 1)) {
+      const key = formatDateKey(d)
+      const list = map.get(key) || []
+      list.push({
+        id: row.id,
+        content: String(row.content || '').trim(),
+        isStart: isSameDate(d, visibleStart),
+        isEnd: isSameDate(d, visibleEnd),
+      })
+      map.set(key, list)
+    }
+  })
+
+  return map
+}
+
 const getScheduleTypeLabel = (item) => {
   const type = String(item?.schedule_type || '').trim()
   if (type === '기타') {
@@ -144,6 +187,15 @@ export default function AdminCalendar() {
     customType: '',
     memo: '',
   })
+  const [companyScheduleModalOpen, setCompanyScheduleModalOpen] = useState(false)
+  const [companyScheduleSaving, setCompanyScheduleSaving] = useState(false)
+  const [companyScheduleEditId, setCompanyScheduleEditId] = useState(null)
+  const [companySchedules, setCompanySchedules] = useState([])
+  const [companyScheduleForm, setCompanyScheduleForm] = useState({
+    startDate: toDateInput(new Date()),
+    endDate: toDateInput(new Date()),
+    content: '',
+  })
 
   useEffect(() => {
     const load = async () => {
@@ -182,6 +234,19 @@ export default function AdminCalendar() {
       }
     }
     loadSchedules()
+  }, [currentMonth])
+
+  useEffect(() => {
+    const loadCompanySchedules = async () => {
+      try {
+        const { from, to } = buildMonthRange(currentMonth)
+        const res = await api.get('/company/schedules', { params: { from, to } })
+        setCompanySchedules(Array.isArray(res.data) ? res.data : [])
+      } catch {
+        setCompanySchedules([])
+      }
+    }
+    loadCompanySchedules()
   }, [currentMonth])
 
   const tmMap = useMemo(() => {
@@ -279,6 +344,11 @@ export default function AdminCalendar() {
     return cells
   }, [currentMonth])
 
+  const companyBarsByDate = useMemo(
+    () => buildCompanyBarsByDate(currentMonth, companySchedules),
+    [currentMonth, companySchedules]
+  )
+
   const selectedReservations = selectedDate ? reservationsByDate.get(selectedDate) || [] : []
 
   const openCreateScheduleModal = () => {
@@ -363,6 +433,72 @@ export default function AdminCalendar() {
     }
   }
 
+  const openCompanyScheduleModal = () => {
+    const today = toDateInput(new Date())
+    setCompanyScheduleForm({
+      startDate: today,
+      endDate: today,
+      content: '',
+    })
+    setCompanyScheduleEditId(null)
+    setCompanyScheduleModalOpen(true)
+  }
+
+  const closeCompanyScheduleModal = () => {
+    setCompanyScheduleModalOpen(false)
+    setCompanyScheduleEditId(null)
+  }
+
+  const openEditCompanySchedule = (item) => {
+    setCompanyScheduleEditId(item.id)
+    setCompanyScheduleForm({
+      startDate: String(item.start_date || '').slice(0, 10),
+      endDate: String(item.end_date || '').slice(0, 10),
+      content: String(item.content || ''),
+    })
+    setCompanyScheduleModalOpen(true)
+  }
+
+  const handleCompanyScheduleSave = async () => {
+    if (!companyScheduleForm.startDate || !companyScheduleForm.endDate || !companyScheduleForm.content.trim()) return
+    if (companyScheduleForm.endDate < companyScheduleForm.startDate) return
+    try {
+      setCompanyScheduleSaving(true)
+      const payload = {
+        startDate: companyScheduleForm.startDate,
+        endDate: companyScheduleForm.endDate,
+        content: companyScheduleForm.content.trim(),
+      }
+      if (companyScheduleEditId) {
+        await api.patch(`/company/schedules/${companyScheduleEditId}`, payload)
+      } else {
+        await api.post('/company/schedules', payload)
+      }
+      const { from, to } = buildMonthRange(currentMonth)
+      const res = await api.get('/company/schedules', { params: { from, to } })
+      setCompanySchedules(Array.isArray(res.data) ? res.data : [])
+      setCompanyScheduleModalOpen(false)
+      setCompanyScheduleEditId(null)
+    } finally {
+      setCompanyScheduleSaving(false)
+    }
+  }
+
+  const handleCompanyScheduleDelete = async () => {
+    if (!companyScheduleEditId) return
+    try {
+      setCompanyScheduleSaving(true)
+      await api.delete(`/company/schedules/${companyScheduleEditId}`)
+      const { from, to } = buildMonthRange(currentMonth)
+      const res = await api.get('/company/schedules', { params: { from, to } })
+      setCompanySchedules(Array.isArray(res.data) ? res.data : [])
+      setCompanyScheduleModalOpen(false)
+      setCompanyScheduleEditId(null)
+    } finally {
+      setCompanyScheduleSaving(false)
+    }
+  }
+
   return (
     <div className="tm-calendar">
       <div className="tm-calendar-header">
@@ -399,6 +535,7 @@ export default function AdminCalendar() {
           <button
             type="button"
             className="tm-add-button"
+            onClick={openCompanyScheduleModal}
           >
             회사일정기입
           </button>
@@ -428,6 +565,7 @@ export default function AdminCalendar() {
             const daySchedules = schedulesByDate.get(key) || []
             const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
             const dayReservations = isCurrentMonth ? (reservationsByDate.get(key) || []) : []
+            const dayCompanyBars = isCurrentMonth ? (companyBarsByDate.get(key) || []) : []
             const statusCounts = dayReservations.reduce((acc, row) => {
               const statusKey = getReservationStatus(row['상태'])
               if (statusKey) acc[statusKey] = (acc[statusKey] || 0) + 1
@@ -448,6 +586,19 @@ export default function AdminCalendar() {
               >
                 {isCurrentMonth ? (
                   <>
+                    {dayCompanyBars.length > 0 ? (
+                      <div className="tm-calendar-company-bars">
+                        {dayCompanyBars.map((bar) => (
+                          <div
+                            key={`company-${bar.id}-${key}`}
+                            className={`tm-calendar-company-bar${bar.isStart ? ' is-start' : ''}${bar.isEnd ? ' is-end' : ''}`}
+                            title={bar.content || '회사일정'}
+                          >
+                            {bar.isStart ? (bar.content || '회사일정') : '\u00A0'}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                     <div className="tm-calendar-date">{date.getDate()}</div>
                     {hasReservationStatus ? (
                       <div className="tm-calendar-status-row">
@@ -605,6 +756,77 @@ export default function AdminCalendar() {
               <button type="button" onClick={handleScheduleSave} disabled={scheduleSaving}>
                 {scheduleSaving ? '저장 중..' : '저장'}
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {companyScheduleModalOpen ? (
+        <div className="tm-lead-modal">
+          <div className="tm-lead-backdrop" onClick={closeCompanyScheduleModal} />
+          <div className="tm-lead-card">
+            <div className="tm-lead-header">
+              <h3>{companyScheduleEditId ? '회사 일정 수정' : '회사 일정 기입'}</h3>
+              <button type="button" onClick={closeCompanyScheduleModal}>닫기</button>
+            </div>
+            <div className="tm-lead-form">
+              <label>
+                시작일
+                <input
+                  type="date"
+                  value={companyScheduleForm.startDate}
+                  onChange={(e) => setCompanyScheduleForm((prev) => ({ ...prev, startDate: e.target.value }))}
+                />
+              </label>
+              <label>
+                종료일
+                <input
+                  type="date"
+                  value={companyScheduleForm.endDate}
+                  onChange={(e) => setCompanyScheduleForm((prev) => ({ ...prev, endDate: e.target.value }))}
+                />
+              </label>
+              <label>
+                내용
+                <textarea
+                  rows="3"
+                  value={companyScheduleForm.content}
+                  onChange={(e) => setCompanyScheduleForm((prev) => ({ ...prev, content: e.target.value }))}
+                  placeholder="회사 일정 내용을 입력하세요"
+                />
+              </label>
+            </div>
+            <div className="tm-lead-actions">
+              {companyScheduleEditId ? (
+                <button type="button" onClick={handleCompanyScheduleDelete} disabled={companyScheduleSaving}>삭제</button>
+              ) : null}
+              <button type="button" onClick={closeCompanyScheduleModal}>취소</button>
+              <button type="button" onClick={handleCompanyScheduleSave} disabled={companyScheduleSaving}>
+                {companyScheduleSaving ? '저장 중...' : '저장'}
+              </button>
+            </div>
+            <div className="tm-lead-memos" style={{ marginTop: '10px' }}>
+              <div className="tm-lead-memos-title">이번 달 회사 일정</div>
+              {companySchedules.length === 0 ? (
+                <div className="tm-lead-memos-empty">등록된 일정이 없습니다.</div>
+              ) : (
+                <div className="tm-lead-memos-list">
+                  {companySchedules.map((row) => (
+                    <div key={row.id} className="tm-lead-memo">
+                      <div className="tm-lead-memo-time">
+                        {String(row.start_date || '').slice(0, 10)} ~ {String(row.end_date || '').slice(0, 10)}
+                      </div>
+                      <div className="tm-lead-memo-content">{row.content}</div>
+                      <button
+                        type="button"
+                        style={{ marginTop: '6px' }}
+                        onClick={() => openEditCompanySchedule(row)}
+                      >
+                        수정
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

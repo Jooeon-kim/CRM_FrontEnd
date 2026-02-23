@@ -2247,6 +2247,38 @@ input {
   margin-bottom: 0.15rem;
 }
 
+.tm-calendar-company-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  margin-bottom: 0.12rem;
+}
+
+.tm-calendar-company-bar {
+  height: 18px;
+  line-height: 18px;
+  width: 100%;
+  background: #7c3aed;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0;
+}
+
+.tm-calendar-company-bar.is-start {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.tm-calendar-company-bar.is-end {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
 .tm-calendar-count {
   align-self: flex-start;
   background: #1d4ed8;
