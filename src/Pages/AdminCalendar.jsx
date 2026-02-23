@@ -258,10 +258,12 @@ export default function AdminCalendar() {
   const calendarCells = useMemo(() => {
     const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
     const startDay = start.getDay()
+    const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
+    const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7
     const firstCell = new Date(start)
     firstCell.setDate(start.getDate() - startDay)
     const cells = []
-    for (let i = 0; i < 42; i += 1) {
+    for (let i = 0; i < totalCells; i += 1) {
       const date = new Date(firstCell)
       date.setDate(firstCell.getDate() + i)
       cells.push(date)
