@@ -234,10 +234,10 @@ export default function TmCallStatus() {
   ]
 
   const formatCell = (key, value) => {
-    if (key === '콜_날짜시간') {
+    if (key === '콜_날짜시간' || key === '최근메모시간') {
       return value ? formatUtcAsKstDateTime(value) : '-'
     }
-    if (key === '인입날짜' || key === '콜_날짜시간' || key === '예약_내원일시' || key === '최근메모시간') {
+    if (key === '인입날짜' || key === '예약_내원일시') {
       return value ? formatDateTime(value) : '-'
     }
     if (key === '연락처') {
