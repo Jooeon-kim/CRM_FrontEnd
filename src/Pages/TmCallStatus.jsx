@@ -397,8 +397,42 @@ export default function TmCallStatus() {
   }, [rows, assignedTodayOnly, assignedDateFrom, assignedDateTo])
 
   const filteredRows = useMemo(() => {
-    if (activeTm === 'all') return dateFilteredRows
-    return dateFilteredRows.filter((row) => String(row.tm) === String(activeTm))
+    const base = activeTm === 'all'
+      ? [...dateFilteredRows]
+      : dateFilteredRows.filter((row) => String(row.tm) === String(activeTm))
+
+    const statusPriority = {
+      예약: 1,
+      내원완료: 2,
+      리콜대기: 3,
+      부재중: 4,
+      실패: 5,
+      무효: 6,
+      대기: 7,
+    }
+
+    const normalizeStatus = (value) => {
+      const raw = String(value || '').trim()
+      return raw || '대기'
+    }
+
+    base.sort((a, b) => {
+      const aStatus = normalizeStatus(a['상태'])
+      const bStatus = normalizeStatus(b['상태'])
+      const aPriority = statusPriority[aStatus] || 99
+      const bPriority = statusPriority[bStatus] || 99
+      if (aPriority !== bPriority) return aPriority - bPriority
+
+      const aTime = parseDateTimeLocal(a['콜_날짜시간'])?.getTime()
+        ?? parseDateTimeLocal(a['인입날짜'])?.getTime()
+        ?? 0
+      const bTime = parseDateTimeLocal(b['콜_날짜시간'])?.getTime()
+        ?? parseDateTimeLocal(b['인입날짜'])?.getTime()
+        ?? 0
+      return bTime - aTime
+    })
+
+    return base
   }, [dateFilteredRows, activeTm])
 
   const statusBuckets = ['대기', '부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
