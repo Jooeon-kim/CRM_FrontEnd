@@ -145,7 +145,7 @@ const buildCompanyBarsByDate = (monthDate, rows) => {
     if (visibleEnd < visibleStart) return
 
     const dayCount = Math.floor((visibleEnd.getTime() - visibleStart.getTime()) / (24 * 60 * 60 * 1000)) + 1
-    const labelIndex = Math.floor((dayCount - 1) / 2)
+    const labelIndex = Math.floor(dayCount / 2)
     let dayIndex = 0
     for (const d = new Date(visibleStart); d <= visibleEnd; d.setDate(d.getDate() + 1)) {
       const key = formatDateKey(d)
