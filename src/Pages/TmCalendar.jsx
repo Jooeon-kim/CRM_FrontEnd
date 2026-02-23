@@ -171,29 +171,30 @@ export default function TmCalendar() {
     memo: '',
   })
 
-  useEffect(() => {
-    const load = async () => {
-      if (!user?.id) return
-      try {
-        setLoading(true)
-        const res = await api.get('/dbdata', {
-          params: { tm: user.id },
+  const loadReservations = async (withLoading = false) => {
+    if (!user?.id) return
+    try {
+      if (withLoading) setLoading(true)
+      const res = await api.get('/dbdata', {
+        params: { tm: user.id },
+      })
+      setReservations(
+        (res.data || []).filter((row) => {
+          const status = String(row['상태'] || '').trim()
+          return isCalendarStatus(status) && Boolean(row['예약_내원일시'])
         })
-        setReservations(
-          (res.data || []).filter((row) => {
-            const status = String(row['상태'] || '').trim()
-            return isCalendarStatus(status) && Boolean(row['예약_내원일시'])
-          })
-        )
-        setError('')
-      } catch (err) {
-        setError('예약 데이터를 불러오지 못했습니다.')
-      } finally {
-        setLoading(false)
-      }
+      )
+      setError('')
+    } catch (err) {
+      setError('예약 데이터를 불러오지 못했습니다.')
+    } finally {
+      if (withLoading) setLoading(false)
     }
+  }
 
-    load()
+  useEffect(() => {
+    loadReservations(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
   useEffect(() => {
@@ -405,29 +406,9 @@ export default function TmCalendar() {
         reservationAt,
         phone: activeLead['연락처'] || '',
       })
-      setReservations((prev) => {
-        const updated = prev.map((row) =>
-          row.id === activeLead.id
-            ? {
-                ...row,
-                상태: form.status,
-                거주지: form.region,
-                예약_내원일시: reservationAt || row['예약_내원일시'],
-                콜횟수: (Number(row['콜횟수'] || 0) + (['부재중', '리콜대기', '예약'].includes(form.status) ? 1 : 0)),
-                부재중_횟수: form.status === '부재중' ? Number(row['부재중_횟수'] || 0) + 1 : row['부재중_횟수'],
-                예약부도_횟수: form.status === '예약부도' ? Number(row['예약부도_횟수'] || 0) + 1 : row['예약부도_횟수'],
-                최근메모내용: form.memo || row['최근메모내용'],
-                최근메모시간: form.memo ? new Date().toISOString() : row['최근메모시간'],
-              }
-            : row
-        )
-        const keepInCalendar = isCalendarStatus(form.status)
-        if (!keepInCalendar) {
-          return updated.filter((row) => row.id !== activeLead.id)
-        }
-        return updated
-      })
+      await loadReservations(false)
       setModalOpen(false)
+      setActiveLead(null)
     } catch (err) {
       setError('저장에 실패했습니다.')
     } finally {
