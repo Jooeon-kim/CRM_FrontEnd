@@ -37,7 +37,7 @@ export default function AdminTmReassign() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [nameQuery, setNameQuery] = useState('')
   const [phoneQuery, setPhoneQuery] = useState('')
-  const [eventQuery, setEventQuery] = useState('')
+  const [eventFilter, setEventFilter] = useState('all')
   const [selectedIds, setSelectedIds] = useState([])
   const [targetTmId, setTargetTmId] = useState('')
   const [saving, setSaving] = useState(false)
@@ -75,19 +75,29 @@ export default function AdminTmReassign() {
   )
 
   const normalizedName = nameQuery.trim().toLowerCase()
-  const normalizedEvent = eventQuery.trim().toLowerCase()
   const normalizedPhone = normalizePhoneDigits(phoneQuery)
+  const eventOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          assignedRows
+            .map((row) => String(row['이벤트'] || '').trim())
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, 'ko')),
+    [assignedRows]
+  )
 
   const filteredRows = useMemo(() => {
     return assignedRows.filter((row) => {
       if (fromTm !== 'all' && String(row.tm) !== String(fromTm)) return false
       if (statusFilter !== 'all' && String(row['상태'] || '').trim() !== statusFilter) return false
       if (normalizedName && !String(row['이름'] || '').toLowerCase().includes(normalizedName)) return false
-      if (normalizedEvent && !String(row['이벤트'] || '').toLowerCase().includes(normalizedEvent)) return false
+      if (eventFilter !== 'all' && String(row['이벤트'] || '') !== eventFilter) return false
       if (normalizedPhone && !normalizePhoneDigits(row['연락처']).includes(normalizedPhone)) return false
       return true
     })
-  }, [assignedRows, fromTm, statusFilter, normalizedName, normalizedEvent, normalizedPhone])
+  }, [assignedRows, fromTm, statusFilter, normalizedName, eventFilter, normalizedPhone])
 
   const filteredIdSet = useMemo(
     () => new Set(filteredRows.map((row) => String(row.id))),
@@ -189,8 +199,13 @@ export default function AdminTmReassign() {
           <input value={phoneQuery} onChange={(e) => setPhoneQuery(e.target.value)} placeholder="숫자만 입력" />
         </label>
         <label>
-          이벤트 검색
-          <input value={eventQuery} onChange={(e) => setEventQuery(e.target.value)} placeholder="이벤트명" />
+          이벤트
+          <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}>
+            <option value="all">전체</option>
+            {eventOptions.map((event) => (
+              <option key={event} value={event}>{event}</option>
+            ))}
+          </select>
         </label>
       </div>
 
@@ -251,4 +266,3 @@ export default function AdminTmReassign() {
     </div>
   )
 }
-

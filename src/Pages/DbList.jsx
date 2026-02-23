@@ -27,7 +27,7 @@ export default function DbList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [nameQuery, setNameQuery] = useState('')
   const [phoneQuery, setPhoneQuery] = useState('')
-  const [eventQuery, setEventQuery] = useState('')
+  const [eventFilter, setEventFilter] = useState('all')
   const [callMin, setCallMin] = useState('')
   const [missMin, setMissMin] = useState('')
   const [regionQuery, setRegionQuery] = useState('')
@@ -375,7 +375,6 @@ export default function DbList() {
   const normalizedMemo = memoQuery.trim().toLowerCase()
   const normalizedName = nameQuery.trim().toLowerCase()
   const normalizedPhone = normalizePhoneDigits(phoneQuery)
-  const normalizedEvent = eventQuery.trim().toLowerCase()
   const callMinNum = Number(callMin)
   const missMinNum = Number(missMin)
 
@@ -399,9 +398,7 @@ export default function DbList() {
     const phoneOk =
       !normalizedPhone ||
       normalizePhoneDigits(row['연락처']).includes(normalizedPhone)
-    const eventOk =
-      !normalizedEvent ||
-      String(row['이벤트'] || '').toLowerCase().includes(normalizedEvent)
+    const eventOk = eventFilter === 'all' || String(row['이벤트'] || '') === eventFilter
     const regionOk =
       !normalizedRegion ||
       String(row['거주지'] || '').toLowerCase().includes(normalizedRegion)
@@ -418,7 +415,7 @@ export default function DbList() {
     setStatusFilter('all')
     setNameQuery('')
     setPhoneQuery('')
-    setEventQuery('')
+    setEventFilter('all')
     setCallMin('')
     setMissMin('')
     setRegionQuery('')
@@ -435,7 +432,7 @@ export default function DbList() {
           status: statusFilter,
           callMin,
           missMin,
-          event: eventQuery,
+          event: eventFilter === 'all' ? '' : eventFilter,
           region: regionQuery,
           memo: memoQuery,
         },
@@ -560,12 +557,12 @@ export default function DbList() {
         </label>
         <label>
           이벤트
-          <input
-            type="text"
-            placeholder="검색"
-            value={eventQuery}
-            onChange={(e) => setEventQuery(e.target.value)}
-          />
+          <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}>
+            <option value="all">전체</option>
+            {eventOptions.map((event) => (
+              <option key={event} value={event}>{event}</option>
+            ))}
+          </select>
         </label>
         <label>
           콜횟수 ≥
