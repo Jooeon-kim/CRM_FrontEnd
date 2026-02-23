@@ -2157,7 +2157,7 @@ input {
 
 .tm-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
   border: 1px solid rgba(15, 23, 42, 0.28);
   border-radius: 16px;
   overflow: hidden;
@@ -2186,9 +2186,9 @@ input {
   gap: 0.35rem;
   cursor: pointer;
   text-align: left;
-  height: 171px;
-  min-height: 171px;
-  max-height: 171px;
+  height: 176px;
+  min-height: 176px;
+  max-height: 176px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -2263,25 +2263,20 @@ input {
   font-weight: 700;
   padding: 0.16rem 0.42rem;
   border-radius: 999px;
-  border: 1px solid transparent;
+  color: #ffffff;
+  border: none;
 }
 
 .tm-calendar-status-badge.is-reserved {
-  color: #1d4ed8;
-  background: #eff6ff;
-  border-color: #bfdbfe;
+  background: #1d4ed8;
 }
 
 .tm-calendar-status-badge.is-noshow {
-  color: #b91c1c;
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: #dc2626;
 }
 
 .tm-calendar-status-badge.is-visited {
-  color: #166534;
-  background: #ecfdf5;
-  border-color: #bbf7d0;
+  background: #16a34a;
 }
 
 .tm-calendar-schedule-line {
