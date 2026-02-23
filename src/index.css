@@ -2226,6 +2226,14 @@ input {
   text-overflow: ellipsis;
 }
 
+.tm-calendar-schedule-line.is-editable {
+  cursor: pointer;
+}
+
+.tm-calendar-schedule-line.is-editable:hover {
+  background: #d1fae5;
+}
+
 .tm-calendar-modal {
   position: fixed;
   inset: 0;

@@ -150,6 +150,7 @@ export default function TmCalendar() {
   const [schedules, setSchedules] = useState([])
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
   const [scheduleSaving, setScheduleSaving] = useState(false)
+  const [scheduleEditId, setScheduleEditId] = useState(null)
   const [scheduleForm, setScheduleForm] = useState({
     date: toDateInput(new Date()),
     type: '휴무',
@@ -263,25 +264,71 @@ export default function TmCalendar() {
 
   const selectedReservations = selectedDate ? reservationsByDate.get(selectedDate) || [] : []
 
+  const openCreateScheduleModal = () => {
+    setScheduleEditId(null)
+    setScheduleForm({
+      date: toDateInput(new Date()),
+      type: '휴무',
+      customType: '',
+      memo: '',
+    })
+    setScheduleModalOpen(true)
+  }
+
+  const openEditScheduleModal = (item) => {
+    if (String(item.tm_id || '') !== String(user?.id || '')) return
+    setScheduleEditId(item.id)
+    setScheduleForm({
+      date: String(item.schedule_date || '').slice(0, 10),
+      type: String(item.schedule_type || '휴무'),
+      customType: String(item.custom_type || ''),
+      memo: String(item.memo || ''),
+    })
+    setScheduleModalOpen(true)
+  }
+
   const handleScheduleSave = async () => {
     if (!user?.id || !scheduleForm.date || !scheduleForm.type) return
     if (scheduleForm.type === '기타' && !scheduleForm.customType.trim()) return
     try {
       setScheduleSaving(true)
-      await api.post('/tm/schedules', {
+      const payload = {
         tmId: Number(user.id),
         scheduleDate: scheduleForm.date,
         scheduleType: scheduleForm.type,
         customType: scheduleForm.type === '기타' ? scheduleForm.customType.trim() : '',
         memo: scheduleForm.memo.trim(),
-      })
+      }
+      if (scheduleEditId) {
+        await api.patch(`/tm/schedules/${scheduleEditId}`, payload)
+      } else {
+        await api.post('/tm/schedules', payload)
+      }
       const { from, to } = buildMonthRange(currentMonth)
       const res = await api.get('/tm/schedules', { params: { from, to } })
       setSchedules(Array.isArray(res.data) ? res.data : [])
       setScheduleModalOpen(false)
+      setScheduleEditId(null)
       setScheduleForm((prev) => ({ ...prev, customType: '', memo: '' }))
     } catch {
       setError('일정 저장에 실패했습니다.')
+    } finally {
+      setScheduleSaving(false)
+    }
+  }
+
+  const handleScheduleDelete = async () => {
+    if (!scheduleEditId) return
+    try {
+      setScheduleSaving(true)
+      await api.delete(`/tm/schedules/${scheduleEditId}`)
+      const { from, to } = buildMonthRange(currentMonth)
+      const res = await api.get('/tm/schedules', { params: { from, to } })
+      setSchedules(Array.isArray(res.data) ? res.data : [])
+      setScheduleModalOpen(false)
+      setScheduleEditId(null)
+    } catch {
+      setError('일정 삭제에 실패했습니다.')
     } finally {
       setScheduleSaving(false)
     }
@@ -386,7 +433,7 @@ export default function TmCalendar() {
         <button
           type="button"
           className="tm-add-button"
-          onClick={() => setScheduleModalOpen(true)}
+          onClick={openCreateScheduleModal}
         >
           일정 기입
         </button>
@@ -429,7 +476,14 @@ export default function TmCalendar() {
                 <div className="tm-calendar-date">{date.getDate()}</div>
                 {count ? <div className="tm-calendar-count">{count}명</div> : null}
                 {daySchedules.map((item) => (
-                  <div key={`sch-${item.id}`} className="tm-calendar-schedule-line">
+                  <div
+                    key={`sch-${item.id}`}
+                    className={`tm-calendar-schedule-line${String(item.tm_id || '') === String(user?.id || '') ? ' is-editable' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openEditScheduleModal(item)
+                    }}
+                  >
                     {(item.tm_name || '-') + ' ' + getScheduleTypeLabel(item)}
                   </div>
                 ))}
@@ -641,8 +695,8 @@ export default function TmCalendar() {
           <div className="tm-lead-backdrop" onClick={() => setScheduleModalOpen(false)} />
           <div className="tm-lead-card">
             <div className="tm-lead-header">
-              <h3>일정 기입</h3>
-              <button type="button" onClick={() => setScheduleModalOpen(false)}>닫기</button>
+              <h3>{scheduleEditId ? '일정 수정' : '일정 기입'}</h3>
+              <button type="button" onClick={() => { setScheduleModalOpen(false); setScheduleEditId(null) }}>닫기</button>
             </div>
             <div className="tm-lead-form">
               <label>
@@ -688,7 +742,12 @@ export default function TmCalendar() {
               </label>
             </div>
             <div className="tm-lead-actions">
-              <button type="button" onClick={() => setScheduleModalOpen(false)}>취소</button>
+              {scheduleEditId ? (
+                <button type="button" onClick={handleScheduleDelete} disabled={scheduleSaving}>
+                  삭제
+                </button>
+              ) : null}
+              <button type="button" onClick={() => { setScheduleModalOpen(false); setScheduleEditId(null) }}>취소</button>
               <button type="button" onClick={handleScheduleSave} disabled={scheduleSaving}>
                 {scheduleSaving ? '저장 중..' : '저장'}
               </button>
