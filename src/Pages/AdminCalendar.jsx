@@ -396,6 +396,12 @@ export default function AdminCalendar() {
           >
             TM일정기입
           </button>
+          <button
+            type="button"
+            className="tm-add-button"
+          >
+            회사일정기입
+          </button>
         </div>
         <div className="tm-calendar-nav">
           <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
