@@ -161,6 +161,19 @@ export default function DbList() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
+  const formatMemoDateTimeKst = (value) => {
+    if (!value) return ''
+    const utc = parseUtcDateTime(value)
+    if (!utc) return String(value)
+    const kst = new Date(utc.getTime() + 9 * 60 * 60 * 1000)
+    const yyyy = kst.getUTCFullYear()
+    const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(kst.getUTCDate()).padStart(2, '0')
+    const hh = String(kst.getUTCHours()).padStart(2, '0')
+    const min = String(kst.getUTCMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+  }
+
   const formatReservationDateTime = (value) => {
     if (!value) return ''
     const date = parseDateTimeLocal(value)
@@ -652,7 +665,7 @@ export default function DbList() {
                     <div className="tm-lead-memos-list">
                       {memos.map((memo, idx) => (
                         <div key={idx} className="tm-lead-memo">
-                          <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
+                          <div className="tm-lead-memo-time">{formatMemoDateTimeKst(memo.memo_time)}</div>
                           <div className="tm-lead-memo-content">{memo.memo_content}</div>
                           {memo.tm_id ? (
                             <div className="tm-lead-memo-time">
