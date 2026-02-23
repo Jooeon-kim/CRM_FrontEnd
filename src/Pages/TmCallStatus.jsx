@@ -136,14 +136,15 @@ const normalizeRegionForChart = (value) => {
 }
 
 export default function TmCallStatus() {
+  const todayKstKey = toKstDateKeyFromUtc(new Date().toISOString())
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
   const [activeTm, setActiveTm] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [assignedTodayOnly, setAssignedTodayOnly] = useState(false)
-  const [assignedDateFrom, setAssignedDateFrom] = useState('')
-  const [assignedDateTo, setAssignedDateTo] = useState('')
+  const [assignedDateFrom, setAssignedDateFrom] = useState(todayKstKey)
+  const [assignedDateTo, setAssignedDateTo] = useState(todayKstKey)
   const [modalOpen, setModalOpen] = useState(false)
   const [activeLead, setActiveLead] = useState(null)
   const [memos, setMemos] = useState([])
@@ -554,6 +555,7 @@ export default function TmCallStatus() {
           />
         </label>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('today')}>오늘</button>
+        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('all')}>전체</button>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('yesterday')}>어제</button>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('last7')}>최근7일</button>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('reset')}>날짜 초기화</button>
