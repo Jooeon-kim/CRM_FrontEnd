@@ -131,6 +131,14 @@ const getScheduleClassName = (item) => {
   return type === '휴무' ? 'is-off' : ''
 }
 
+const getReservationStatus = (value) => {
+  const status = String(value || '').replace(/\s+/g, '').trim()
+  if (status.includes('예약부도')) return '예약부도'
+  if (status.includes('내원완료')) return '내원완료'
+  if (status === '예약') return '예약'
+  return ''
+}
+
 export default function TmCalendar() {
   const { user } = useSelector((state) => state.auth)
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -468,23 +476,35 @@ export default function TmCalendar() {
             const key = formatDateKey(date)
             const daySchedules = schedulesByDate.get(key) || []
             const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
-            const count = isCurrentMonth ? (reservationsByDate.get(key) || []).length : 0
+            const dayReservations = isCurrentMonth ? (reservationsByDate.get(key) || []) : []
+            const statusCounts = dayReservations.reduce((acc, row) => {
+              const statusKey = getReservationStatus(row['상태'])
+              if (statusKey) acc[statusKey] = (acc[statusKey] || 0) + 1
+              return acc
+            }, { 예약: 0, 예약부도: 0, 내원완료: 0 })
+            const hasReservationStatus = statusCounts['예약'] > 0 || statusCounts['예약부도'] > 0 || statusCounts['내원완료'] > 0
             const isToday = key === formatDateKey(new Date())
             const isWeekend = date.getDay() === 0 || date.getDay() === 6
             return (
               <button
                 type="button"
                 key={key}
-                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-blank'}${count ? ' has-reservation' : ''}${isToday && isCurrentMonth ? ' is-today' : ''}${isWeekend && isCurrentMonth ? ' is-weekend' : ''}`}
+                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-blank'}${hasReservationStatus ? ' has-reservation' : ''}${isToday && isCurrentMonth ? ' is-today' : ''}${isWeekend && isCurrentMonth ? ' is-weekend' : ''}`}
                 onClick={() => {
-                  if (!count) return
+                  if (!dayReservations.length) return
                   setSelectedDate(key)
                 }}
               >
                 {isCurrentMonth ? (
                   <>
                     <div className="tm-calendar-date">{date.getDate()}</div>
-                    {count ? <div className="tm-calendar-count">예약: {count}명</div> : null}
+                    {hasReservationStatus ? (
+                      <div className="tm-calendar-status-row">
+                        {statusCounts['예약'] > 0 ? <span className="tm-calendar-status-badge is-reserved">예약: {statusCounts['예약']}명</span> : null}
+                        {statusCounts['예약부도'] > 0 ? <span className="tm-calendar-status-badge is-noshow">예약부도: {statusCounts['예약부도']}명</span> : null}
+                        {statusCounts['내원완료'] > 0 ? <span className="tm-calendar-status-badge is-visited">내원완료: {statusCounts['내원완료']}명</span> : null}
+                      </div>
+                    ) : null}
                     {daySchedules.map((item) => (
                       <div
                         key={`sch-${item.id}`}
