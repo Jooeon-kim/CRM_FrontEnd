@@ -217,7 +217,6 @@ export default function AdminDailyReport() {
           <div className="db-list-row db-list-head daily-report-row-admin">
             <div>TM</div>
             <div>{'\uC0C1\uD0DC'}</div>
-            <div>{'\uC2E4\uD328'}</div>
             <div>{'\uB2F9\uC77C \uC608\uC57D'}</div>
             <div>{'\uB2F9\uC77C \uB0B4\uC6D0'}</div>
             <div>{'\uC775\uC77C \uB0B4\uC6D0'}</div>
@@ -229,7 +228,6 @@ export default function AdminDailyReport() {
             <div key={row.id} className="db-list-row daily-report-row-admin">
               <div>{row.tm_name || '-'}</div>
               <div>{row.is_submitted ? '\uC644\uB8CC' : '\uC9C4\uD589\uC911'}</div>
-              <div>{countOf(row, 'manual_failed_count', 'failed_count')}</div>
               <div>{countOf(row, 'manual_reserved_count', 'reserved_count')}</div>
               <div>{countOf(row, 'manual_visit_today_count', 'visit_today_count')}</div>
               <div>{countOf(row, 'manual_visit_nextday_count', 'visit_nextday_count')}</div>
