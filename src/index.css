@@ -1977,6 +1977,14 @@ input {
   color: var(--muted);
 }
 
+.admin-home-line-values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
 @media (max-width: 900px) {
   .admin-home-header {
     flex-direction: column;

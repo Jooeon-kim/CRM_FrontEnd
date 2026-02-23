@@ -428,6 +428,11 @@ export default function AdminHome() {
                       <span key={day.key}>{day.label}</span>
                     ))}
                   </div>
+                  <div className="admin-home-line-values">
+                    {counts.map((value, idx) => (
+                      <span key={`count-${days[idx]?.key || idx}`}>{value}건</span>
+                    ))}
+                  </div>
                 </>
               )
             })()}
