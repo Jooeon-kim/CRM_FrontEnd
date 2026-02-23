@@ -348,6 +348,11 @@ export default function AdminCalendar() {
     () => buildCompanyBarsByDate(currentMonth, companySchedules),
     [currentMonth, companySchedules]
   )
+  const companyScheduleMap = useMemo(() => {
+    const map = new Map()
+    companySchedules.forEach((row) => map.set(Number(row.id), row))
+    return map
+  }, [companySchedules])
 
   const selectedReservations = selectedDate ? reservationsByDate.get(selectedDate) || [] : []
 
@@ -594,6 +599,12 @@ export default function AdminCalendar() {
                             key={`company-${bar.id}-${key}`}
                             className={`tm-calendar-company-bar${bar.isStart ? ' is-start' : ''}${bar.isEnd ? ' is-end' : ''}`}
                             title={bar.content || '회사일정'}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              const target = companyScheduleMap.get(Number(bar.id))
+                              if (target) openEditCompanySchedule(target)
+                            }}
                           >
                             {bar.isStart ? (bar.content || '회사일정') : '\u00A0'}
                           </div>
