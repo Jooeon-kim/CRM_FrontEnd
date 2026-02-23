@@ -119,6 +119,36 @@ export default function DbList() {
     return Number.isNaN(parsed.getTime()) ? null : parsed
   }
 
+  const parseUtcDateTime = (value) => {
+    if (!value) return null
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+    const raw = String(value).trim()
+    const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+    if (plain) {
+      const utc = new Date(Date.UTC(
+        Number(plain[1]),
+        Number(plain[2]) - 1,
+        Number(plain[3]),
+        Number(plain[4]),
+        Number(plain[5]),
+        Number(plain[6] || '0')
+      ))
+      return Number.isNaN(utc.getTime()) ? null : utc
+    }
+    const parsed = new Date(raw)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  const toKstDateKeyFromUtc = (value) => {
+    const utc = parseUtcDateTime(value)
+    if (!utc) return ''
+    const kst = new Date(utc.getTime() + 9 * 60 * 60 * 1000)
+    const yyyy = kst.getUTCFullYear()
+    const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(kst.getUTCDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
   const formatDateTime = (value) => {
     if (!value) return ''
     const date = parseDateTimeLocal(value)
@@ -322,14 +352,8 @@ export default function DbList() {
 
   const isAssignedToday = (value) => {
     if (!value) return false
-    const date = parseDateTimeLocal(value)
-    if (!date) return false
-    const today = new Date()
-    return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    )
+    const todayKst = toKstDateKeyFromUtc(new Date().toISOString())
+    return toKstDateKeyFromUtc(value) === todayKst
   }
 
   const filteredRows = rows.filter((row) => {
