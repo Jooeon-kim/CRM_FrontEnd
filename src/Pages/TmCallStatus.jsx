@@ -669,7 +669,7 @@ export default function TmCallStatus() {
       {filteredRows.length === 0 ? (
         <div className="db-list-empty">표시할 데이터가 없습니다.</div>
       ) : (
-        <div className="db-list-table">
+        <div className="db-list-table tm-call-table">
           <div className="db-list-row db-list-head">
             {visibleColumns.map((key) => (
               <div key={key}>{key}</div>

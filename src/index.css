@@ -1022,6 +1022,14 @@ input {
   grid-template-columns: 0.95fr 0.95fr 0.9fr 0.95fr 0.8fr 0.7fr 0.75fr 4.4fr 0.95fr 1fr 0.75fr 0.95fr 0.5fr;
 }
 
+.tm-call-table .db-list-row {
+  grid-template-columns: 0.9fr 0.9fr 0.85fr 0.9fr 0.75fr 0.65fr minmax(220px, 2.8fr) 0.9fr 0.95fr 0.75fr 0.9fr 0.5fr;
+}
+
+.tm-call-table .db-list-row > div:nth-child(7) {
+  min-width: 220px;
+}
+
 .db-list-row > div {
   white-space: nowrap;
   overflow: hidden;
