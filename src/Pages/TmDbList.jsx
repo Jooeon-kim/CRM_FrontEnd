@@ -1025,6 +1025,15 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 type="button"
                 onClick={() => setForm((prev) => ({
                   ...prev,
+                  memo: prev.memo ? `${prev.memo}/예약ok` : '/예약ok',
+                }))}
+              >
+                예약ok
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({
+                  ...prev,
                   memo: prev.memo ? `${prev.memo}/문자보냄` : '/문자보냄',
                 }))}
               >
