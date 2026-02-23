@@ -34,9 +34,11 @@ export default function DbList() {
   const [memoQuery, setMemoQuery] = useState('')
   const [assignedTodayOnly, setAssignedTodayOnly] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [activeLead, setActiveLead] = useState(null)
   const [memos, setMemos] = useState([])
   const [saving, setSaving] = useState(false)
+  const [createSaving, setCreateSaving] = useState(false)
   const [form, setForm] = useState({
     name: '',
     status: '',
@@ -46,25 +48,31 @@ export default function DbList() {
     time: '',
     tmId: '',
   })
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    phone: '',
+    event: '',
+    tmId: '',
+  })
+
+  const load = async () => {
+    try {
+      setLoading(true)
+      const [res, tmRes] = await Promise.all([
+        api.get('/dbdata'),
+        api.get('/tm/agents'),
+      ])
+      setRows(res.data || [])
+      setAgents(tmRes.data || [])
+      setError('')
+    } catch (err) {
+      setError('DB 목록을 불러오지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true)
-        const [res, tmRes] = await Promise.all([
-          api.get('/dbdata'),
-          api.get('/tm/agents'),
-        ])
-        setRows(res.data || [])
-        setAgents(tmRes.data || [])
-        setError('')
-      } catch (err) {
-        setError('DB 목록을 불러오지 못했습니다.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     load()
   }, [])
 
@@ -286,6 +294,13 @@ export default function DbList() {
   })
 
   const statusOptions = ['대기', '예약', '부재중', '리콜대기', '실패', '무효', '예약부도', '내원완료']
+  const eventOptions = Array.from(
+    new Set(
+      rows
+        .map((row) => String(row['이벤트'] || '').trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, 'ko'))
 
   const normalizedRegion = regionQuery.trim().toLowerCase()
   const normalizedMemo = memoQuery.trim().toLowerCase()
@@ -380,6 +395,39 @@ export default function DbList() {
     }
   }
 
+  const openCreateModal = () => {
+    setCreateForm({
+      name: '',
+      phone: '',
+      event: eventOptions[0] || '',
+      tmId: '',
+    })
+    setCreateModalOpen(true)
+  }
+
+  const handleCreate = async () => {
+    if (!createForm.name.trim() || !createForm.phone.trim() || !createForm.event.trim()) {
+      setError('이름, 연락처, 이벤트를 입력해주세요.')
+      return
+    }
+    try {
+      setCreateSaving(true)
+      await api.post('/admin/leads', {
+        name: createForm.name.trim(),
+        phone: createForm.phone.trim(),
+        event: createForm.event.trim(),
+        tmId: createForm.tmId || null,
+      })
+      await load()
+      setCreateModalOpen(false)
+      setError('')
+    } catch (err) {
+      setError('DB 추가에 실패했습니다.')
+    } finally {
+      setCreateSaving(false)
+    }
+  }
+
   return (
     <div className="db-list">
       <div className="db-list-header">
@@ -408,6 +456,9 @@ export default function DbList() {
             disabled={downloading}
           >
             {downloading ? '다운로드 중...' : '엑셀 다운로드'}
+          </button>
+          <button className="db-list-export" type="button" onClick={openCreateModal}>
+            DB 추가
           </button>
           <button className="db-list-reset" type="button" onClick={handleReset}>
             초기화
@@ -670,6 +721,70 @@ export default function DbList() {
               <button type="button" onClick={() => setModalOpen(false)}>취소</button>
               <button type="button" onClick={handleSave} disabled={saving}>
                 {saving ? '저장 중...' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {createModalOpen ? (
+        <div className="tm-lead-modal">
+          <div className="tm-lead-backdrop" onClick={() => setCreateModalOpen(false)} />
+          <div className="tm-lead-card">
+            <div className="tm-lead-header">
+              <h3>DB 추가</h3>
+              <button type="button" onClick={() => setCreateModalOpen(false)}>닫기</button>
+            </div>
+
+            <div className="tm-lead-form">
+              <label>
+                이름
+                <input
+                  type="text"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+                />
+              </label>
+              <label>
+                연락처
+                <input
+                  type="text"
+                  value={createForm.phone}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, phone: e.target.value }))}
+                />
+              </label>
+              <label>
+                이벤트
+                <select
+                  value={createForm.event}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, event: e.target.value }))}
+                >
+                  <option value="">선택</option>
+                  {eventOptions.map((event) => (
+                    <option key={event} value={event}>{event}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                TM
+                <select
+                  value={createForm.tmId}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, tmId: e.target.value }))}
+                >
+                  <option value="">미지정</option>
+                  {agents
+                    .filter((agent) => !agent.isAdmin)
+                    .map((agent) => (
+                      <option key={agent.id} value={agent.id}>{agent.name}</option>
+                    ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="tm-lead-actions">
+              <button type="button" onClick={() => setCreateModalOpen(false)}>취소</button>
+              <button type="button" onClick={handleCreate} disabled={createSaving}>
+                {createSaving ? '저장 중...' : '저장'}
               </button>
             </div>
           </div>
