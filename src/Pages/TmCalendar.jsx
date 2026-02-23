@@ -468,11 +468,12 @@ export default function TmCalendar() {
             const daySchedules = schedulesByDate.get(key) || []
             const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
             const isToday = key === formatDateKey(new Date())
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6
             return (
               <button
                 type="button"
                 key={key}
-                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-outside'}${count ? ' has-reservation' : ''}${isToday ? ' is-today' : ''}`}
+                className={`tm-calendar-cell${isCurrentMonth ? '' : ' is-outside'}${count ? ' has-reservation' : ''}${isToday ? ' is-today' : ''}${isWeekend ? ' is-weekend' : ''}`}
                 onClick={() => {
                   if (!count) return
                   setSelectedDate(key)
