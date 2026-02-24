@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+﻿import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import api from '../apiClient'
 
 const CLIENT_COOKIE = 'crm_auth'
@@ -108,6 +108,11 @@ export const logout = createAsyncThunk(
       clearClientUserId()
       return response.data
     } catch (error) {
+      // 서버 요청 실패해도 프론트는 반드시 로그아웃 상태로 정리
+      clearClientCookie()
+      clearClientRole()
+      clearClientUser()
+      clearClientUserId()
       const message = resolveErrorMessage(error, '로그아웃에 실패했습니다.')
       return rejectWithValue(message)
     }
@@ -177,6 +182,9 @@ const authSlice = createSlice({
       .addCase(logout.rejected, (state, action) => {
         state.status = 'failed'
         state.error = action.payload || '로그아웃에 실패했습니다.'
+        state.user = null
+        state.isAdmin = false
+        state.isAuthenticated = false
       })
   },
 })
