@@ -130,10 +130,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const tmDbCache = useSelector((state) => state.main?.tmDbCache || {})
   const cacheKey = useMemo(() => {
     const tmId = user?.id ? String(user.id) : '0'
-    const status = String(statusFilter || 'all')
-    const assigned = assignedTodayOnly ? '1' : '0'
-    return `tm:${tmId}:status:${status}:assigned:${assigned}`
-  }, [user?.id, statusFilter, assignedTodayOnly])
+    return `tm:${tmId}:base`
+  }, [user?.id])
   const cacheEntry = tmDbCache?.[cacheKey]
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
@@ -169,6 +167,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   useEffect(() => {
     if (cacheEntry && Array.isArray(cacheEntry.rows)) {
       setRows(cacheEntry.rows)
+      setLoading(false)
     }
   }, [cacheEntry])
 
@@ -176,11 +175,10 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     const load = async () => {
       if (!user?.id) return
       try {
-        setLoading(true)
         const cacheFresh =
           cacheEntry &&
           Array.isArray(cacheEntry.rows) &&
-          Date.now() - Number(cacheEntry.fetchedAt || 0) < 60 * 1000
+          Date.now() - Number(cacheEntry.fetchedAt || 0) < 5 * 60 * 1000
         if (cacheFresh) {
           setRows(cacheEntry.rows)
           try {
@@ -190,14 +188,15 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             // keep previous agents
           }
           setError('')
+          setLoading(false)
           return
         }
+        setLoading(true)
         const [dbRes, tmRes] = await Promise.all([
           api.get('/dbdata', {
             params: {
               tm: user.id,
-              status: statusFilter || 'all',
-              assignedToday: assignedTodayOnly ? 1 : undefined,
+              status: 'all',
             },
           }),
           api.get('/tm/agents'),
@@ -221,7 +220,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     }
 
     load()
-  }, [user?.id, statusFilter, assignedTodayOnly, cacheEntry, cacheKey, dispatch])
+  }, [user?.id, cacheEntry, cacheKey, dispatch])
 
   const formatDateTime = (value) => {
     if (!value) return '-'
