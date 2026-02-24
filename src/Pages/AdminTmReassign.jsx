@@ -85,7 +85,7 @@ export default function AdminTmReassign() {
       }
     }
     load()
-  }, [agentsCache?.fetchedAt, dbCache?.fetchedAt, dispatch])
+  }, [])
 
   const tmNameMap = useMemo(() => {
     const map = new Map()

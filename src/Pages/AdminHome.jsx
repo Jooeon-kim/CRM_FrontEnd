@@ -93,7 +93,7 @@ export default function AdminHome() {
 
     load()
     loadRules()
-  }, [agentsCache?.fetchedAt, dbCache?.fetchedAt, dispatch, tmLeadsCache?.fetchedAt])
+  }, [])
 
   const handleSync = async () => {
     try {

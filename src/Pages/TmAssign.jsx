@@ -89,7 +89,7 @@ export default function TmAssign() {
     }
 
     load()
-  }, [agentsCache?.fetchedAt, dispatch, tmLeadsCache?.fetchedAt])
+  }, [])
 
   const handleAssign = async (leadId, tmId) => {
     if (!tmId) return

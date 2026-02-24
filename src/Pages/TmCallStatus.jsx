@@ -199,7 +199,7 @@ export default function TmCallStatus() {
     }
 
     load()
-  }, [agentsCache?.fetchedAt, dbCache?.fetchedAt, dispatch])
+  }, [])
 
   const formatDateTime = (value) => {
     if (!value) return ''
