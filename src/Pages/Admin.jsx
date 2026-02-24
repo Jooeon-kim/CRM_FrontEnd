@@ -1,5 +1,5 @@
 ﻿import { useDispatch, useSelector } from 'react-redux'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import api from '../apiClient'
 import { logout, setUser } from '../store/authSlice'
@@ -10,6 +10,7 @@ export default function Admin() {
   const dispatch = useDispatch()
   const { status, user } = useSelector((state) => state.auth)
   const adminDatasets = useSelector((state) => state.main.adminDatasets)
+  const prefetchStartedRef = useRef(false)
   const location = useLocation()
   const [profileOpen, setProfileOpen] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -85,6 +86,9 @@ export default function Admin() {
   }
 
   useEffect(() => {
+    if (prefetchStartedRef.current) return
+    prefetchStartedRef.current = true
+
     const CACHE_TTL_MS = 2 * 60 * 1000
     const now = Date.now()
     const dbFresh = now - Number(adminDatasets?.dbRows?.fetchedAt || 0) < CACHE_TTL_MS
@@ -131,12 +135,7 @@ export default function Admin() {
     return () => {
       cancelled = true
     }
-  }, [
-    adminDatasets?.agents?.fetchedAt,
-    adminDatasets?.dbRows?.fetchedAt,
-    adminDatasets?.tmLeads?.fetchedAt,
-    dispatch,
-  ])
+  }, [adminDatasets, dispatch])
 
   return (
     <div className="admin-page">
