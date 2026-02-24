@@ -355,6 +355,22 @@ export default function DbList() {
     }
   }
 
+  const handleShareLead = () => {
+    if (!activeLead?.id) return
+    window.dispatchEvent(
+      new CustomEvent('crm:share-lead', {
+        detail: {
+          lead: {
+            id: activeLead.id,
+            이름: activeLead['이름'] || '',
+            연락처: activeLead['연락처'] || '',
+            이벤트: activeLead['이벤트'] || '',
+          },
+        },
+      })
+    )
+  }
+
   const tmOptions = Array.from(
     new Set(
       rows
@@ -808,6 +824,7 @@ export default function DbList() {
             </div>
 
             <div className="tm-lead-actions">
+              <button type="button" onClick={handleShareLead}>공유</button>
               <button type="button" onClick={() => setModalOpen(false)}>취소</button>
               <button type="button" onClick={handleSave} disabled={saving}>
                 {saving ? '저장 중...' : '저장'}
