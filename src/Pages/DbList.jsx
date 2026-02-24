@@ -198,6 +198,18 @@ export default function DbList() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
+  const parseMemoStatusMeta = (content) => {
+    const text = String(content || '').trim()
+    const re = /^(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?\s*(?:\/\s*)?(.*)$/u
+    const m = text.match(re)
+    if (!m) return { badge: '', reservationText: '', body: text }
+    return {
+      badge: m[1] || '',
+      reservationText: m[2] || '',
+      body: String(m[3] || '').trim(),
+    }
+  }
+
   const formatUtcAsKstDateTime = (value) => {
     if (!value) return ''
     const utc = parseUtcDateTime(value)
@@ -743,7 +755,25 @@ export default function DbList() {
                       {memos.map((memo, idx) => (
                         <div key={idx} className="tm-lead-memo">
                           <div className="tm-lead-memo-time">{formatMemoDateTimeKst(memo.memo_time)}</div>
-                          <div className="tm-lead-memo-content">{memo.memo_content}</div>
+                          {(() => {
+                            const parsed = parseMemoStatusMeta(memo.memo_content)
+                            if (!parsed.badge) return null
+                            const badgeClass =
+                              parsed.badge === '예약'
+                                ? 'tm-lead-memo-badge is-reserved'
+                                : parsed.badge === '예약부도'
+                                  ? 'tm-lead-memo-badge is-noshow'
+                                  : 'tm-lead-memo-badge is-visited'
+                            return (
+                              <div className="tm-lead-memo-status">
+                                <span className={badgeClass}>{parsed.badge}</span>
+                                {parsed.reservationText ? (
+                                  <span className="tm-lead-memo-status-time">예약일시: {parsed.reservationText}</span>
+                                ) : null}
+                              </div>
+                            )
+                          })()}
+                          <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo.memo_content).body || memo.memo_content}</div>
                           {memo.tm_id ? (
                             <div className="tm-lead-memo-time">
                               작성 TM: {memo.tm_name || memo.tm_id}
