@@ -78,6 +78,7 @@ export default function ChatWidget() {
   const socketRef = useRef(null)
   const listRef = useRef(null)
   const openRef = useRef(open)
+  const roomFetchSeqRef = useRef(0)
 
   const socketUrl = useMemo(() => getSocketUrl(), [])
   const selectedKey =
@@ -208,7 +209,10 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!open || !isAuthenticated || !user?.id) return
     let mounted = true
+    const fetchSeq = roomFetchSeqRef.current + 1
+    roomFetchSeqRef.current = fetchSeq
     setError('')
+    setMessages([])
 
     const params = {
       limit: 150,
@@ -221,13 +225,13 @@ export default function ChatWidget() {
     api
       .get('/chat/messages', { params })
       .then((res) => {
-        if (!mounted) return
+        if (!mounted || roomFetchSeqRef.current !== fetchSeq) return
         const nextMessages = Array.isArray(res.data) ? res.data : []
         setMessages(nextMessages)
         markRoomAsRead(selectedKey, nextMessages)
       })
       .catch(() => {
-        if (!mounted) return
+        if (!mounted || roomFetchSeqRef.current !== fetchSeq) return
         setError('채팅 내역을 불러오지 못했습니다.')
       })
 
