@@ -1780,6 +1780,23 @@ input {
   background: #16a34a;
 }
 
+.tm-lead-memo-badge.is-missed {
+  background: #dc2626;
+}
+
+.tm-lead-memo-badge.is-recall {
+  background: #eab308;
+  color: #1f2937;
+}
+
+.tm-lead-memo-badge.is-invalid {
+  background: #111827;
+}
+
+.tm-lead-memo-badge.is-failed {
+  background: #f97316;
+}
+
 .tm-lead-memo-status-time {
   font-size: 0.72rem;
   color: #475569;

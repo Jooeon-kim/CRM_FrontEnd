@@ -775,12 +775,16 @@ export default function DbList() {
                             const reservationText =
                               parsed.reservationText ||
                               (activeLead?.['예약_내원일시'] ? formatDateTime(activeLead['예약_내원일시']) : '')
-                            const badgeClass =
-                              parsed.badge === '예약'
-                                ? 'tm-lead-memo-badge is-reserved'
-                                : parsed.badge === '예약부도'
-                                  ? 'tm-lead-memo-badge is-noshow'
-                                  : 'tm-lead-memo-badge is-visited'
+                            const badgeClassMap = {
+                              예약: 'tm-lead-memo-badge is-reserved',
+                              예약부도: 'tm-lead-memo-badge is-noshow',
+                              내원완료: 'tm-lead-memo-badge is-visited',
+                              부재중: 'tm-lead-memo-badge is-missed',
+                              리콜대기: 'tm-lead-memo-badge is-recall',
+                              무효: 'tm-lead-memo-badge is-invalid',
+                              실패: 'tm-lead-memo-badge is-failed',
+                            }
+                            const badgeClass = badgeClassMap[parsed.badge] || 'tm-lead-memo-badge'
                             return (
                               <div className="tm-lead-memo-status">
                                 <span className={badgeClass}>{parsed.badge}</span>

@@ -327,20 +327,6 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     return toKstDateKeyFromUtc(value) === todayKst
   }
 
-  const buildStatusMemoPrefix = ({ status, reservationAt }) => {
-    if (!status) return ''
-    if (status === '예약') {
-      return reservationAt ? `예약 예약일시:${formatDateTime(reservationAt)}` : '예약'
-    }
-    if (status === '예약부도') {
-      return reservationAt ? `예약부도 예약일시:${formatDateTime(reservationAt)}` : '예약부도'
-    }
-    if (status === '내원완료') {
-      return reservationAt ? `내원완료 예약일시:${formatDateTime(reservationAt)}` : '내원완료'
-    }
-    return ''
-  }
-
   const parseMemoStatusMeta = (memo) => {
     const text = String((typeof memo === 'object' && memo !== null ? memo.memo_content : memo) || '').trim()
     const columnTag = String(memo?.status_tag || '').trim()
@@ -453,11 +439,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       return
     }
     if (value === '예약부도') {
-      const reservationText = activeLead['예약_내원일시']
-        ? formatDateTime(activeLead['예약_내원일시'])
-        : ''
-      const memo = reservationText ? `예약부도 ${reservationText}` : '예약부도'
-      setForm((prev) => ({ ...prev, status: value, memo }))
+      setForm((prev) => ({ ...prev, status: value }))
       return
     }
     if (value === '리콜대기') {
@@ -552,13 +534,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
     try {
       setSaving(true)
-      const statusPrefix = hasStatusChange
-        ? buildStatusMemoPrefix({ status: form.status, reservationAt: reservationAt || activeLead['예약_내원일시'] })
-        : ''
       const finalMemo = String(form.memo || '').trim()
       const memoToSave = finalMemo
-        ? (statusPrefix ? `${statusPrefix} / ${finalMemo}` : finalMemo)
-        : statusPrefix
       await api.post(`/tm/leads/${leadId}/update`, {
         status: hasStatusChange ? form.status : undefined,
         name: form.name,
@@ -1069,12 +1046,16 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                             const reservationText =
                               parsed.reservationText ||
                               (activeLead?.['예약_내원일시'] ? formatDateTime(activeLead['예약_내원일시']) : '')
-                            const badgeClass =
-                              parsed.badge === '예약'
-                                ? 'tm-lead-memo-badge is-reserved'
-                                : parsed.badge === '예약부도'
-                                  ? 'tm-lead-memo-badge is-noshow'
-                                  : 'tm-lead-memo-badge is-visited'
+                            const badgeClassMap = {
+                              예약: 'tm-lead-memo-badge is-reserved',
+                              예약부도: 'tm-lead-memo-badge is-noshow',
+                              내원완료: 'tm-lead-memo-badge is-visited',
+                              부재중: 'tm-lead-memo-badge is-missed',
+                              리콜대기: 'tm-lead-memo-badge is-recall',
+                              무효: 'tm-lead-memo-badge is-invalid',
+                              실패: 'tm-lead-memo-badge is-failed',
+                            }
+                            const badgeClass = badgeClassMap[parsed.badge] || 'tm-lead-memo-badge'
                             return (
                               <div className="tm-lead-memo-status">
                                 <span className={badgeClass}>{parsed.badge}</span>
