@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux'
 import { io } from 'socket.io-client'
 import api from '../apiClient'
 
+const GROUP_ROOM_KEY = 'group'
+
 const formatChatTime = (value) => {
   if (!value) return ''
   const d = new Date(value)
@@ -24,49 +26,74 @@ const getSocketUrl = () => {
   return undefined
 }
 
+const getDirectRoomKey = (tmId) => `direct:${tmId}`
+
+const getMessageRoomKey = (msg, myTmId) => {
+  const isGroup = Number(msg?.is_group || 0) === 1 || !msg?.target_tm_id
+  if (isGroup) return GROUP_ROOM_KEY
+  const senderId = Number(msg?.sender_tm_id || 0)
+  const targetId = Number(msg?.target_tm_id || 0)
+  const otherId = senderId === Number(myTmId) ? targetId : senderId
+  return getDirectRoomKey(otherId)
+}
+
 export default function ChatWidget() {
   const { isAuthenticated, user, isAdmin } = useSelector((state) => state.auth)
   const [open, setOpen] = useState(false)
+  const [users, setUsers] = useState([])
   const [messages, setMessages] = useState([])
+  const [selectedRoom, setSelectedRoom] = useState({ type: 'group', tmId: null, label: '단체 채팅방' })
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadMap, setUnreadMap] = useState({})
   const socketRef = useRef(null)
   const listRef = useRef(null)
 
   const socketUrl = useMemo(() => getSocketUrl(), [])
+  const selectedKey = selectedRoom.type === 'group' ? GROUP_ROOM_KEY : getDirectRoomKey(selectedRoom.tmId)
+  const unreadCount = Object.values(unreadMap).reduce((sum, v) => sum + Number(v || 0), 0)
 
   useEffect(() => {
-    if (!isAuthenticated) return undefined
+    if (!isAuthenticated || !user?.id) return undefined
     const socket = io(socketUrl, {
       withCredentials: true,
       auth: {
-        tmId: user?.id,
-        username: user?.username,
+        tmId: user.id,
+        username: user.username,
         isAdmin,
       },
       transports: ['websocket', 'polling'],
     })
     socketRef.current = socket
     socket.on('chat:new', (msg) => {
-      setMessages((prev) => [...prev, msg])
-      setUnreadCount((prev) => (open ? prev : prev + 1))
+      const roomKey = getMessageRoomKey(msg, user.id)
+      if (open && roomKey === selectedKey) {
+        setMessages((prev) => [...prev, msg])
+        return
+      }
+      setUnreadMap((prev) => ({
+        ...prev,
+        [roomKey]: Number(prev[roomKey] || 0) + 1,
+      }))
     })
     return () => {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin, open])
+  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin, open, selectedKey])
 
   useEffect(() => {
-    if (!open || !isAuthenticated) return
+    if (!open || !isAuthenticated || !user?.id) return
     let mounted = true
-    api
-      .get('/chat/messages', { params: { limit: 150, tmId: user?.id } })
-      .then((res) => {
+    Promise.all([
+      api.get('/chat/users', { params: { tmId: user.id } }),
+      api.get('/chat/messages', { params: { limit: 150, tmId: user.id } }),
+    ])
+      .then(([usersRes, messagesRes]) => {
         if (!mounted) return
-        setMessages(Array.isArray(res.data) ? res.data : [])
+        setUsers(Array.isArray(usersRes.data) ? usersRes.data : [])
+        setMessages(Array.isArray(messagesRes.data) ? messagesRes.data : [])
       })
       .catch(() => {
         if (!mounted) return
@@ -78,18 +105,51 @@ export default function ChatWidget() {
   }, [open, isAuthenticated, user?.id])
 
   useEffect(() => {
+    if (!open || !isAuthenticated || !user?.id) return
+    let mounted = true
+    setError('')
+    const params = {
+      limit: 150,
+      tmId: user.id,
+    }
+    if (selectedRoom.type === 'direct' && selectedRoom.tmId) {
+      params.targetTmId = selectedRoom.tmId
+    }
+    api
+      .get('/chat/messages', { params })
+      .then((res) => {
+        if (!mounted) return
+        setMessages(Array.isArray(res.data) ? res.data : [])
+      })
+      .catch(() => {
+        if (!mounted) return
+        setError('채팅 내역을 불러오지 못했습니다.')
+      })
+    return () => {
+      mounted = false
+    }
+  }, [open, isAuthenticated, user?.id, selectedRoom.type, selectedRoom.tmId])
+
+  useEffect(() => {
     if (!open) return
-    setUnreadCount(0)
+    setUnreadMap((prev) => ({
+      ...prev,
+      [selectedKey]: 0,
+    }))
     if (!listRef.current) return
     listRef.current.scrollTop = listRef.current.scrollHeight
-  }, [messages, open])
+  }, [messages, open, selectedKey])
 
   const sendMessage = () => {
     const message = text.trim()
     if (!message || !socketRef.current) return
+    const payload = { message }
+    if (selectedRoom.type === 'direct' && selectedRoom.tmId) {
+      payload.targetTmId = selectedRoom.tmId
+    }
     setSending(true)
     setError('')
-    socketRef.current.emit('chat:send', { message }, (result) => {
+    socketRef.current.emit('chat:send', payload, (result) => {
       setSending(false)
       if (!result?.ok) {
         setError(result?.error || '메시지 전송 실패')
@@ -104,42 +164,74 @@ export default function ChatWidget() {
   return (
     <div className={`crm-chat-widget${open ? ' open' : ''}`}>
       {open ? (
-        <div className="crm-chat-panel">
-          <div className="crm-chat-header">
-            <strong>팀 채팅</strong>
-            <button type="button" onClick={() => setOpen(false)}>닫기</button>
-          </div>
-          <div className="crm-chat-list" ref={listRef}>
-            {messages.map((msg) => {
-              const mine = Number(msg.sender_tm_id) === Number(user?.id)
-              return (
-                <div key={msg.id} className={`crm-chat-item${mine ? ' mine' : ''}`}>
-                  <div className="crm-chat-meta">
-                    <span>{msg.sender_name}</span>
-                    <span>{formatChatTime(msg.created_at)}</span>
-                  </div>
-                  <div className="crm-chat-message">{msg.message}</div>
-                </div>
-              )
-            })}
-          </div>
-          {error ? <div className="crm-chat-error">{error}</div> : null}
-          <div className="crm-chat-input-row">
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="메시지 입력"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  sendMessage()
-                }
-              }}
-            />
-            <button type="button" onClick={sendMessage} disabled={sending}>
-              전송
+        <div className="crm-chat-panel crm-chat-panel-with-rooms">
+          <div className="crm-chat-rooms">
+            <div className="crm-chat-rooms-title">개인 채팅</div>
+            <div className="crm-chat-room-list">
+              {users.map((tm) => {
+                const key = getDirectRoomKey(tm.id)
+                const unread = Number(unreadMap[key] || 0)
+                return (
+                  <button
+                    key={tm.id}
+                    type="button"
+                    className={`crm-chat-room-item${selectedRoom.type === 'direct' && Number(selectedRoom.tmId) === Number(tm.id) ? ' active' : ''}`}
+                    onClick={() => setSelectedRoom({ type: 'direct', tmId: tm.id, label: tm.name })}
+                  >
+                    <span>{tm.name}</span>
+                    {unread > 0 ? <span className="crm-chat-room-unread">{unread}</span> : null}
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              type="button"
+              className={`crm-chat-room-item crm-chat-room-group${selectedRoom.type === 'group' ? ' active' : ''}`}
+              onClick={() => setSelectedRoom({ type: 'group', tmId: null, label: '단체 채팅방' })}
+            >
+              <span>단체 채팅방</span>
+              {Number(unreadMap[GROUP_ROOM_KEY] || 0) > 0 ? (
+                <span className="crm-chat-room-unread">{Number(unreadMap[GROUP_ROOM_KEY] || 0)}</span>
+              ) : null}
             </button>
+          </div>
+          <div className="crm-chat-main">
+            <div className="crm-chat-header">
+              <strong>{selectedRoom.label}</strong>
+              <button type="button" onClick={() => setOpen(false)}>닫기</button>
+            </div>
+            <div className="crm-chat-list" ref={listRef}>
+              {messages.map((msg) => {
+                const mine = Number(msg.sender_tm_id) === Number(user?.id)
+                return (
+                  <div key={msg.id} className={`crm-chat-item${mine ? ' mine' : ''}`}>
+                    <div className="crm-chat-meta">
+                      <span>{msg.sender_name}</span>
+                      <span>{formatChatTime(msg.created_at)}</span>
+                    </div>
+                    <div className="crm-chat-message">{msg.message}</div>
+                  </div>
+                )
+              })}
+            </div>
+            {error ? <div className="crm-chat-error">{error}</div> : null}
+            <div className="crm-chat-input-row">
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="메시지 입력"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    sendMessage()
+                  }
+                }}
+              />
+              <button type="button" onClick={sendMessage} disabled={sending}>
+                전송
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -147,11 +239,7 @@ export default function ChatWidget() {
         type="button"
         className="crm-chat-toggle"
         onClick={() => {
-          setOpen((prev) => {
-            const next = !prev
-            if (next) setUnreadCount(0)
-            return next
-          })
+          setOpen((prev) => !prev)
         }}
       >
         채팅
@@ -160,3 +248,4 @@ export default function ChatWidget() {
     </div>
   )
 }
+

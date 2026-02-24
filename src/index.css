@@ -1065,6 +1065,73 @@ input {
   overflow: hidden;
 }
 
+.crm-chat-panel-with-rooms {
+  width: 620px;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+}
+
+.crm-chat-rooms {
+  border-right: 1px solid #e5ebf8;
+  background: #f8faff;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  gap: 8px;
+}
+
+.crm-chat-rooms-title {
+  font-size: 12px;
+  color: #475467;
+  font-weight: 700;
+}
+
+.crm-chat-room-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crm-chat-room-item {
+  border: 1px solid #d5dff3;
+  background: #fff;
+  border-radius: 8px;
+  padding: 7px 8px;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.crm-chat-room-item.active {
+  border-color: #2b5bd9;
+  background: #eef4ff;
+}
+
+.crm-chat-room-group {
+  margin-top: auto;
+}
+
+.crm-chat-room-unread {
+  background: #e11d48;
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.crm-chat-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .crm-chat-header {
   display: flex;
   align-items: center;
