@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import api from '../apiClient'
 import { logout, setUser } from '../store/authSlice'
+import ChatWidget from '../Components/ChatWidget'
 
 export default function Admin() {
   const dispatch = useDispatch()
@@ -238,6 +239,7 @@ export default function Admin() {
           </div>
         </div>
       ) : null}
+      <ChatWidget />
     </div>
   )
 }
