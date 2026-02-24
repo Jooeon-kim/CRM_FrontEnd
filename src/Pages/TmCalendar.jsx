@@ -233,14 +233,14 @@ export default function TmCalendar() {
   const currentMonthCacheKey = `${String(user?.id || '')}:${currentMonthKey}`
   const tmCalendarMonthCache = calendarCache?.tmMonth?.[currentMonthCacheKey]
 
-  const loadReservations = async (withLoading = false) => {
+  const loadReservations = async (withLoading = false, forceRefresh = false) => {
     if (!user?.id) return
     try {
       const cacheFresh =
         tmCalendarBaseCache &&
         Array.isArray(tmCalendarBaseCache.rows) &&
         Date.now() - Number(tmCalendarBaseCache.fetchedAt || 0) < 5 * 60 * 1000
-      if (cacheFresh) {
+      if (cacheFresh && !forceRefresh) {
         setReservations(
           (tmCalendarBaseCache.rows || []).filter((row) => {
             const status = String(row['상태'] || '').trim()
@@ -554,7 +554,7 @@ export default function TmCalendar() {
         reservationAt,
         phone: activeLead['연락처'] || '',
       })
-      await loadReservations(false)
+      await loadReservations(false, true)
       setModalOpen(false)
       setActiveLead(null)
     } catch (err) {
