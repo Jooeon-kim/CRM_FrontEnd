@@ -343,13 +343,18 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   const parseMemoStatusMeta = (content) => {
     const text = String(content || '').trim()
-    const re = /^(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?\s*(?:\/\s*)?(.*)$/u
+    const re = /(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?/u
     const m = text.match(re)
     if (!m) return { badge: '', reservationText: '', body: text }
+    const fullMatch = String(m[0] || '').trim()
+    const body = text
+      .replace(fullMatch, '')
+      .replace(/^\s*\/\s*/, '')
+      .trim()
     return {
       badge: m[1] || '',
       reservationText: m[2] || '',
-      body: String(m[3] || '').trim(),
+      body,
     }
   }
 
