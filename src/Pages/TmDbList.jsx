@@ -1046,6 +1046,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                           {(() => {
                             const parsed = parseMemoStatusMeta(memo.memo_content)
                             if (!parsed.badge) return null
+                            const reservationText =
+                              parsed.reservationText ||
+                              (activeLead?.['예약_내원일시'] ? formatDateTime(activeLead['예약_내원일시']) : '')
                             const badgeClass =
                               parsed.badge === '예약'
                                 ? 'tm-lead-memo-badge is-reserved'
@@ -1055,8 +1058,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                             return (
                               <div className="tm-lead-memo-status">
                                 <span className={badgeClass}>{parsed.badge}</span>
-                                {parsed.reservationText ? (
-                                  <span className="tm-lead-memo-status-time">예약일시: {parsed.reservationText}</span>
+                                {reservationText ? (
+                                  <span className="tm-lead-memo-status-time">예약일시: {reservationText}</span>
                                 ) : null}
                               </div>
                             )
