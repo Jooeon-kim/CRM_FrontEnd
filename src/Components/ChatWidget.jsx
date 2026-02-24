@@ -303,7 +303,12 @@ export default function ChatWidget() {
                       })
                     }
                   >
-                    <span>{tm.name}</span>
+                    <span className="crm-chat-room-label">
+                      {tm.name}
+                      {Number(tm.isAdmin) === 1 ? (
+                        <span className="crm-chat-room-role">관리자</span>
+                      ) : null}
+                    </span>
                     {unread > 0 ? (
                       <span className="crm-chat-room-unread">{unread}</span>
                     ) : null}
