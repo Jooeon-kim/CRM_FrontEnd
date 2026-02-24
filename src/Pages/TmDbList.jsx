@@ -704,6 +704,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     const noShowMinNum = noShowMin === '' ? null : Number(noShowMin)
     return filteredRows.filter((row) => {
       const statusValue = row['상태'] || '대기'
+      const passRouteStatus = !statusFilter || statusValue === statusFilter
       const passStatus = statusFilterLocal === 'all' || statusFilterLocal === statusValue
       const passEvent = eventFilter === 'all' || eventFilter === row['이벤트']
       const passRegion = regionFilter === 'all' || regionFilter === row['거주지']
@@ -716,8 +717,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       const emptyStatus = !row['상태'] || String(row['상태']).trim().length === 0
       const passEmptyStatus = !onlyEmptyStatus || emptyStatus
       const passAvailable = !onlyAvailable || isAvailableNow(row)
-      const passAssignedToday = true
-      if (!passStatus || !passEvent || !passRegion || !passCall || !passMiss || !passNoShow) {
+      const passAssignedToday = !assignedTodayOnly || isAssignedToday(row)
+      if (!passRouteStatus || !passStatus || !passEvent || !passRegion || !passCall || !passMiss || !passNoShow) {
         return false
       }
       if (!passEmptyStatus || !passAvailable || !passAssignedToday) {
@@ -735,7 +736,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         memo.includes(term)
       )
     })
-  }, [filteredRows, searchTerm, statusFilterLocal, eventFilter, regionFilter, callMin, missMin, noShowMin, onlyEmptyStatus, onlyAvailable, assignedTodayOnly])
+  }, [filteredRows, searchTerm, statusFilter, statusFilterLocal, eventFilter, regionFilter, callMin, missMin, noShowMin, onlyEmptyStatus, onlyAvailable, assignedTodayOnly])
 
   const getRecallUrgency = (row) => {
     if ((row?.['상태'] || '') !== '리콜대기') return ''
