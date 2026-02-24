@@ -483,7 +483,9 @@ export default function TmCalendar() {
     if (!scheduleEditId) return
     try {
       setScheduleSaving(true)
-      await api.delete(`/tm/schedules/${scheduleEditId}`)
+      await api.delete(`/tm/schedules/${scheduleEditId}`, {
+        params: { tmId: user?.id },
+      })
       const { from, to } = buildMonthRange(currentMonth)
       const res = await api.get('/tm/schedules', { params: { from, to } })
       setSchedules(Array.isArray(res.data) ? res.data : [])
