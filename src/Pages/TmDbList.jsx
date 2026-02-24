@@ -158,6 +158,9 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     recallAt: null,
   })
   const [memos, setMemos] = useState([])
+  const [memoLoading, setMemoLoading] = useState(false)
+  const [memoCacheByPhone, setMemoCacheByPhone] = useState({})
+  const [phoneEventsCacheByPhone, setPhoneEventsCacheByPhone] = useState({})
   const [phoneEvents, setPhoneEvents] = useState([])
   const [editingMemoId, setEditingMemoId] = useState(null)
   const [editingMemoContent, setEditingMemoContent] = useState('')
@@ -311,12 +314,42 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     return toKstDateKeyFromUtc(value) === todayKst
   }
 
+  const buildStatusMemoPrefix = ({ status, reservationAt }) => {
+    if (!status) return ''
+    if (status === '예약') {
+      return reservationAt ? `예약 예약일시:${formatDateTime(reservationAt)}` : '예약'
+    }
+    if (status === '예약부도') {
+      return reservationAt ? `예약부도 예약일시:${formatDateTime(reservationAt)}` : '예약부도'
+    }
+    if (status === '내원완료') {
+      return reservationAt ? `내원완료 예약일시:${formatDateTime(reservationAt)}` : '내원완료'
+    }
+    return ''
+  }
+
+  const parseMemoStatusMeta = (content) => {
+    const text = String(content || '').trim()
+    const re = /^(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?\s*(?:\/\s*)?(.*)$/u
+    const m = text.match(re)
+    if (!m) return { badge: '', reservationText: '', body: text }
+    return {
+      badge: m[1] || '',
+      reservationText: m[2] || '',
+      body: String(m[3] || '').trim(),
+    }
+  }
+
   const visibleColumns = assignedTodayOnly
     ? ['배정날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', ...(statusFilter === '리콜대기' ? ['리콜_예정일시'] : []), '최근메모내용', '콜횟수']
     : ['인입날짜', '이름', '연락처', '이벤트', '상태', '거주지', '예약_내원일시', ...(statusFilter === '리콜대기' ? ['리콜_예정일시'] : []), '최근메모내용', '콜횟수']
   const hasRecallColumn = visibleColumns.includes('리콜_예정일시')
 
   const openModal = async (lead) => {
+    const phoneKey = normalizePhoneDigits(lead?.['연락처'])
+    const cachedMemos = memoCacheByPhone?.[phoneKey]
+    const cachedEvents = phoneEventsCacheByPhone?.[phoneKey]
+
     setActiveLead(lead)
     setForm({
       name: lead['이름'] || '',
@@ -328,23 +361,37 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       recallHours: '1',
       recallAt: toDateTimeValue(lead['리콜_예정일시']),
     })
-    setMemos([])
-    setPhoneEvents([])
+    setMemos(Array.isArray(cachedMemos) ? cachedMemos : [])
+    setPhoneEvents(Array.isArray(cachedEvents) ? cachedEvents : [])
     setEditingMemoId(null)
     setEditingMemoContent('')
     setModalOpen(true)
     try {
-      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'], detailed: 1, leadId: lead.id } })
+      setMemoLoading(!Array.isArray(cachedMemos))
+      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'], detailed: 1, leadId: lead.id, limit: 20 } })
       if (Array.isArray(res.data)) {
-        setMemos(res.data || [])
+        const nextMemos = res.data || []
+        setMemos(nextMemos)
         setPhoneEvents([])
+        setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextMemos }))
+        setPhoneEventsCacheByPhone((prev) => ({ ...prev, [phoneKey]: [] }))
       } else {
-        setMemos(res.data?.memos || [])
-        setPhoneEvents(res.data?.events || [])
+        const nextMemos = res.data?.memos || []
+        const nextEvents = res.data?.events || []
+        setMemos(nextMemos)
+        setPhoneEvents(nextEvents)
+        setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextMemos }))
+        setPhoneEventsCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextEvents }))
       }
     } catch {
-      setMemos([])
-      setPhoneEvents([])
+      if (!Array.isArray(cachedMemos)) {
+        setMemos([])
+      }
+      if (!Array.isArray(cachedEvents)) {
+        setPhoneEvents([])
+      }
+    } finally {
+      setMemoLoading(false)
     }
   }
 
@@ -440,11 +487,18 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
     try {
       setSaving(true)
+      const statusPrefix = hasStatusChange
+        ? buildStatusMemoPrefix({ status: form.status, reservationAt: reservationAt || activeLead['예약_내원일시'] })
+        : ''
+      const finalMemo = String(form.memo || '').trim()
+      const memoToSave = finalMemo
+        ? (statusPrefix ? `${statusPrefix} / ${finalMemo}` : finalMemo)
+        : statusPrefix
       await api.post(`/tm/leads/${leadId}/update`, {
         status: hasStatusChange ? form.status : undefined,
         name: form.name,
         region: form.region,
-        memo: form.memo,
+        memo: memoToSave,
         tmId: user.id,
         reservationAt,
         recallAt,
@@ -467,8 +521,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         콜횟수: (Number(activeLead['콜횟수'] || 0) + (hasStatusChange && ['부재중', '리콜대기', '예약', '실패'].includes(form.status) ? 1 : 0)),
         부재중_횟수: hasStatusChange && form.status === '부재중' ? Number(activeLead['부재중_횟수'] || 0) + 1 : activeLead['부재중_횟수'],
         예약부도_횟수: hasStatusChange && form.status === '예약부도' ? Number(activeLead['예약부도_횟수'] || 0) + 1 : activeLead['예약부도_횟수'],
-        최근메모내용: form.memo || activeLead['최근메모내용'],
-        최근메모시간: form.memo ? nowIso : activeLead['최근메모시간'],
+        최근메모내용: memoToSave || activeLead['최근메모내용'],
+        최근메모시간: memoToSave ? nowIso : activeLead['최근메모시간'],
       }
       setRows((prev) => {
         const next = prev.map((row) =>
@@ -496,11 +550,14 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         })
       )
       setActiveLead(nextLead)
-      if (form.memo && String(form.memo).trim()) {
-        setMemos((prev) => [
-          { memo_time: nowIso, memo_content: form.memo, tm_id: user.id, tm_name: user?.username || '' },
-          ...prev,
-        ])
+      const phoneKey = normalizePhoneDigits(leadPhone)
+      if (memoToSave) {
+        const nextMemoRows = [
+          { memo_time: nowIso, memo_content: memoToSave, tm_id: user.id, tm_name: user?.username || '' },
+          ...memos,
+        ].slice(0, 20)
+        setMemos(nextMemoRows)
+        setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextMemoRows }))
       }
       setForm((prev) => ({
         ...prev,
@@ -512,18 +569,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         recallAt: prev.recallAt,
       }))
 
-      try {
-        const memosRes = await api.get('/tm/memos', { params: { phone: leadPhone, detailed: 1, leadId } })
-        if (Array.isArray(memosRes.data)) {
-          setMemos(memosRes.data || [])
-          setPhoneEvents([])
-        } else {
-          setMemos(memosRes.data?.memos || [])
-          setPhoneEvents(memosRes.data?.events || [])
-        }
-      } catch {
-        // Keep optimistic UI state when background refresh fails.
-      }
+      // keep optimistic memo cache to avoid extra loading calls
     } catch (err) {
       setError('저장에 실패했습니다.')
     } finally {
@@ -574,11 +620,39 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             : memo
         )
       )
+      if (activeLead?.['연락처']) {
+        const phoneKey = normalizePhoneDigits(activeLead['연락처'])
+        setMemoCacheByPhone((prev) => ({
+          ...prev,
+          [phoneKey]: (prev[phoneKey] || []).map((memo) =>
+            String(memo.id) === String(editingMemoId)
+              ? { ...memo, memo_content: nextContent }
+              : memo
+          ),
+        }))
+      }
       cancelEditMemo()
     } catch {
       setError('메모 수정에 실패했습니다.')
     } finally {
       setEditingMemoSaving(false)
+    }
+  }
+
+  const handleDeleteMemo = async (memoId) => {
+    if (!memoId || !user?.id) return
+    try {
+      await api.delete(`/tm/memos/${memoId}`, { params: { tmId: user.id } })
+      setMemos((prev) => prev.filter((memo) => String(memo.id) !== String(memoId)))
+      if (activeLead?.['연락처']) {
+        const phoneKey = normalizePhoneDigits(activeLead['연락처'])
+        setMemoCacheByPhone((prev) => ({
+          ...prev,
+          [phoneKey]: (prev[phoneKey] || []).filter((memo) => String(memo.id) !== String(memoId)),
+        }))
+      }
+    } catch {
+      setError('메모 삭제에 실패했습니다.')
     }
   }
 
@@ -901,13 +975,33 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
               <div className="tm-lead-left">
                 <div className="tm-lead-memos">
                   <div className="tm-lead-memos-title">최근 메모</div>
-                  {memos.length === 0 ? (
+                  {memoLoading ? (
+                    <div className="tm-lead-memos-empty">메모 불러오는 중...</div>
+                  ) : memos.length === 0 ? (
                     <div className="tm-lead-memos-empty">메모가 없습니다.</div>
                   ) : (
                     <div className="tm-lead-memos-list">
                       {memos.map((memo, idx) => (
                         <div key={idx} className="tm-lead-memo">
                           <div className="tm-lead-memo-time">{formatMemoDateTime(memo.memo_time)}</div>
+                          {(() => {
+                            const parsed = parseMemoStatusMeta(memo.memo_content)
+                            if (!parsed.badge) return null
+                            const badgeClass =
+                              parsed.badge === '예약'
+                                ? 'tm-lead-memo-badge is-reserved'
+                                : parsed.badge === '예약부도'
+                                  ? 'tm-lead-memo-badge is-noshow'
+                                  : 'tm-lead-memo-badge is-visited'
+                            return (
+                              <div className="tm-lead-memo-status">
+                                <span className={badgeClass}>{parsed.badge}</span>
+                                {parsed.reservationText ? (
+                                  <span className="tm-lead-memo-status-time">예약일시: {parsed.reservationText}</span>
+                                ) : null}
+                              </div>
+                            )
+                          })()}
                           {String(editingMemoId) === String(memo.id) ? (
                             <div className="tm-lead-memo-edit">
                               <textarea
@@ -925,7 +1019,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                               </div>
                             </div>
                           ) : (
-                            <div className="tm-lead-memo-content">{memo.memo_content}</div>
+                            <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo.memo_content).body || memo.memo_content}</div>
                           )}
                           {memo.tm_id ? (
                             <div className="tm-lead-memo-time">
@@ -933,13 +1027,22 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                             </div>
                           ) : null}
                           {memo.id && memo.tm_id && String(memo.tm_id) === String(user?.id) && String(editingMemoId) !== String(memo.id) ? (
-                            <button
-                              type="button"
-                              className="tm-lead-memo-edit-trigger"
-                              onClick={() => startEditMemo(memo)}
-                            >
-                              메모수정
-                            </button>
+                            <div className="tm-lead-memo-row-actions">
+                              <button
+                                type="button"
+                                className="tm-lead-memo-edit-trigger"
+                                onClick={() => startEditMemo(memo)}
+                              >
+                                메모수정
+                              </button>
+                              <button
+                                type="button"
+                                className="tm-lead-memo-edit-trigger is-danger"
+                                onClick={() => handleDeleteMemo(memo.id)}
+                              >
+                                메모삭제
+                              </button>
+                            </div>
                           ) : null}
                         </div>
                       ))}
