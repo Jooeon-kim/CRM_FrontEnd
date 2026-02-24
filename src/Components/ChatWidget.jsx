@@ -31,6 +31,7 @@ export default function ChatWidget() {
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const socketRef = useRef(null)
   const listRef = useRef(null)
 
@@ -50,12 +51,13 @@ export default function ChatWidget() {
     socketRef.current = socket
     socket.on('chat:new', (msg) => {
       setMessages((prev) => [...prev, msg])
+      setUnreadCount((prev) => (open ? prev : prev + 1))
     })
     return () => {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin])
+  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin, open])
 
   useEffect(() => {
     if (!open || !isAuthenticated) return
@@ -77,6 +79,7 @@ export default function ChatWidget() {
 
   useEffect(() => {
     if (!open) return
+    setUnreadCount(0)
     if (!listRef.current) return
     listRef.current.scrollTop = listRef.current.scrollHeight
   }, [messages, open])
@@ -140,8 +143,19 @@ export default function ChatWidget() {
           </div>
         </div>
       ) : null}
-      <button type="button" className="crm-chat-toggle" onClick={() => setOpen((prev) => !prev)}>
+      <button
+        type="button"
+        className="crm-chat-toggle"
+        onClick={() => {
+          setOpen((prev) => {
+            const next = !prev
+            if (next) setUnreadCount(0)
+            return next
+          })
+        }}
+      >
         채팅
+        {unreadCount > 0 ? <span className="crm-chat-badge">새 메시지 {unreadCount}</span> : null}
       </button>
     </div>
   )
