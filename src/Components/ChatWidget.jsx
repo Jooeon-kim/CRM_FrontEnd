@@ -4,6 +4,19 @@ import { io } from 'socket.io-client'
 import api from '../apiClient'
 
 const GROUP_ROOM_KEY = 'group'
+const getDirectRoomKey = (tmId) => `direct:${tmId}`
+const getLastReadStorageKey = (tmId) => `crm_chat_last_read_${tmId}`
+
+const parseLastReadMap = (raw) => {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return {}
+    return parsed
+  } catch {
+    return {}
+  }
+}
 
 const formatChatTime = (value) => {
   if (!value) return ''
@@ -26,8 +39,6 @@ const getSocketUrl = () => {
   return undefined
 }
 
-const getDirectRoomKey = (tmId) => `direct:${tmId}`
-
 const getMessageRoomKey = (msg, myTmId) => {
   const isGroup = Number(msg?.is_group || 0) === 1 || !msg?.target_tm_id
   if (isGroup) return GROUP_ROOM_KEY
@@ -37,22 +48,80 @@ const getMessageRoomKey = (msg, myTmId) => {
   return getDirectRoomKey(otherId)
 }
 
+const calculateUnreadMap = (allMessages, myTmId, lastReadMap) => {
+  const next = {}
+  ;(allMessages || []).forEach((msg) => {
+    if (Number(msg?.sender_tm_id || 0) === Number(myTmId)) return
+    const roomKey = getMessageRoomKey(msg, myTmId)
+    const lastReadId = Number(lastReadMap?.[roomKey] || 0)
+    if (Number(msg?.id || 0) > lastReadId) {
+      next[roomKey] = Number(next[roomKey] || 0) + 1
+    }
+  })
+  return next
+}
+
 export default function ChatWidget() {
   const { isAuthenticated, user, isAdmin } = useSelector((state) => state.auth)
   const [open, setOpen] = useState(false)
   const [users, setUsers] = useState([])
   const [messages, setMessages] = useState([])
-  const [selectedRoom, setSelectedRoom] = useState({ type: 'group', tmId: null, label: '단체 채팅방' })
+  const [selectedRoom, setSelectedRoom] = useState({
+    type: 'group',
+    tmId: null,
+    label: '단체 채팅방',
+  })
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [unreadMap, setUnreadMap] = useState({})
   const socketRef = useRef(null)
   const listRef = useRef(null)
+  const openRef = useRef(open)
 
   const socketUrl = useMemo(() => getSocketUrl(), [])
-  const selectedKey = selectedRoom.type === 'group' ? GROUP_ROOM_KEY : getDirectRoomKey(selectedRoom.tmId)
-  const unreadCount = Object.values(unreadMap).reduce((sum, v) => sum + Number(v || 0), 0)
+  const selectedKey =
+    selectedRoom.type === 'group'
+      ? GROUP_ROOM_KEY
+      : getDirectRoomKey(selectedRoom.tmId)
+  const unreadCount = Object.values(unreadMap).reduce(
+    (sum, v) => sum + Number(v || 0),
+    0
+  )
+
+  useEffect(() => {
+    openRef.current = open
+  }, [open])
+
+  const markRoomAsRead = (roomKey, roomMessages = []) => {
+    if (!user?.id || !roomKey) return
+    const maxId = (roomMessages || []).reduce(
+      (max, msg) => Math.max(max, Number(msg?.id || 0)),
+      0
+    )
+    if (!maxId) return
+    const storageKey = getLastReadStorageKey(user.id)
+    const current = parseLastReadMap(localStorage.getItem(storageKey))
+    const prevRead = Number(current?.[roomKey] || 0)
+    if (maxId > prevRead) {
+      current[roomKey] = maxId
+      localStorage.setItem(storageKey, JSON.stringify(current))
+    }
+    setUnreadMap((prev) => ({ ...prev, [roomKey]: 0 }))
+  }
+
+  const markRoomAsReadById = (roomKey, messageId) => {
+    if (!user?.id || !roomKey) return
+    const maxId = Number(messageId || 0)
+    const storageKey = getLastReadStorageKey(user.id)
+    const current = parseLastReadMap(localStorage.getItem(storageKey))
+    const prevRead = Number(current?.[roomKey] || 0)
+    if (maxId > prevRead) {
+      current[roomKey] = maxId
+      localStorage.setItem(storageKey, JSON.stringify(current))
+    }
+    setUnreadMap((prev) => ({ ...prev, [roomKey]: 0 }))
+  }
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return undefined
@@ -66,48 +135,81 @@ export default function ChatWidget() {
       transports: ['websocket', 'polling'],
     })
     socketRef.current = socket
+
     socket.on('chat:new', (msg) => {
       const roomKey = getMessageRoomKey(msg, user.id)
-      if (open && roomKey === selectedKey) {
+      const sameRoomOpen = openRef.current && roomKey === selectedKey
+
+      if (sameRoomOpen) {
         setMessages((prev) => [...prev, msg])
+        markRoomAsReadById(roomKey, msg?.id)
         return
       }
+
       setUnreadMap((prev) => ({
         ...prev,
         [roomKey]: Number(prev[roomKey] || 0) + 1,
       }))
     })
+
     return () => {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin, open, selectedKey])
+  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin, selectedKey])
 
   useEffect(() => {
-    if (!open || !isAuthenticated || !user?.id) return
+    if (!isAuthenticated || !user?.id) return
     let mounted = true
+
     Promise.all([
       api.get('/chat/users', { params: { tmId: user.id } }),
-      api.get('/chat/messages', { params: { limit: 150, tmId: user.id } }),
+      api.get('/chat/messages', {
+        params: { limit: 300, tmId: user.id, scope: 'all' },
+      }),
     ])
-      .then(([usersRes, messagesRes]) => {
+      .then(([usersRes, allMessagesRes]) => {
         if (!mounted) return
-        setUsers(Array.isArray(usersRes.data) ? usersRes.data : [])
-        setMessages(Array.isArray(messagesRes.data) ? messagesRes.data : [])
+        const usersList = Array.isArray(usersRes.data) ? usersRes.data : []
+        const allMessages = Array.isArray(allMessagesRes.data)
+          ? allMessagesRes.data
+          : []
+        setUsers(usersList)
+
+        const storageKey = getLastReadStorageKey(user.id)
+        const storedMap = parseLastReadMap(localStorage.getItem(storageKey))
+        const hasStored = Object.keys(storedMap).length > 0
+
+        if (!hasStored) {
+          const baseline = {}
+          allMessages.forEach((msg) => {
+            const key = getMessageRoomKey(msg, user.id)
+            baseline[key] = Math.max(
+              Number(baseline[key] || 0),
+              Number(msg?.id || 0)
+            )
+          })
+          localStorage.setItem(storageKey, JSON.stringify(baseline))
+          setUnreadMap({})
+        } else {
+          setUnreadMap(calculateUnreadMap(allMessages, user.id, storedMap))
+        }
       })
       .catch(() => {
         if (!mounted) return
         setError('채팅 내역을 불러오지 못했습니다.')
       })
+
     return () => {
       mounted = false
     }
-  }, [open, isAuthenticated, user?.id])
+  }, [isAuthenticated, user?.id])
 
   useEffect(() => {
     if (!open || !isAuthenticated || !user?.id) return
     let mounted = true
     setError('')
+
     const params = {
       limit: 150,
       tmId: user.id,
@@ -115,38 +217,46 @@ export default function ChatWidget() {
     if (selectedRoom.type === 'direct' && selectedRoom.tmId) {
       params.targetTmId = selectedRoom.tmId
     }
+
     api
       .get('/chat/messages', { params })
       .then((res) => {
         if (!mounted) return
-        setMessages(Array.isArray(res.data) ? res.data : [])
+        const nextMessages = Array.isArray(res.data) ? res.data : []
+        setMessages(nextMessages)
+        markRoomAsRead(selectedKey, nextMessages)
       })
       .catch(() => {
         if (!mounted) return
         setError('채팅 내역을 불러오지 못했습니다.')
       })
+
     return () => {
       mounted = false
     }
-  }, [open, isAuthenticated, user?.id, selectedRoom.type, selectedRoom.tmId])
+  }, [
+    open,
+    isAuthenticated,
+    user?.id,
+    selectedRoom.type,
+    selectedRoom.tmId,
+    selectedKey,
+  ])
 
   useEffect(() => {
-    if (!open) return
-    setUnreadMap((prev) => ({
-      ...prev,
-      [selectedKey]: 0,
-    }))
-    if (!listRef.current) return
+    if (!open || !listRef.current) return
     listRef.current.scrollTop = listRef.current.scrollHeight
-  }, [messages, open, selectedKey])
+  }, [messages, open])
 
   const sendMessage = () => {
     const message = text.trim()
     if (!message || !socketRef.current) return
+
     const payload = { message }
     if (selectedRoom.type === 'direct' && selectedRoom.tmId) {
       payload.targetTmId = selectedRoom.tmId
     }
+
     setSending(true)
     setError('')
     socketRef.current.emit('chat:send', payload, (result) => {
@@ -175,36 +285,64 @@ export default function ChatWidget() {
                   <button
                     key={tm.id}
                     type="button"
-                    className={`crm-chat-room-item${selectedRoom.type === 'direct' && Number(selectedRoom.tmId) === Number(tm.id) ? ' active' : ''}`}
-                    onClick={() => setSelectedRoom({ type: 'direct', tmId: tm.id, label: tm.name })}
+                    className={`crm-chat-room-item${
+                      selectedRoom.type === 'direct' &&
+                      Number(selectedRoom.tmId) === Number(tm.id)
+                        ? ' active'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      setSelectedRoom({
+                        type: 'direct',
+                        tmId: tm.id,
+                        label: tm.name,
+                      })
+                    }
                   >
                     <span>{tm.name}</span>
-                    {unread > 0 ? <span className="crm-chat-room-unread">{unread}</span> : null}
+                    {unread > 0 ? (
+                      <span className="crm-chat-room-unread">{unread}</span>
+                    ) : null}
                   </button>
                 )
               })}
             </div>
             <button
               type="button"
-              className={`crm-chat-room-item crm-chat-room-group${selectedRoom.type === 'group' ? ' active' : ''}`}
-              onClick={() => setSelectedRoom({ type: 'group', tmId: null, label: '단체 채팅방' })}
+              className={`crm-chat-room-item crm-chat-room-group${
+                selectedRoom.type === 'group' ? ' active' : ''
+              }`}
+              onClick={() =>
+                setSelectedRoom({
+                  type: 'group',
+                  tmId: null,
+                  label: '단체 채팅방',
+                })
+              }
             >
               <span>단체 채팅방</span>
               {Number(unreadMap[GROUP_ROOM_KEY] || 0) > 0 ? (
-                <span className="crm-chat-room-unread">{Number(unreadMap[GROUP_ROOM_KEY] || 0)}</span>
+                <span className="crm-chat-room-unread">
+                  {Number(unreadMap[GROUP_ROOM_KEY] || 0)}
+                </span>
               ) : null}
             </button>
           </div>
           <div className="crm-chat-main">
             <div className="crm-chat-header">
               <strong>{selectedRoom.label}</strong>
-              <button type="button" onClick={() => setOpen(false)}>닫기</button>
+              <button type="button" onClick={() => setOpen(false)}>
+                닫기
+              </button>
             </div>
             <div className="crm-chat-list" ref={listRef}>
               {messages.map((msg) => {
                 const mine = Number(msg.sender_tm_id) === Number(user?.id)
                 return (
-                  <div key={msg.id} className={`crm-chat-item${mine ? ' mine' : ''}`}>
+                  <div
+                    key={msg.id}
+                    className={`crm-chat-item${mine ? ' mine' : ''}`}
+                  >
                     <div className="crm-chat-meta">
                       <span>{msg.sender_name}</span>
                       <span>{formatChatTime(msg.created_at)}</span>
@@ -238,14 +376,13 @@ export default function ChatWidget() {
       <button
         type="button"
         className="crm-chat-toggle"
-        onClick={() => {
-          setOpen((prev) => !prev)
-        }}
+        onClick={() => setOpen((prev) => !prev)}
       >
         채팅
-        {unreadCount > 0 ? <span className="crm-chat-badge">새 메시지 {unreadCount}</span> : null}
+        {unreadCount > 0 ? (
+          <span className="crm-chat-badge">새 메시지 {unreadCount}</span>
+        ) : null}
       </button>
     </div>
   )
 }
-
