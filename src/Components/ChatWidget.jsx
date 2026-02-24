@@ -25,7 +25,7 @@ const getSocketUrl = () => {
 }
 
 export default function ChatWidget() {
-  const { isAuthenticated, user } = useSelector((state) => state.auth)
+  const { isAuthenticated, user, isAdmin } = useSelector((state) => state.auth)
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
@@ -40,6 +40,11 @@ export default function ChatWidget() {
     if (!isAuthenticated) return undefined
     const socket = io(socketUrl, {
       withCredentials: true,
+      auth: {
+        tmId: user?.id,
+        username: user?.username,
+        isAdmin,
+      },
       transports: ['websocket', 'polling'],
     })
     socketRef.current = socket
@@ -50,13 +55,13 @@ export default function ChatWidget() {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [isAuthenticated, socketUrl])
+  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin])
 
   useEffect(() => {
     if (!open || !isAuthenticated) return
     let mounted = true
     api
-      .get('/chat/messages', { params: { limit: 150 } })
+      .get('/chat/messages', { params: { limit: 150, tmId: user?.id } })
       .then((res) => {
         if (!mounted) return
         setMessages(Array.isArray(res.data) ? res.data : [])
@@ -68,7 +73,7 @@ export default function ChatWidget() {
     return () => {
       mounted = false
     }
-  }, [open, isAuthenticated])
+  }, [open, isAuthenticated, user?.id])
 
   useEffect(() => {
     if (!open) return
@@ -141,4 +146,3 @@ export default function ChatWidget() {
     </div>
   )
 }
-
