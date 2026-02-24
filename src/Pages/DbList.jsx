@@ -41,6 +41,7 @@ export default function DbList() {
   const [createSaving, setCreateSaving] = useState(false)
   const [form, setForm] = useState({
     name: '',
+    event: '',
     status: '',
     region: '',
     memo: '',
@@ -290,6 +291,7 @@ export default function DbList() {
     const { date, time } = splitDateTime(lead['예약_내원일시'])
     setForm({
       name: lead['이름'] || '',
+      event: lead['이벤트'] || '',
       status: lead['상태'] || '',
       region: lead['거주지'] || '',
       memo: '',
@@ -320,6 +322,7 @@ export default function DbList() {
       setSaving(true)
       await api.post(`/admin/leads/${activeLead.id}/update`, {
         name: form.name,
+        event: form.event,
         status: form.status,
         region: form.region,
         memo: form.memo,
@@ -333,6 +336,7 @@ export default function DbList() {
             ? {
                 ...row,
                 이름: form.name,
+                이벤트: form.event,
                 상태: form.status,
                 거주지: form.region,
                 예약_내원일시: reservationAt || row['예약_내원일시'],
@@ -715,6 +719,21 @@ export default function DbList() {
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                     />
+                  </label>
+
+                  <label>
+                    이벤트
+                    <input
+                      type="text"
+                      list="admin-event-options"
+                      value={form.event}
+                      onChange={(e) => setForm({ ...form, event: e.target.value })}
+                    />
+                    <datalist id="admin-event-options">
+                      {eventOptions.map((event) => (
+                        <option key={event} value={event} />
+                      ))}
+                    </datalist>
                   </label>
 
                   <label>
