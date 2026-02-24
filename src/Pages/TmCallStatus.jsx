@@ -213,8 +213,17 @@ export default function TmCallStatus() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
-  const parseMemoStatusMeta = (content) => {
-    const text = String(content || '').trim()
+  const parseMemoStatusMeta = (memo) => {
+    const text = String((typeof memo === 'object' && memo !== null ? memo.memo_content : memo) || '').trim()
+    const columnTag = String(memo?.status_tag || '').trim()
+    const columnReservationText = memo?.status_reservation_at ? formatDateTime(memo.status_reservation_at) : ''
+    if (columnTag) {
+      return {
+        badge: columnTag,
+        reservationText: columnReservationText,
+        body: text,
+      }
+    }
     const re = /(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?/u
     const m = text.match(re)
     if (!m) return { badge: '', reservationText: '', body: text }
@@ -822,7 +831,7 @@ export default function TmCallStatus() {
                         <div key={idx} className="tm-lead-memo">
                           <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
                           {(() => {
-                            const parsed = parseMemoStatusMeta(memo.memo_content)
+                            const parsed = parseMemoStatusMeta(memo)
                             if (!parsed.badge) return null
                             const reservationText =
                               parsed.reservationText ||
@@ -842,7 +851,7 @@ export default function TmCallStatus() {
                               </div>
                             )
                           })()}
-                          <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo.memo_content).body || memo.memo_content}</div>
+                          <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo).body || memo.memo_content}</div>
                           {memo.tm_id ? (
                             <div className="tm-lead-memo-time">
                               작성 TM: {memo.tm_name || memo.tm_id}

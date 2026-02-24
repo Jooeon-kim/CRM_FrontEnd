@@ -341,8 +341,17 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     return ''
   }
 
-  const parseMemoStatusMeta = (content) => {
-    const text = String(content || '').trim()
+  const parseMemoStatusMeta = (memo) => {
+    const text = String((typeof memo === 'object' && memo !== null ? memo.memo_content : memo) || '').trim()
+    const columnTag = String(memo?.status_tag || '').trim()
+    const columnReservationText = memo?.status_reservation_at ? formatDateTime(memo.status_reservation_at) : ''
+    if (columnTag) {
+      return {
+        badge: columnTag,
+        reservationText: columnReservationText,
+        body: text,
+      }
+    }
     const re = /(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?/u
     const m = text.match(re)
     if (!m) return { badge: '', reservationText: '', body: text }
@@ -608,8 +617,19 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       setActiveLead(nextLead)
       const phoneKey = normalizePhoneDigits(leadPhone)
       if (memoToSave) {
+        const memoStatusTag = String(nextStatus || '').trim() || null
+        const memoStatusReservationAt = ['예약', '예약부도', '내원완료'].includes(memoStatusTag)
+          ? (nextReservationAt || null)
+          : null
         const nextMemoRows = [
-          { memo_time: nowIso, memo_content: memoToSave, tm_id: user.id, tm_name: user?.username || '' },
+          {
+            memo_time: nowIso,
+            memo_content: memoToSave,
+            status_tag: memoStatusTag,
+            status_reservation_at: memoStatusReservationAt,
+            tm_id: user.id,
+            tm_name: user?.username || '',
+          },
           ...memos,
         ].slice(0, 20)
         setMemos(nextMemoRows)
@@ -1044,7 +1064,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                         <div key={idx} className="tm-lead-memo">
                           <div className="tm-lead-memo-time">{formatMemoDateTime(memo.memo_time)}</div>
                           {(() => {
-                            const parsed = parseMemoStatusMeta(memo.memo_content)
+                            const parsed = parseMemoStatusMeta(memo)
                             if (!parsed.badge) return null
                             const reservationText =
                               parsed.reservationText ||
@@ -1081,7 +1101,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                               </div>
                             </div>
                           ) : (
-                            <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo.memo_content).body || memo.memo_content}</div>
+                          <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo).body || memo.memo_content}</div>
                           )}
                           {memo.tm_id ? (
                             <div className="tm-lead-memo-time">
