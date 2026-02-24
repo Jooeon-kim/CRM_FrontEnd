@@ -1,7 +1,12 @@
 ﻿import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import api from '../apiClient'
+import { setAdminDataset } from '../store/mainSlice'
 
 export default function TmAssign() {
+  const dispatch = useDispatch()
+  const tmLeadsCache = useSelector((state) => state.main.adminDatasets?.tmLeads)
+  const agentsCache = useSelector((state) => state.main.adminDatasets?.agents)
   const [leads, setLeads] = useState([])
   const [agents, setAgents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -40,9 +45,24 @@ export default function TmAssign() {
   }
 
   useEffect(() => {
-    const load = async () => {
+    const CACHE_TTL_MS = 2 * 60 * 1000
+    const load = async ({ force = false } = {}) => {
+      const now = Date.now()
+      const cachedLeads = Array.isArray(tmLeadsCache?.rows) ? tmLeadsCache.rows : []
+      const cachedAgents = Array.isArray(agentsCache?.rows) ? agentsCache.rows : []
+      const leadsFresh = now - Number(tmLeadsCache?.fetchedAt || 0) < CACHE_TTL_MS
+      const agentsFresh = now - Number(agentsCache?.fetchedAt || 0) < CACHE_TTL_MS
+      const hasCache = cachedLeads.length > 0 && cachedAgents.length > 0
+
+      if (!force && hasCache) {
+        setLeads(cachedLeads)
+        setAgents(cachedAgents)
+        setLoading(false)
+        if (leadsFresh && agentsFresh) return
+      }
+
       try {
-        setLoading(true)
+        if (!hasCache || force) setLoading(true)
         // 페이지 진입 시 최신 리드를 보장하기 위해 동기화를 먼저 실행
         try {
           await api.post('/admin/sync-meta-leads')
@@ -54,8 +74,12 @@ export default function TmAssign() {
           api.get('/tm/leads'),
           api.get('/tm/agents'),
         ])
-        setLeads(leadsRes.data?.leads || [])
-        setAgents(agentsRes.data || [])
+        const nextLeads = leadsRes.data?.leads || []
+        const nextAgents = agentsRes.data || []
+        setLeads(nextLeads)
+        setAgents(nextAgents)
+        dispatch(setAdminDataset({ key: 'tmLeads', rows: nextLeads, fetchedAt: Date.now() }))
+        dispatch(setAdminDataset({ key: 'agents', rows: nextAgents, fetchedAt: Date.now() }))
         setError('')
       } catch (err) {
         setError('데이터를 불러오지 못했습니다.')
@@ -65,14 +89,18 @@ export default function TmAssign() {
     }
 
     load()
-  }, [])
+  }, [agentsCache?.fetchedAt, dispatch, tmLeadsCache?.fetchedAt])
 
   const handleAssign = async (leadId, tmId) => {
     if (!tmId) return
     try {
       setAssigningId(leadId)
       await api.post('/tm/assign', { leadId, tmId })
-      setLeads((prev) => prev.filter((lead) => lead.id !== leadId))
+      setLeads((prev) => {
+        const next = prev.filter((lead) => lead.id !== leadId)
+        dispatch(setAdminDataset({ key: 'tmLeads', rows: next, fetchedAt: Date.now() }))
+        return next
+      })
     } catch (err) {
       setError('TM 배정에 실패했습니다.')
     } finally {
@@ -84,7 +112,11 @@ export default function TmAssign() {
     try {
       setAssigningId(leadId)
       await api.post('/tm/assign', { leadId, tmId: 0 })
-      setLeads((prev) => prev.filter((lead) => lead.id !== leadId))
+      setLeads((prev) => {
+        const next = prev.filter((lead) => lead.id !== leadId)
+        dispatch(setAdminDataset({ key: 'tmLeads', rows: next, fetchedAt: Date.now() }))
+        return next
+      })
       setError('')
     } catch (err) {
       setError('보류 처리에 실패했습니다.')
@@ -115,7 +147,11 @@ export default function TmAssign() {
         }
       }
 
-      setLeads((prev) => prev.filter((lead) => !assignedIds.includes(lead.id)))
+      setLeads((prev) => {
+        const next = prev.filter((lead) => !assignedIds.includes(lead.id))
+        dispatch(setAdminDataset({ key: 'tmLeads', rows: next, fetchedAt: Date.now() }))
+        return next
+      })
       setError('')
       setAutoPreviewOpen(false)
       setActivePreviewTm(null)
@@ -390,3 +426,4 @@ export default function TmAssign() {
     </div>
   )
 }
+

@@ -1,5 +1,7 @@
 ﻿import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import api from '../apiClient'
+import { patchAdminDbLead, setAdminDataset } from '../store/mainSlice'
 
 const statusOptions = ['부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
 
@@ -18,6 +20,9 @@ const buildTimes = () => {
 const timeOptions = buildTimes()
 
 export default function DbList() {
+  const dispatch = useDispatch()
+  const dbCache = useSelector((state) => state.main.adminDatasets?.dbRows)
+  const agentsCache = useSelector((state) => state.main.adminDatasets?.agents)
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -56,9 +61,25 @@ export default function DbList() {
     tmId: '',
   })
 
-  const load = async () => {
+  const CACHE_TTL_MS = 2 * 60 * 1000
+
+  const load = async ({ force = false } = {}) => {
+    const now = Date.now()
+    const cachedRows = Array.isArray(dbCache?.rows) ? dbCache.rows : []
+    const cachedAgents = Array.isArray(agentsCache?.rows) ? agentsCache.rows : []
+    const dbFresh = now - Number(dbCache?.fetchedAt || 0) < CACHE_TTL_MS
+    const agentsFresh = now - Number(agentsCache?.fetchedAt || 0) < CACHE_TTL_MS
+    const hasCache = cachedRows.length > 0 && cachedAgents.length > 0
+
+    if (!force && hasCache) {
+      setRows(cachedRows)
+      setAgents(cachedAgents)
+      setLoading(false)
+      if (dbFresh && agentsFresh) return
+    }
+
     try {
-      setLoading(true)
+      if (!hasCache || force) setLoading(true)
       const [res, tmRes] = await Promise.all([
         api.get('/dbdata'),
         api.get('/tm/agents'),
@@ -74,6 +95,8 @@ export default function DbList() {
       }))
       setRows(normalizedRows)
       setAgents(tmRes.data || [])
+      dispatch(setAdminDataset({ key: 'dbRows', rows: normalizedRows, fetchedAt: Date.now() }))
+      dispatch(setAdminDataset({ key: 'agents', rows: tmRes.data || [], fetchedAt: Date.now() }))
       setError('')
     } catch (err) {
       setError('DB 목록을 불러오지 못했습니다.')
@@ -346,6 +369,21 @@ export default function DbList() {
               }
             : row
         )
+      )
+      dispatch(
+        patchAdminDbLead({
+          leadId: activeLead.id,
+          patch: {
+            이름: form.name,
+            이벤트: form.event,
+            상태: form.status,
+            거주지: form.region,
+            예약_내원일시: reservationAt || activeLead['예약_내원일시'],
+            tm: form.tmId || activeLead.tm,
+            최근메모내용: form.memo || activeLead['최근메모내용'],
+            최근메모시간: form.memo ? new Date().toISOString() : activeLead['최근메모시간'],
+          },
+        })
       )
       setModalOpen(false)
     } catch (err) {
@@ -900,4 +938,6 @@ export default function DbList() {
     </div>
   )
 }
+
+
 

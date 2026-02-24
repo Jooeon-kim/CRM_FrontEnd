@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import api from '../apiClient'
+import { setAdminDataset } from '../store/mainSlice'
 
 const normalizePhoneDigits = (value) => {
   if (!value) return ''
@@ -29,6 +31,10 @@ const formatDateTime = (value) => {
 }
 
 export default function AdminTmReassign() {
+  const dispatch = useDispatch()
+  const dbCache = useSelector((state) => state.main.adminDatasets?.dbRows)
+  const agentsCache = useSelector((state) => state.main.adminDatasets?.agents)
+
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -43,15 +49,34 @@ export default function AdminTmReassign() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    const load = async () => {
+    const CACHE_TTL_MS = 2 * 60 * 1000
+    const load = async ({ force = false } = {}) => {
+      const now = Date.now()
+      const cachedRows = Array.isArray(dbCache?.rows) ? dbCache.rows : []
+      const cachedAgents = Array.isArray(agentsCache?.rows) ? agentsCache.rows : []
+      const dbFresh = now - Number(dbCache?.fetchedAt || 0) < CACHE_TTL_MS
+      const agentsFresh = now - Number(agentsCache?.fetchedAt || 0) < CACHE_TTL_MS
+      const hasCache = cachedRows.length > 0 && cachedAgents.length > 0
+
+      if (!force && hasCache) {
+        setRows(cachedRows)
+        setAgents(cachedAgents.filter((agent) => !agent.isAdmin))
+        setLoading(false)
+        if (dbFresh && agentsFresh) return
+      }
+
       try {
-        setLoading(true)
+        if (!hasCache || force) setLoading(true)
         const [dbRes, tmRes] = await Promise.all([
           api.get('/dbdata'),
           api.get('/tm/agents'),
         ])
-        setRows(dbRes.data || [])
-        setAgents((tmRes.data || []).filter((agent) => !agent.isAdmin))
+        const nextRows = dbRes.data || []
+        const nextAgents = tmRes.data || []
+        setRows(nextRows)
+        setAgents(nextAgents.filter((agent) => !agent.isAdmin))
+        dispatch(setAdminDataset({ key: 'dbRows', rows: nextRows, fetchedAt: Date.now() }))
+        dispatch(setAdminDataset({ key: 'agents', rows: nextAgents, fetchedAt: Date.now() }))
         setError('')
       } catch (e) {
         setError('TM 변경 데이터를 불러오지 못했습니다.')
@@ -60,7 +85,7 @@ export default function AdminTmReassign() {
       }
     }
     load()
-  }, [])
+  }, [agentsCache?.fetchedAt, dbCache?.fetchedAt, dispatch])
 
   const tmNameMap = useMemo(() => {
     const map = new Map()
@@ -134,13 +159,15 @@ export default function AdminTmReassign() {
         tmId: Number(targetTmId),
       })
       const nowIso = new Date().toISOString()
-      setRows((prev) =>
-        prev.map((row) =>
+      setRows((prev) => {
+        const next = prev.map((row) =>
           selectedIds.includes(String(row.id))
             ? { ...row, tm: Number(targetTmId), 배정날짜: nowIso }
             : row
         )
-      )
+        dispatch(setAdminDataset({ key: 'dbRows', rows: next, fetchedAt: Date.now() }))
+        return next
+      })
       setSelectedIds([])
       setError('')
     } catch (e) {

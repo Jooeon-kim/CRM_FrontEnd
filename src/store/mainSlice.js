@@ -4,6 +4,11 @@ const mainSlice = createSlice({
   name: 'main',
   initialState: {
     tmDbCache: {},
+    adminDatasets: {
+      dbRows: { rows: [], fetchedAt: 0 },
+      agents: { rows: [], fetchedAt: 0 },
+      tmLeads: { rows: [], fetchedAt: 0 },
+    },
     calendarCache: {
       tmBase: {},
       tmMonth: {},
@@ -37,6 +42,29 @@ const mainSlice = createSlice({
             : row
         )
       })
+    },
+    setAdminDataset(state, action) {
+      const { key, rows, fetchedAt } = action.payload || {}
+      if (!key) return
+      if (!state.adminDatasets[key]) {
+        state.adminDatasets[key] = { rows: [], fetchedAt: 0 }
+      }
+      state.adminDatasets[key] = {
+        rows: Array.isArray(rows) ? rows : [],
+        fetchedAt: Number(fetchedAt || Date.now()),
+      }
+    },
+    patchAdminDbLead(state, action) {
+      const { leadId, patch } = action.payload || {}
+      const targetLeadId = String(leadId || '')
+      if (!targetLeadId || !patch || typeof patch !== 'object') return
+      const dbCache = state.adminDatasets?.dbRows
+      if (!dbCache || !Array.isArray(dbCache.rows)) return
+      dbCache.rows = dbCache.rows.map((row) =>
+        String(row?.id || '') === targetLeadId
+          ? { ...row, ...patch }
+          : row
+      )
     },
     setTmCalendarBase(state, action) {
       const { tmId, rows, fetchedAt } = action.payload || {}
@@ -81,6 +109,8 @@ const mainSlice = createSlice({
 export const {
   setTmDbCache,
   patchTmDbLead,
+  setAdminDataset,
+  patchAdminDbLead,
   setTmCalendarBase,
   setTmCalendarMonth,
   setAdminCalendarBase,

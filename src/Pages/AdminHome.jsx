@@ -1,8 +1,14 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import api from '../apiClient'
+import { setAdminDataset } from '../store/mainSlice'
 
 export default function AdminHome() {
+  const dispatch = useDispatch()
+  const dbCache = useSelector((state) => state.main.adminDatasets?.dbRows)
+  const agentsCache = useSelector((state) => state.main.adminDatasets?.agents)
+  const tmLeadsCache = useSelector((state) => state.main.adminDatasets?.tmLeads)
   const [syncing, setSyncing] = useState(false)
   const [message, setMessage] = useState('')
   const [ruleMessage, setRuleMessage] = useState('')
@@ -22,6 +28,7 @@ export default function AdminHome() {
   const [formData, setFormData] = useState({ id: '', name: '', phone: '', password: '' })
 
   useEffect(() => {
+    const CACHE_TTL_MS = 2 * 60 * 1000
     const loadRules = async () => {
       try {
         setRulesLoading(true)
@@ -34,9 +41,30 @@ export default function AdminHome() {
       }
     }
 
-    const load = async () => {
+    const load = async ({ force = false } = {}) => {
+      const now = Date.now()
+      const cachedRows = Array.isArray(dbCache?.rows) ? dbCache.rows : []
+      const cachedAgents = Array.isArray(agentsCache?.rows) ? agentsCache.rows : []
+      const cachedTmLeads = Array.isArray(tmLeadsCache?.rows) ? tmLeadsCache.rows : []
+      const hasCache = cachedRows.length > 0 && cachedAgents.length > 0 && cachedTmLeads.length > 0
+      const dbFresh = now - Number(dbCache?.fetchedAt || 0) < CACHE_TTL_MS
+      const agentsFresh = now - Number(agentsCache?.fetchedAt || 0) < CACHE_TTL_MS
+      const tmLeadsFresh = now - Number(tmLeadsCache?.fetchedAt || 0) < CACHE_TTL_MS
+
+      if (!force && hasCache) {
+        setRows(cachedRows)
+        setAgents(cachedAgents)
+        setStats({
+          total: cachedRows.length || 0,
+          unassigned: cachedTmLeads.length || 0,
+          tmCount: cachedAgents.length || 0,
+        })
+        setLoading(false)
+        if (dbFresh && agentsFresh && tmLeadsFresh) return
+      }
+
       try {
-        setLoading(true)
+        if (!hasCache || force) setLoading(true)
         try {
           await api.post('/admin/sync-meta-leads')
         } catch (syncErr) {
@@ -55,6 +83,9 @@ export default function AdminHome() {
         })
         setRows(dbRows)
         setAgents(tmRes.data || [])
+        dispatch(setAdminDataset({ key: 'dbRows', rows: dbRows, fetchedAt: Date.now() }))
+        dispatch(setAdminDataset({ key: 'tmLeads', rows: unassignedRes.data?.leads || [], fetchedAt: Date.now() }))
+        dispatch(setAdminDataset({ key: 'agents', rows: tmRes.data || [], fetchedAt: Date.now() }))
       } finally {
         setLoading(false)
       }
@@ -62,7 +93,7 @@ export default function AdminHome() {
 
     load()
     loadRules()
-  }, [])
+  }, [agentsCache?.fetchedAt, dbCache?.fetchedAt, dispatch, tmLeadsCache?.fetchedAt])
 
   const handleSync = async () => {
     try {
@@ -98,10 +129,14 @@ export default function AdminHome() {
           phone: formData.phone.replace(/\D/g, ''),
           password: formData.password,
         })
-        setAgents((prev) => [
-          ...prev,
-          { id: res.data?.id, name: formData.name, phone: formData.phone.replace(/\D/g, ''), isAdmin: 0 },
-        ])
+        setAgents((prev) => {
+          const next = [
+            ...prev,
+            { id: res.data?.id, name: formData.name, phone: formData.phone.replace(/\D/g, ''), isAdmin: 0 },
+          ]
+          dispatch(setAdminDataset({ key: 'agents', rows: next, fetchedAt: Date.now() }))
+          return next
+        })
       } else {
         await api.patch(`/tm/agents/${formData.id}`, {
           name: formData.name,
@@ -109,11 +144,15 @@ export default function AdminHome() {
           password: formData.password || undefined,
         })
         setAgents((prev) =>
-          prev.map((agent) =>
-            agent.id === formData.id
-              ? { ...agent, name: formData.name, phone: formData.phone.replace(/\D/g, '') }
-              : agent
-          )
+          {
+            const next = prev.map((agent) =>
+              agent.id === formData.id
+                ? { ...agent, name: formData.name, phone: formData.phone.replace(/\D/g, '') }
+                : agent
+            )
+            dispatch(setAdminDataset({ key: 'agents', rows: next, fetchedAt: Date.now() }))
+            return next
+          }
         )
       }
       setModalOpen(false)
@@ -457,3 +496,4 @@ export default function AdminHome() {
     </div>
   )
 }
+
