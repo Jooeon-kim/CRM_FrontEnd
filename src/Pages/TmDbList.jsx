@@ -347,6 +347,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   const openModal = async (lead) => {
     const phoneKey = normalizePhoneDigits(lead?.['연락처'])
+    const phoneParam = phoneKey || String(lead?.['연락처'] || '')
     const cachedMemos = memoCacheByPhone?.[phoneKey]
     const cachedEvents = phoneEventsCacheByPhone?.[phoneKey]
 
@@ -368,20 +369,35 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     setModalOpen(true)
     try {
       setMemoLoading(!Array.isArray(cachedMemos))
-      const res = await api.get('/tm/memos', { params: { phone: lead['연락처'], detailed: 1, leadId: lead.id, limit: 20 } })
-      if (Array.isArray(res.data)) {
-        const nextMemos = res.data || []
-        setMemos(nextMemos)
+      let loaded = false
+      try {
+        const res = await api.get('/tm/memos', { params: { phone: phoneParam, detailed: 1, leadId: lead.id, limit: 20 } })
+        if (Array.isArray(res.data)) {
+          const nextMemos = res.data || []
+          setMemos(nextMemos)
+          setPhoneEvents([])
+          setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextMemos }))
+          setPhoneEventsCacheByPhone((prev) => ({ ...prev, [phoneKey]: [] }))
+        } else {
+          const nextMemos = res.data?.memos || []
+          const nextEvents = res.data?.events || []
+          setMemos(nextMemos)
+          setPhoneEvents(nextEvents)
+          setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextMemos }))
+          setPhoneEventsCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextEvents }))
+        }
+        loaded = true
+      } catch {
+        loaded = false
+      }
+
+      if (!loaded) {
+        const fallbackRes = await api.get('/tm/memos', { params: { phone: phoneParam } })
+        const fallbackMemos = Array.isArray(fallbackRes.data) ? fallbackRes.data : (fallbackRes.data?.memos || [])
+        setMemos(fallbackMemos)
         setPhoneEvents([])
-        setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextMemos }))
+        setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: fallbackMemos }))
         setPhoneEventsCacheByPhone((prev) => ({ ...prev, [phoneKey]: [] }))
-      } else {
-        const nextMemos = res.data?.memos || []
-        const nextEvents = res.data?.events || []
-        setMemos(nextMemos)
-        setPhoneEvents(nextEvents)
-        setMemoCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextMemos }))
-        setPhoneEventsCacheByPhone((prev) => ({ ...prev, [phoneKey]: nextEvents }))
       }
     } catch {
       if (!Array.isArray(cachedMemos)) {
