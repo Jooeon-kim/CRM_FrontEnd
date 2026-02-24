@@ -1,21 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { logout } from './authSlice'
+
+const initialState = {
+  tmDbCache: {},
+  adminDatasets: {
+    dbRows: { rows: [], fetchedAt: 0 },
+    agents: { rows: [], fetchedAt: 0 },
+    tmLeads: { rows: [], fetchedAt: 0 },
+  },
+  calendarCache: {
+    tmBase: {},
+    tmMonth: {},
+    adminBase: null,
+    adminMonth: {},
+  },
+}
 
 const mainSlice = createSlice({
   name: 'main',
-  initialState: {
-    tmDbCache: {},
-    adminDatasets: {
-      dbRows: { rows: [], fetchedAt: 0 },
-      agents: { rows: [], fetchedAt: 0 },
-      tmLeads: { rows: [], fetchedAt: 0 },
-    },
-    calendarCache: {
-      tmBase: {},
-      tmMonth: {},
-      adminBase: null,
-      adminMonth: {},
-    },
-  },
+  initialState,
   reducers: {
     setTmDbCache(state, action) {
       const { key, rows, fetchedAt } = action.payload || {}
@@ -103,6 +106,59 @@ const mainSlice = createSlice({
         fetchedAt: Number(fetchedAt || Date.now()),
       }
     },
+    clearMainCaches() {
+      return {
+        ...initialState,
+        adminDatasets: {
+          ...initialState.adminDatasets,
+          dbRows: { ...initialState.adminDatasets.dbRows },
+          agents: { ...initialState.adminDatasets.agents },
+          tmLeads: { ...initialState.adminDatasets.tmLeads },
+        },
+        calendarCache: {
+          ...initialState.calendarCache,
+          tmBase: {},
+          tmMonth: {},
+          adminBase: null,
+          adminMonth: {},
+        },
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(logout.fulfilled, () => ({
+        ...initialState,
+        adminDatasets: {
+          ...initialState.adminDatasets,
+          dbRows: { ...initialState.adminDatasets.dbRows },
+          agents: { ...initialState.adminDatasets.agents },
+          tmLeads: { ...initialState.adminDatasets.tmLeads },
+        },
+        calendarCache: {
+          ...initialState.calendarCache,
+          tmBase: {},
+          tmMonth: {},
+          adminBase: null,
+          adminMonth: {},
+        },
+      }))
+      .addCase(logout.rejected, () => ({
+        ...initialState,
+        adminDatasets: {
+          ...initialState.adminDatasets,
+          dbRows: { ...initialState.adminDatasets.dbRows },
+          agents: { ...initialState.adminDatasets.agents },
+          tmLeads: { ...initialState.adminDatasets.tmLeads },
+        },
+        calendarCache: {
+          ...initialState.calendarCache,
+          tmBase: {},
+          tmMonth: {},
+          adminBase: null,
+          adminMonth: {},
+        },
+      }))
   },
 })
 
@@ -115,5 +171,6 @@ export const {
   setTmCalendarMonth,
   setAdminCalendarBase,
   setAdminCalendarMonth,
+  clearMainCaches,
 } = mainSlice.actions
 export default mainSlice.reducer
