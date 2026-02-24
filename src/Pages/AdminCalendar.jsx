@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import api from '../apiClient'
+import { setAdminCalendarBase, setAdminCalendarMonth } from '../store/mainSlice'
 
 const weekLabels = ['일', '월', '화', '수', '목', '금', '토']
 const isCalendarStatus = (value) => {
@@ -99,6 +101,12 @@ const buildMonthRange = (monthDate) => {
   }
 }
 
+const getMonthKey = (monthDate) => {
+  const yyyy = monthDate.getFullYear()
+  const mm = String(monthDate.getMonth() + 1).padStart(2, '0')
+  return `${yyyy}-${mm}`
+}
+
 const parseDateOnly = (value) => {
   const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
   if (!m) return null
@@ -170,6 +178,8 @@ const getReservationStatus = (value) => {
 }
 
 export default function AdminCalendar() {
+  const dispatch = useDispatch()
+  const calendarCache = useSelector((state) => state.main?.calendarCache || {})
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
@@ -201,22 +211,49 @@ export default function AdminCalendar() {
     endDate: toDateInput(new Date()),
     content: '',
   })
+  const adminCalendarBaseCache = calendarCache?.adminBase
+  const currentMonthKey = useMemo(() => getMonthKey(currentMonth), [currentMonth])
+  const adminCalendarMonthCache = calendarCache?.adminMonth?.[currentMonthKey]
 
   useEffect(() => {
     const load = async () => {
       try {
+        const cacheFresh =
+          adminCalendarBaseCache &&
+          Date.now() - Number(adminCalendarBaseCache.fetchedAt || 0) < 5 * 60 * 1000
+        if (cacheFresh) {
+          setReservations(
+            (adminCalendarBaseCache.reservations || []).filter((row) => {
+              const status = String(row['상태'] || '').trim()
+              return isCalendarStatus(status) && Boolean(row['예약_내원일시'])
+            })
+          )
+          setAgents(adminCalendarBaseCache.agents || [])
+          setError('')
+          setLoading(false)
+          return
+        }
         setLoading(true)
         const [dbRes, tmRes] = await Promise.all([
           api.get('/dbdata'),
           api.get('/tm/agents'),
         ])
+        const nextReservations = dbRes.data || []
+        const nextAgents = tmRes.data || []
+        dispatch(
+          setAdminCalendarBase({
+            reservations: nextReservations,
+            agents: nextAgents,
+            fetchedAt: Date.now(),
+          })
+        )
         setReservations(
-          (dbRes.data || []).filter((row) => {
+          nextReservations.filter((row) => {
             const status = String(row['상태'] || '').trim()
             return isCalendarStatus(status) && Boolean(row['예약_내원일시'])
           })
         )
-        setAgents(tmRes.data || [])
+        setAgents(nextAgents)
         setError('')
       } catch (err) {
         setError('예약 데이터를 불러오지 못했습니다.')
@@ -226,33 +263,72 @@ export default function AdminCalendar() {
     }
 
     load()
-  }, [])
+  }, [adminCalendarBaseCache, dispatch])
 
   useEffect(() => {
-    const loadSchedules = async () => {
+    const loadMonthData = async () => {
       try {
+        const monthCacheFresh =
+          adminCalendarMonthCache &&
+          Date.now() - Number(adminCalendarMonthCache.fetchedAt || 0) < 10 * 60 * 1000
+        if (monthCacheFresh) {
+          setSchedules(Array.isArray(adminCalendarMonthCache.schedules) ? adminCalendarMonthCache.schedules : [])
+          setCompanySchedules(Array.isArray(adminCalendarMonthCache.companySchedules) ? adminCalendarMonthCache.companySchedules : [])
+          return
+        }
+
         const { from, to } = buildMonthRange(currentMonth)
-        const res = await api.get('/tm/schedules', { params: { from, to } })
-        setSchedules(Array.isArray(res.data) ? res.data : [])
+        const [tmRes, companyRes] = await Promise.all([
+          api.get('/tm/schedules', { params: { from, to } }),
+          api.get('/company/schedules', { params: { from, to } }),
+        ])
+        const nextSchedules = Array.isArray(tmRes.data) ? tmRes.data : []
+        const nextCompanySchedules = Array.isArray(companyRes.data) ? companyRes.data : []
+        setSchedules(nextSchedules)
+        setCompanySchedules(nextCompanySchedules)
+        dispatch(
+          setAdminCalendarMonth({
+            monthKey: currentMonthKey,
+            schedules: nextSchedules,
+            companySchedules: nextCompanySchedules,
+            fetchedAt: Date.now(),
+          })
+        )
       } catch {
         setSchedules([])
-      }
-    }
-    loadSchedules()
-  }, [currentMonth])
-
-  useEffect(() => {
-    const loadCompanySchedules = async () => {
-      try {
-        const { from, to } = buildMonthRange(currentMonth)
-        const res = await api.get('/company/schedules', { params: { from, to } })
-        setCompanySchedules(Array.isArray(res.data) ? res.data : [])
-      } catch {
         setCompanySchedules([])
       }
     }
-    loadCompanySchedules()
-  }, [currentMonth])
+    loadMonthData()
+  }, [currentMonth, currentMonthKey, adminCalendarMonthCache, dispatch])
+
+  useEffect(() => {
+    const prefetchMonth = async (offset) => {
+      const target = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1)
+      const targetKey = getMonthKey(target)
+      const cached = calendarCache?.adminMonth?.[targetKey]
+      if (cached && Date.now() - Number(cached.fetchedAt || 0) < 10 * 60 * 1000) return
+      try {
+        const { from, to } = buildMonthRange(target)
+        const [tmRes, companyRes] = await Promise.all([
+          api.get('/tm/schedules', { params: { from, to } }),
+          api.get('/company/schedules', { params: { from, to } }),
+        ])
+        dispatch(
+          setAdminCalendarMonth({
+            monthKey: targetKey,
+            schedules: Array.isArray(tmRes.data) ? tmRes.data : [],
+            companySchedules: Array.isArray(companyRes.data) ? companyRes.data : [],
+            fetchedAt: Date.now(),
+          })
+        )
+      } catch {
+        // prefetch failure is non-blocking
+      }
+    }
+    prefetchMonth(-1)
+    prefetchMonth(1)
+  }, [currentMonth, calendarCache?.adminMonth, dispatch])
 
   const tmMap = useMemo(() => {
     const map = new Map()

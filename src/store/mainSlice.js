@@ -4,6 +4,12 @@ const mainSlice = createSlice({
   name: 'main',
   initialState: {
     tmDbCache: {},
+    calendarCache: {
+      tmBase: {},
+      tmMonth: {},
+      adminBase: null,
+      adminMonth: {},
+    },
   },
   reducers: {
     setTmDbCache(state, action) {
@@ -32,8 +38,52 @@ const mainSlice = createSlice({
         )
       })
     },
+    setTmCalendarBase(state, action) {
+      const { tmId, rows, fetchedAt } = action.payload || {}
+      const key = String(tmId || '')
+      if (!key) return
+      state.calendarCache.tmBase[key] = {
+        rows: Array.isArray(rows) ? rows : [],
+        fetchedAt: Number(fetchedAt || Date.now()),
+      }
+    },
+    setTmCalendarMonth(state, action) {
+      const { tmId, monthKey, schedules, companySchedules, fetchedAt } = action.payload || {}
+      const key = `${String(tmId || '')}:${String(monthKey || '')}`
+      if (!key || key === ':') return
+      state.calendarCache.tmMonth[key] = {
+        schedules: Array.isArray(schedules) ? schedules : [],
+        companySchedules: Array.isArray(companySchedules) ? companySchedules : [],
+        fetchedAt: Number(fetchedAt || Date.now()),
+      }
+    },
+    setAdminCalendarBase(state, action) {
+      const { reservations, agents, fetchedAt } = action.payload || {}
+      state.calendarCache.adminBase = {
+        reservations: Array.isArray(reservations) ? reservations : [],
+        agents: Array.isArray(agents) ? agents : [],
+        fetchedAt: Number(fetchedAt || Date.now()),
+      }
+    },
+    setAdminCalendarMonth(state, action) {
+      const { monthKey, schedules, companySchedules, fetchedAt } = action.payload || {}
+      const key = String(monthKey || '')
+      if (!key) return
+      state.calendarCache.adminMonth[key] = {
+        schedules: Array.isArray(schedules) ? schedules : [],
+        companySchedules: Array.isArray(companySchedules) ? companySchedules : [],
+        fetchedAt: Number(fetchedAt || Date.now()),
+      }
+    },
   },
 })
 
-export const { setTmDbCache, patchTmDbLead } = mainSlice.actions
+export const {
+  setTmDbCache,
+  patchTmDbLead,
+  setTmCalendarBase,
+  setTmCalendarMonth,
+  setAdminCalendarBase,
+  setAdminCalendarMonth,
+} = mainSlice.actions
 export default mainSlice.reducer
