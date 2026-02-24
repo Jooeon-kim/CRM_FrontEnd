@@ -55,6 +55,32 @@ const formatDateTime = (value) => {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`
 }
 
+const parseMemoStatusMeta = (memo) => {
+  const text = String((typeof memo === 'object' && memo !== null ? memo.memo_content : memo) || '').trim()
+  const columnTag = String(memo?.status_tag || '').trim()
+  const columnReservationText = memo?.status_reservation_at ? formatDateTime(memo.status_reservation_at) : ''
+  if (columnTag) {
+    return {
+      badge: columnTag,
+      reservationText: columnReservationText,
+      body: text,
+    }
+  }
+  const re = /(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?/u
+  const m = text.match(re)
+  if (!m) return { badge: '', reservationText: '', body: text }
+  const fullMatch = String(m[0] || '').trim()
+  const body = text
+    .replace(fullMatch, '')
+    .replace(/^\s*\/\s*/, '')
+    .trim()
+  return {
+    badge: m[1] || '',
+    reservationText: m[2] || '',
+    body,
+  }
+}
+
 const getSocketUrl = () => {
   const base = import.meta.env.VITE_API_BASE_URL || ''
   if (/^https?:\/\//i.test(base)) {
@@ -668,7 +694,29 @@ export default function ChatWidget() {
                         {sharedLeadModal.memos.map((memo) => (
                           <div key={memo.id} className="tm-lead-memo">
                             <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
-                            <div className="tm-lead-memo-content">{memo.memo_content}</div>
+                            {(() => {
+                              const parsed = parseMemoStatusMeta(memo)
+                              const reservationText = String(parsed.reservationText || '').trim()
+                              const badgeClassMap = {
+                                예약: 'tm-lead-memo-badge is-reserved',
+                                예약부도: 'tm-lead-memo-badge is-noshow',
+                                내원완료: 'tm-lead-memo-badge is-visited',
+                                부재중: 'tm-lead-memo-badge is-missed',
+                                리콜대기: 'tm-lead-memo-badge is-recall',
+                                무효: 'tm-lead-memo-badge is-invalid',
+                                실패: 'tm-lead-memo-badge is-failed',
+                              }
+                              const badgeClass = badgeClassMap[parsed.badge] || 'tm-lead-memo-badge'
+                              return parsed.badge ? (
+                                <div className="tm-lead-memo-status">
+                                  <span className={badgeClass}>{parsed.badge}</span>
+                                  {reservationText ? (
+                                    <span className="tm-lead-memo-status-time">예약일시: {reservationText}</span>
+                                  ) : null}
+                                </div>
+                              ) : null
+                            })()}
+                            <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo).body || memo.memo_content}</div>
                             <div className="tm-lead-memo-time">
                               작성 TM: {memo.tm_name || memo.tm_id || '-'}
                             </div>
