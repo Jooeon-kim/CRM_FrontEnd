@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import api from '../apiClient'
+import { patchTmDbLead, setTmDbCache } from '../store/mainSlice'
 
 const statusOptions = ['부재중', '리콜대기', '예약', '실패', '무효', '예약부도', '내원완료']
 
@@ -124,7 +125,16 @@ const toLocalDateTimeString = (value = new Date()) => {
 }
 
 export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAvailable = false, assignedTodayOnly = false }) {
+  const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
+  const tmDbCache = useSelector((state) => state.main?.tmDbCache || {})
+  const cacheKey = useMemo(() => {
+    const tmId = user?.id ? String(user.id) : '0'
+    const status = String(statusFilter || 'all')
+    const assigned = assignedTodayOnly ? '1' : '0'
+    return `tm:${tmId}:status:${status}:assigned:${assigned}`
+  }, [user?.id, statusFilter, assignedTodayOnly])
+  const cacheEntry = tmDbCache?.[cacheKey]
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -157,10 +167,31 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    if (cacheEntry && Array.isArray(cacheEntry.rows)) {
+      setRows(cacheEntry.rows)
+    }
+  }, [cacheEntry])
+
+  useEffect(() => {
     const load = async () => {
       if (!user?.id) return
       try {
         setLoading(true)
+        const cacheFresh =
+          cacheEntry &&
+          Array.isArray(cacheEntry.rows) &&
+          Date.now() - Number(cacheEntry.fetchedAt || 0) < 60 * 1000
+        if (cacheFresh) {
+          setRows(cacheEntry.rows)
+          try {
+            const tmRes = await api.get('/tm/agents')
+            setAgents(tmRes.data || [])
+          } catch {
+            // keep previous agents
+          }
+          setError('')
+          return
+        }
         const [dbRes, tmRes] = await Promise.all([
           api.get('/dbdata', {
             params: {
@@ -171,7 +202,15 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
           }),
           api.get('/tm/agents'),
         ])
-        setRows(dbRes.data || [])
+        const nextRows = dbRes.data || []
+        setRows(nextRows)
+        dispatch(
+          setTmDbCache({
+            key: cacheKey,
+            rows: nextRows,
+            fetchedAt: Date.now(),
+          })
+        )
         setAgents(tmRes.data || [])
         setError('')
       } catch (err) {
@@ -182,7 +221,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     }
 
     load()
-  }, [user?.id, statusFilter, assignedTodayOnly])
+  }, [user?.id, statusFilter, assignedTodayOnly, cacheEntry, cacheKey, dispatch])
 
   const formatDateTime = (value) => {
     if (!value) return '-'
@@ -432,8 +471,8 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         최근메모내용: form.memo || activeLead['최근메모내용'],
         최근메모시간: form.memo ? nowIso : activeLead['최근메모시간'],
       }
-      setRows((prev) =>
-        prev.map((row) =>
+      setRows((prev) => {
+        const next = prev.map((row) =>
           String(row.id) === String(leadId)
             ? {
                 ...row,
@@ -441,6 +480,21 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
               }
             : row
         )
+        dispatch(
+          setTmDbCache({
+            key: cacheKey,
+            rows: next,
+            fetchedAt: Date.now(),
+          })
+        )
+        return next
+      })
+      dispatch(
+        patchTmDbLead({
+          tmId: user.id,
+          leadId,
+          patch: nextLead,
+        })
       )
       setActiveLead(nextLead)
       if (form.memo && String(form.memo).trim()) {
@@ -460,30 +514,13 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       }))
 
       try {
-        const [memosRes, dbRes] = await Promise.all([
-          api.get('/tm/memos', { params: { phone: leadPhone, detailed: 1, leadId } }),
-          api.get('/dbdata', {
-            params: {
-              tm: user.id,
-              status: statusFilter || 'all',
-              assignedToday: assignedTodayOnly ? 1 : undefined,
-            },
-          }),
-        ])
-
-        const latestRows = dbRes.data || []
-        const latestLead = latestRows.find((row) => String(row.id) === String(leadId))
-
+        const memosRes = await api.get('/tm/memos', { params: { phone: leadPhone, detailed: 1, leadId } })
         if (Array.isArray(memosRes.data)) {
           setMemos(memosRes.data || [])
           setPhoneEvents([])
         } else {
           setMemos(memosRes.data?.memos || [])
           setPhoneEvents(memosRes.data?.events || [])
-        }
-        setRows(latestRows)
-        if (latestLead) {
-          setActiveLead((prev) => (prev ? { ...prev, ...latestLead } : prev))
         }
       } catch {
         // Keep optimistic UI state when background refresh fails.
