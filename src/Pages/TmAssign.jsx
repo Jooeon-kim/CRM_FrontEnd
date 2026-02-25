@@ -99,8 +99,8 @@ export default function TmAssign() {
   }, [])
 
   const updateSummaryLocal = (tmId, delta) => {
-    const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000)
-    const kstDay = nowKst.toISOString().slice(0, 10)
+    const now = new Date()
+    const kstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
     setSummaryRows((prev) =>
       prev.map((row) => {
         if (String(row.tmId) !== String(tmId)) return row

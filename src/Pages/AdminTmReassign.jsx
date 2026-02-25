@@ -158,11 +158,12 @@ export default function AdminTmReassign() {
         leadIds: selectedIds.map((id) => Number(id)),
         tmId: Number(targetTmId),
       })
-      const nowIso = new Date().toISOString()
+      const now = new Date()
+      const nowLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
       setRows((prev) => {
         const next = prev.map((row) =>
           selectedIds.includes(String(row.id))
-            ? { ...row, tm: Number(targetTmId), 배정날짜: nowIso }
+            ? { ...row, tm: Number(targetTmId), 배정날짜: nowLocal }
             : row
         )
         dispatch(setAdminDataset({ key: 'dbRows', rows: next, fetchedAt: Date.now() }))

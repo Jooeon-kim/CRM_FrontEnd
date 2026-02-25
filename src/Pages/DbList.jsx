@@ -143,33 +143,12 @@ export default function DbList() {
     return Number.isNaN(parsed.getTime()) ? null : parsed
   }
 
-  const parseUtcDateTime = (value) => {
-    if (!value) return null
-    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
-    const raw = String(value).trim()
-    const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
-    if (plain) {
-      const utc = new Date(Date.UTC(
-        Number(plain[1]),
-        Number(plain[2]) - 1,
-        Number(plain[3]),
-        Number(plain[4]),
-        Number(plain[5]),
-        Number(plain[6] || '0')
-      ))
-      return Number.isNaN(utc.getTime()) ? null : utc
-    }
-    const parsed = new Date(raw)
-    return Number.isNaN(parsed.getTime()) ? null : parsed
-  }
-
   const toKstDateKeyFromUtc = (value) => {
-    const utc = parseUtcDateTime(value)
-    if (!utc) return ''
-    const kst = new Date(utc.getTime() + 9 * 60 * 60 * 1000)
-    const yyyy = kst.getUTCFullYear()
-    const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
-    const dd = String(kst.getUTCDate()).padStart(2, '0')
+    const local = parseDateTimeLocal(value)
+    if (!local) return ''
+    const yyyy = local.getFullYear()
+    const mm = String(local.getMonth() + 1).padStart(2, '0')
+    const dd = String(local.getDate()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd}`
   }
 
@@ -187,14 +166,13 @@ export default function DbList() {
 
   const formatMemoDateTimeKst = (value) => {
     if (!value) return ''
-    const utc = parseUtcDateTime(value)
-    if (!utc) return String(value)
-    const kst = new Date(utc.getTime() + 9 * 60 * 60 * 1000)
-    const yyyy = kst.getUTCFullYear()
-    const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
-    const dd = String(kst.getUTCDate()).padStart(2, '0')
-    const hh = String(kst.getUTCHours()).padStart(2, '0')
-    const min = String(kst.getUTCMinutes()).padStart(2, '0')
+    const local = parseDateTimeLocal(value)
+    if (!local) return String(value)
+    const yyyy = local.getFullYear()
+    const mm = String(local.getMonth() + 1).padStart(2, '0')
+    const dd = String(local.getDate()).padStart(2, '0')
+    const hh = String(local.getHours()).padStart(2, '0')
+    const min = String(local.getMinutes()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
@@ -226,14 +204,13 @@ export default function DbList() {
 
   const formatUtcAsKstDateTime = (value) => {
     if (!value) return ''
-    const utc = parseUtcDateTime(value)
-    if (!utc) return String(value)
-    const kst = new Date(utc.getTime() + 9 * 60 * 60 * 1000)
-    const yyyy = kst.getUTCFullYear()
-    const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
-    const dd = String(kst.getUTCDate()).padStart(2, '0')
-    const hh = String(kst.getUTCHours()).padStart(2, '0')
-    const min = String(kst.getUTCMinutes()).padStart(2, '0')
+    const local = parseDateTimeLocal(value)
+    if (!local) return String(value)
+    const yyyy = local.getFullYear()
+    const mm = String(local.getMonth() + 1).padStart(2, '0')
+    const dd = String(local.getDate()).padStart(2, '0')
+    const hh = String(local.getHours()).padStart(2, '0')
+    const min = String(local.getMinutes()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
@@ -391,7 +368,7 @@ export default function DbList() {
                 예약_내원일시: reservationAt || row['예약_내원일시'],
                 tm: form.tmId || row.tm,
                 최근메모내용: form.memo || row['최근메모내용'],
-                최근메모시간: form.memo ? new Date().toISOString() : row['최근메모시간'],
+                최근메모시간: form.memo ? new Date() : row['최근메모시간'],
               }
             : row
         )
@@ -407,7 +384,7 @@ export default function DbList() {
             예약_내원일시: reservationAt || activeLead['예약_내원일시'],
             tm: form.tmId || activeLead.tm,
             최근메모내용: form.memo || activeLead['최근메모내용'],
-            최근메모시간: form.memo ? new Date().toISOString() : activeLead['최근메모시간'],
+            최근메모시간: form.memo ? new Date() : activeLead['최근메모시간'],
           },
         })
       )
@@ -467,7 +444,7 @@ export default function DbList() {
 
   const isAssignedToday = (value) => {
     if (!value) return false
-    const todayKst = toKstDateKeyFromUtc(new Date().toISOString())
+    const todayKst = toKstDateKeyFromUtc(new Date())
     return toKstDateKeyFromUtc(value) === todayKst
   }
 
