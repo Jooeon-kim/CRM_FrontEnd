@@ -42,6 +42,8 @@ const safeParse = (value) => {
   }
 }
 
+const ROLE_OPTIONS = ['all', 'ADMIN', 'TM', 'SYSTEM']
+
 export default function AdminAuditLogs() {
   const agentsCache = useSelector((state) => state.main.adminDatasets?.agents?.rows || [])
   const [rows, setRows] = useState([])
@@ -50,6 +52,7 @@ export default function AdminAuditLogs() {
   const [action, setAction] = useState('all')
   const [targetType, setTargetType] = useState('all')
   const [adminTmId, setAdminTmId] = useState('all')
+  const [actorRole, setActorRole] = useState('all')
   const [limit, setLimit] = useState(100)
   const [detail, setDetail] = useState(null)
 
@@ -60,6 +63,7 @@ export default function AdminAuditLogs() {
       if (action !== 'all') params.action = action
       if (targetType !== 'all') params.targetType = targetType
       if (adminTmId !== 'all') params.adminTmId = adminTmId
+      if (actorRole !== 'all') params.actorRole = actorRole
       const res = await api.get('/admin/audit-logs', { params })
       setRows(Array.isArray(res.data) ? res.data : [])
       setError('')
@@ -72,7 +76,7 @@ export default function AdminAuditLogs() {
 
   useEffect(() => {
     load()
-  }, [action, targetType, adminTmId, limit])
+  }, [action, targetType, adminTmId, actorRole, limit])
 
   const actionOptions = useMemo(() => {
     const set = new Set(rows.map((row) => String(row?.action || '').trim()).filter(Boolean))
@@ -84,14 +88,27 @@ export default function AdminAuditLogs() {
     return Array.from(set)
   }, [rows])
 
-  const adminAgents = useMemo(
-    () => (agentsCache || []).filter((agent) => Number(agent?.isAdmin) === 1),
+  const tmOptions = useMemo(
+    () =>
+      (agentsCache || [])
+        .filter((agent) => Number(agent?.isAdmin) !== 1)
+        .map((agent) => ({ id: agent.id, name: agent.name })),
     [agentsCache]
   )
 
   return (
     <section className="audit-log-page">
       <div className="audit-log-controls">
+        <label>
+          역할
+          <select value={actorRole} onChange={(e) => setActorRole(e.target.value)}>
+            {ROLE_OPTIONS.map((role) => (
+              <option key={role} value={role}>
+                {role === 'all' ? '전체' : role}
+              </option>
+            ))}
+          </select>
+        </label>
         <label>
           액션
           <select value={action} onChange={(e) => setAction(e.target.value)}>
@@ -111,10 +128,10 @@ export default function AdminAuditLogs() {
           </select>
         </label>
         <label>
-          관리자
+          사용자
           <select value={adminTmId} onChange={(e) => setAdminTmId(e.target.value)}>
             <option value="all">전체</option>
-            {adminAgents.map((agent) => (
+            {tmOptions.map((agent) => (
               <option key={agent.id} value={String(agent.id)}>
                 {agent.name} ({agent.id})
               </option>
@@ -143,7 +160,8 @@ export default function AdminAuditLogs() {
               <tr>
                 <th>ID</th>
                 <th>시간</th>
-                <th>관리자</th>
+                <th>역할</th>
+                <th>사용자</th>
                 <th>액션</th>
                 <th>대상</th>
                 <th>대상ID</th>
@@ -156,6 +174,7 @@ export default function AdminAuditLogs() {
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>{formatDateTime(row.created_at)}</td>
+                  <td>{row.actor_role || '-'}</td>
                   <td>{row.admin_name || row.admin_tm_id || '-'}</td>
                   <td>{row.action || '-'}</td>
                   <td>{row.target_type || '-'}</td>
@@ -174,7 +193,7 @@ export default function AdminAuditLogs() {
               ))}
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="audit-log-empty">조회 결과가 없습니다.</td>
+                  <td colSpan={9} className="audit-log-empty">조회 결과가 없습니다.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -192,7 +211,8 @@ export default function AdminAuditLogs() {
             </div>
             <div className="audit-log-modal-meta">
               <div>시간: {formatDateTime(detail.created_at)}</div>
-              <div>관리자: {detail.admin_name || detail.admin_tm_id || '-'}</div>
+              <div>역할: {detail.actor_role || '-'}</div>
+              <div>사용자: {detail.admin_name || detail.admin_tm_id || '-'}</div>
               <div>액션: {detail.action || '-'}</div>
               <div>대상: {detail.target_type || '-'} / {detail.target_id || '-'}</div>
             </div>
