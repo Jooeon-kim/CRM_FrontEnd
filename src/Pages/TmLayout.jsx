@@ -43,7 +43,6 @@ export default function TmLayout() {
   const location = useLocation()
   const [todayCount, setTodayCount] = useState(0)
   const [assignedTodayCount, setAssignedTodayCount] = useState(0)
-  const [recallDueCount, setRecallDueCount] = useState(0)
 
   useEffect(() => {
     const loadToday = async () => {
@@ -88,37 +87,6 @@ export default function TmLayout() {
     }
 
     loadAssignedToday()
-  }, [user?.id])
-
-  useEffect(() => {
-    let timer = null
-    const loadRecallDue = async () => {
-      if (!user?.id) return
-      try {
-        const res = await api.get('/tm/recalls', { params: { mode: 'all', tmId: user.id } })
-        const list = res.data || []
-        const now = new Date()
-        const count = list.filter((row) => {
-          const dueAt = parseLocalDateTime(row?.['리콜_예정일시'])
-          if (!dueAt) return false
-          return (
-            dueAt.getFullYear() === now.getFullYear() &&
-            dueAt.getMonth() === now.getMonth() &&
-            dueAt.getDate() === now.getDate() &&
-            dueAt.getHours() === now.getHours()
-          )
-        }).length
-        setRecallDueCount(count || 0)
-      } catch {
-        setRecallDueCount(0)
-      }
-    }
-
-    loadRecallDue()
-    timer = setInterval(loadRecallDue, 60 * 1000)
-    return () => {
-      if (timer) clearInterval(timer)
-    }
   }, [user?.id])
 
   const pageTitle = location.pathname.includes('/main/waiting')
@@ -193,12 +161,9 @@ export default function TmLayout() {
             </NavLink>
             <NavLink
               to="/main/recall"
-              className={({ isActive }) =>
-                `admin-nav-item${isActive ? ' active' : ''}${recallDueCount ? ' calendar-alert' : ''}`
-              }
+              className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
             >
               <span>리콜대기</span>
-              {recallDueCount ? <span className="calendar-badge">{recallDueCount}건</span> : null}
             </NavLink>
             <NavLink
               to="/main/reserved"
