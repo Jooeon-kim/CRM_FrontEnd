@@ -1462,7 +1462,7 @@ input {
   padding: 1.1rem 1.3rem 1.2rem;
   width: min(980px, 96vw);
   max-height: 92vh;
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.95rem;
@@ -1604,7 +1604,9 @@ input {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.4fr);
   gap: 1.2rem;
-  align-items: start;
+  align-items: stretch;
+  height: min(64vh, 620px);
+  min-height: 360px;
 }
 
 .tm-lead-left,
@@ -1612,6 +1614,7 @@ input {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 0;
 }
 
 .tm-lead-form {
@@ -1721,6 +1724,10 @@ input {
 .tm-lead-left .tm-lead-memos {
   border-top: none;
   padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .tm-lead-memos-title {
@@ -1731,6 +1738,10 @@ input {
 .tm-lead-memos-list {
   display: grid;
   gap: 0.6rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.2rem;
 }
 
 .tm-lead-memo {
@@ -3017,10 +3028,21 @@ input {
 
   .tm-lead-body {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
   }
 
   .tm-lead-top {
     grid-template-columns: 1fr;
+  }
+
+  .tm-lead-card {
+    overflow: auto;
+  }
+
+  .tm-lead-memos-list {
+    max-height: 280px;
+    overflow-y: auto;
   }
 }
 
