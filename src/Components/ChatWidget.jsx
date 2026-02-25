@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { io } from 'socket.io-client'
 import api from '../apiClient'
@@ -333,7 +333,7 @@ export default function ChatWidget() {
       })
       .catch(() => {
         if (!mounted) return
-        setError('채팅 내역을 불러오지 못했습니다.')
+        setError('梨꾪똿 ?댁뿭??遺덈윭?ㅼ? 紐삵뻽?듬땲??')
       })
 
     return () => {
@@ -357,7 +357,7 @@ export default function ChatWidget() {
       })
       .catch(() => {
         if (!mounted || roomFetchSeqRef.current !== fetchSeq) return
-        setError('채팅 내역을 불러오지 못했습니다.')
+        setError('梨꾪똿 ?댁뿭??遺덈윭?ㅼ? 紐삵뻽?듬땲??')
       })
 
     return () => {
@@ -422,7 +422,7 @@ export default function ChatWidget() {
     socketRef.current.emit('chat:send', payload, (result) => {
       setSending(false)
       if (!result?.ok) {
-        setError(result?.error || '메시지 전송 실패')
+        setError(result?.error || '硫붿떆吏 ?꾩넚 ?ㅽ뙣')
         return
       }
       setText('')
@@ -458,7 +458,7 @@ export default function ChatWidget() {
 
     socketRef.current.emit('chat:send', payload, (result) => {
       if (!result?.ok) {
-        setError(result?.error || '공유 전송 실패')
+        setError(result?.error || '怨듭쑀 ?꾩넚 ?ㅽ뙣')
         return
       }
       closeSharePicker()
@@ -487,7 +487,7 @@ export default function ChatWidget() {
       setSharedLeadModal({
         open: true,
         loading: false,
-        error: '공유된 DB를 불러오지 못했습니다.',
+        error: '怨듭쑀??DB瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??',
         lead: null,
         memos: [],
       })
@@ -499,7 +499,7 @@ export default function ChatWidget() {
       return <div className="crm-chat-message">{msg.message}</div>
     }
     const snapshot = parseMaybeJson(msg?.shared_payload)
-    const name = snapshot?.name || msg?.message || '공유 DB'
+    const name = snapshot?.name || msg?.message || '怨듭쑀 DB'
     const phone = snapshot?.phone || '-'
     const eventName = snapshot?.event_name || '-'
     return (
@@ -508,7 +508,7 @@ export default function ChatWidget() {
         className="crm-chat-share-card"
         onClick={() => openSharedLead(Number(msg?.shared_lead_id || 0))}
       >
-        <div className="crm-chat-share-title">공유 DB</div>
+        <div className="crm-chat-share-title">怨듭쑀 DB</div>
         <div className="crm-chat-share-line">{name}</div>
         <div className="crm-chat-share-line">{phone}</div>
         <div className="crm-chat-share-line">{eventName}</div>
@@ -524,7 +524,7 @@ export default function ChatWidget() {
         {open ? (
           <div className="crm-chat-panel crm-chat-panel-with-rooms">
             <div className="crm-chat-rooms">
-              <div className="crm-chat-rooms-title">개인 채팅</div>
+              <div className="crm-chat-rooms-title">媛쒖씤 梨꾪똿</div>
               <div className="crm-chat-room-list">
                 {users.map((tm) => {
                   const key = getDirectRoomKey(tm.id)
@@ -550,7 +550,7 @@ export default function ChatWidget() {
                       <span className="crm-chat-room-label">
                         {tm.name}
                         {Number(tm.isAdmin) === 1 ? (
-                          <span className="crm-chat-room-role">관리자</span>
+                          <span className="crm-chat-room-role">愿由ъ옄</span>
                         ) : null}
                       </span>
                       {unread > 0 ? (
@@ -585,11 +585,11 @@ export default function ChatWidget() {
               <div className="crm-chat-header">
                 <strong>{selectedRoom.label}</strong>
                 <button type="button" onClick={() => setOpen(false)}>
-                  닫기
+                  ?リ린
                 </button>
               </div>
               <div className="crm-chat-list" ref={listRef} onScroll={handleChatScroll}>
-                {loadingMore ? <div className="crm-chat-loading-more">이전 대화 불러오는 중...</div> : null}
+                {loadingMore ? <div className="crm-chat-loading-more">?댁쟾 ???遺덈윭?ㅻ뒗 以?..</div> : null}
                 {messages.map((msg) => {
                   const mine = Number(msg.sender_tm_id) === Number(user?.id)
                   return (
@@ -612,7 +612,7 @@ export default function ChatWidget() {
                   type="text"
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="메시지 입력"
+                  placeholder="硫붿떆吏 ?낅젰"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
@@ -621,7 +621,7 @@ export default function ChatWidget() {
                   }}
                 />
                 <button type="button" onClick={sendMessage} disabled={sending}>
-                  전송
+                  ?꾩넚
                 </button>
               </div>
             </div>
@@ -632,9 +632,9 @@ export default function ChatWidget() {
           className="crm-chat-toggle"
           onClick={() => setOpen((prev) => !prev)}
         >
-          채팅
+          梨꾪똿
           {unreadCount > 0 ? (
-            <span className="crm-chat-badge">새 메시지 {unreadCount}</span>
+            <span className="crm-chat-badge">??硫붿떆吏 {unreadCount}</span>
           ) : null}
         </button>
       </div>
@@ -644,13 +644,12 @@ export default function ChatWidget() {
           <div className="tm-lead-backdrop" onClick={closeSharePicker} />
           <div className="tm-lead-card crm-chat-share-picker">
             <div className="tm-lead-header">
-              <h3>DB 공유</h3>
-              <button type="button" onClick={closeSharePicker}>닫기</button>
+              <h3>DB 怨듭쑀</h3>
+              <button type="button" onClick={closeSharePicker}>?リ린</button>
             </div>
             <div className="tm-lead-form">
               <label>
-                공유 대상 채팅방
-                <select
+                怨듭쑀 ???梨꾪똿諛?                <select
                   value={shareTargetKey}
                   onChange={(e) => setShareTargetKey(e.target.value)}
                 >
@@ -669,8 +668,8 @@ export default function ChatWidget() {
               </div>
             </div>
             <div className="tm-lead-actions">
-              <button type="button" onClick={closeSharePicker}>취소</button>
-              <button type="button" onClick={handleShareSubmit}>공유 전송</button>
+              <button type="button" onClick={closeSharePicker}>痍⑥냼</button>
+              <button type="button" onClick={handleShareSubmit}>怨듭쑀 ?꾩넚</button>
             </div>
           </div>
         </div>
@@ -692,7 +691,7 @@ export default function ChatWidget() {
           />
           <div className="tm-lead-card crm-chat-readonly-modal">
             <div className="tm-lead-header">
-              <h3>공유 DB 상세</h3>
+              <h3>怨듭쑀 DB ?곸꽭</h3>
               <button
                 type="button"
                 onClick={() =>
@@ -705,20 +704,20 @@ export default function ChatWidget() {
                   })
                 }
               >
-                닫기
+                ?リ린
               </button>
             </div>
             {sharedLeadModal.loading ? (
-              <div className="tm-lead-memos-empty">불러오는 중...</div>
+              <div className="tm-lead-memos-empty">遺덈윭?ㅻ뒗 以?..</div>
             ) : sharedLeadModal.error ? (
               <div className="db-list-error">{sharedLeadModal.error}</div>
             ) : (
               <div className="tm-lead-body">
                 <div className="tm-lead-left">
                   <div className="tm-lead-memos">
-                    <div className="tm-lead-memos-title">메모 히스토리</div>
+                    <div className="tm-lead-memos-title">硫붾え ?덉뒪?좊━</div>
                     {sharedLeadModal.memos.length === 0 ? (
-                      <div className="tm-lead-memos-empty">메모가 없습니다.</div>
+                      <div className="tm-lead-memos-empty">硫붾え媛 ?놁뒿?덈떎.</div>
                     ) : (
                       <div className="tm-lead-memos-list">
                         {sharedLeadModal.memos.map((memo) => (
@@ -741,14 +740,14 @@ export default function ChatWidget() {
                                 <div className="tm-lead-memo-status">
                                   <span className={badgeClass}>{parsed.badge}</span>
                                   {reservationText ? (
-                                    <span className="tm-lead-memo-status-time">예약일시: {reservationText}</span>
+                                    <span className="tm-lead-memo-status-time">?덉빟?쇱떆: {reservationText}</span>
                                   ) : null}
                                 </div>
                               ) : null
                             })()}
                             <div className="tm-lead-memo-content">{parseMemoStatusMeta(memo).body || memo.memo_content}</div>
                             <div className="tm-lead-memo-time">
-                              작성 TM: {memo.tm_name || memo.tm_id || '-'}
+                              ?묒꽦 TM: {memo.tm_name || memo.tm_id || '-'}
                             </div>
                           </div>
                         ))}
@@ -758,11 +757,11 @@ export default function ChatWidget() {
                 </div>
                 <div className="tm-lead-right">
                   <div className="tm-lead-summary-card">
-                    <div className="tm-lead-summary-label">인입날짜</div>
+                    <div className="tm-lead-summary-label">?몄엯?좎쭨</div>
                     <div className="tm-lead-summary-value">{formatDateTime(sharedLeadModal.lead?.inbound_at)}</div>
                   </div>
                   <div className="tm-lead-summary-card">
-                    <div className="tm-lead-summary-label">이름</div>
+                    <div className="tm-lead-summary-label">?대쫫</div>
                     <div className="tm-lead-summary-value">{sharedLeadModal.lead?.name || '-'}</div>
                   </div>
                   <div className="tm-lead-summary-card">
@@ -774,15 +773,15 @@ export default function ChatWidget() {
                     <div className="tm-lead-summary-value">{sharedLeadModal.lead?.event_name || '-'}</div>
                   </div>
                   <div className="tm-lead-summary-card">
-                    <div className="tm-lead-summary-label">상태</div>
+                    <div className="tm-lead-summary-label">?곹깭</div>
                     <div className="tm-lead-summary-value">{sharedLeadModal.lead?.status_name || '-'}</div>
                   </div>
                   <div className="tm-lead-summary-card">
-                    <div className="tm-lead-summary-label">예약/내원일시</div>
+                    <div className="tm-lead-summary-label">?덉빟/?댁썝?쇱떆</div>
                     <div className="tm-lead-summary-value">{formatDateTime(sharedLeadModal.lead?.reservation_at)}</div>
                   </div>
                   <div className="tm-lead-summary-card">
-                    <div className="tm-lead-summary-label">리콜 예정일시</div>
+                    <div className="tm-lead-summary-label">由ъ퐳 ?덉젙?쇱떆</div>
                     <div className="tm-lead-summary-value">{formatDateTime(sharedLeadModal.lead?.recall_at)}</div>
                   </div>
                 </div>
@@ -794,3 +793,4 @@ export default function ChatWidget() {
     </>
   )
 }
+
