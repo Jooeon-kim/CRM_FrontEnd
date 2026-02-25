@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import api from '../apiClient'
 import { setAdminDataset } from '../store/mainSlice'
@@ -7,28 +7,27 @@ export default function TmAssign() {
   const dispatch = useDispatch()
   const tmLeadsCache = useSelector((state) => state.main.adminDatasets?.tmLeads)
   const agentsCache = useSelector((state) => state.main.adminDatasets?.agents)
+
   const [leads, setLeads] = useState([])
   const [agents, setAgents] = useState([])
+  const [summaryRows, setSummaryRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [assigningId, setAssigningId] = useState(null)
-  const [query, setQuery] = useState('')
-  const [timeFilter, setTimeFilter] = useState('all')
+  const [sortMode, setSortMode] = useState('event')
+  const [selectedLeadIds, setSelectedLeadIds] = useState([])
+  const [batchAssigning, setBatchAssigning] = useState(false)
+
+  const [showAutoAssign, setShowAutoAssign] = useState(false)
   const [selectedTms, setSelectedTms] = useState([])
   const [autoAssigning, setAutoAssigning] = useState(false)
   const [autoPreviewOpen, setAutoPreviewOpen] = useState(false)
   const [activePreviewTm, setActivePreviewTm] = useState(null)
-  const [downloading, setDownloading] = useState(false)
 
   const formatPhone = (value) => {
     if (!value) return ''
     const digits = String(value).replace(/\D/g, '')
-    if (digits.length === 11) {
-      return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
-    }
-    if (digits.length === 10) {
-      return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
-    }
+    if (digits.length === 11) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+    if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
     return value
   }
 
@@ -44,8 +43,14 @@ export default function TmAssign() {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
 
+  const fetchSummary = async () => {
+    const summaryRes = await api.get('/tm/assign/summary')
+    setSummaryRows(summaryRes.data?.rows || [])
+  }
+
   useEffect(() => {
     const CACHE_TTL_MS = 2 * 60 * 1000
+
     const load = async ({ force = false } = {}) => {
       const now = Date.now()
       const cachedLeads = Array.isArray(tmLeadsCache?.rows) ? tmLeadsCache.rows : []
@@ -58,28 +63,30 @@ export default function TmAssign() {
         setLeads(cachedLeads)
         setAgents(cachedAgents)
         setLoading(false)
+        await fetchSummary()
         if (leadsFresh && agentsFresh) return
       }
 
       try {
         if (!hasCache || force) setLoading(true)
-        // 페이지 진입 시 최신 리드를 보장하기 위해 동기화를 먼저 실행
         try {
           await api.post('/admin/sync-meta-leads')
-        } catch (syncErr) {
-          // 동기화 실패 시에도 기존 데이터 조회는 진행
+        } catch (e) {
+          // sync 실패해도 목록 조회는 진행
         }
 
         const [leadsRes, agentsRes] = await Promise.all([
           api.get('/tm/leads'),
           api.get('/tm/agents'),
         ])
+
         const nextLeads = leadsRes.data?.leads || []
-        const nextAgents = agentsRes.data || []
+        const nextAgents = (agentsRes.data || []).filter((row) => !Number(row?.isAdmin))
         setLeads(nextLeads)
         setAgents(nextAgents)
         dispatch(setAdminDataset({ key: 'tmLeads', rows: nextLeads, fetchedAt: Date.now() }))
         dispatch(setAdminDataset({ key: 'agents', rows: nextAgents, fetchedAt: Date.now() }))
+        await fetchSummary()
         setError('')
       } catch (err) {
         setError('데이터를 불러오지 못했습니다.')
@@ -91,37 +98,47 @@ export default function TmAssign() {
     load()
   }, [])
 
-  const handleAssign = async (leadId, tmId) => {
-    if (!tmId) return
-    try {
-      setAssigningId(leadId)
-      await api.post('/tm/assign', { leadId, tmId })
-      setLeads((prev) => {
-        const next = prev.filter((lead) => lead.id !== leadId)
-        dispatch(setAdminDataset({ key: 'tmLeads', rows: next, fetchedAt: Date.now() }))
-        return next
+  const updateSummaryLocal = (tmId, delta) => {
+    const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+    const kstDay = nowKst.toISOString().slice(0, 10)
+    setSummaryRows((prev) =>
+      prev.map((row) => {
+        if (String(row.tmId) !== String(tmId)) return row
+        return {
+          ...row,
+          totalCount: Math.max(0, Number(row.totalCount || 0) + delta),
+          todayCount: Math.max(0, Number(row.todayCount || 0) + (kstDay ? delta : 0)),
+        }
       })
-    } catch (err) {
-      setError('TM 배정에 실패했습니다.')
-    } finally {
-      setAssigningId(null)
-    }
+    )
   }
 
-  const handleHold = async (leadId) => {
+  const handleAssignSelectedToTm = async (tmId) => {
+    if (selectedLeadIds.length === 0 || batchAssigning || autoAssigning) return
     try {
-      setAssigningId(leadId)
-      await api.post('/tm/assign', { leadId, tmId: 0 })
+      setBatchAssigning(true)
+      const targetTmId = Number(tmId)
+      const leadIds = selectedLeadIds.map((v) => Number(v)).filter((v) => Number.isInteger(v) && v > 0)
+      if (leadIds.length === 0) return
+
+      const res = await api.post('/admin/leads/reassign-bulk', {
+        leadIds,
+        tmId: targetTmId,
+      })
+      const updated = Number(res.data?.updated || leadIds.length)
+
       setLeads((prev) => {
-        const next = prev.filter((lead) => lead.id !== leadId)
+        const next = prev.filter((lead) => !leadIds.includes(Number(lead.id)))
         dispatch(setAdminDataset({ key: 'tmLeads', rows: next, fetchedAt: Date.now() }))
         return next
       })
+      setSelectedLeadIds([])
+      updateSummaryLocal(targetTmId, updated)
       setError('')
     } catch (err) {
-      setError('보류 처리에 실패했습니다.')
+      setError('일괄 TM 배정에 실패했습니다.')
     } finally {
-      setAssigningId(null)
+      setBatchAssigning(false)
     }
   }
 
@@ -134,27 +151,68 @@ export default function TmAssign() {
     )
   }
 
+  const toggleLead = (leadId) => {
+    const key = String(leadId)
+    setSelectedLeadIds((prev) =>
+      prev.includes(key) ? prev.filter((id) => id !== key) : [...prev, key]
+    )
+  }
+
+  const toggleAllVisible = () => {
+    const visibleIds = sortedLeads.map((lead) => String(lead.id))
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedLeadIds.includes(id))
+    if (allSelected) {
+      setSelectedLeadIds((prev) => prev.filter((id) => !visibleIds.includes(id)))
+    } else {
+      setSelectedLeadIds((prev) => Array.from(new Set([...prev, ...visibleIds])))
+    }
+  }
+
+  const buildAutoPlan = () => {
+    if (selectedTms.length === 0) return []
+    if (sortedLeads.length === 0) return []
+    const plan = selectedTms.map((tmId) => ({ tmId, leads: [] }))
+    let index = 0
+    for (const lead of sortedLeads) {
+      const slot = plan[index % plan.length]
+      slot.leads.push(lead)
+      index += 1
+    }
+    return plan
+  }
+
+  const plan = buildAutoPlan()
+  const totalPlanned = plan.reduce((sum, item) => sum + item.leads.length, 0)
+
   const handleAutoAssign = async () => {
     if (plan.length === 0) return
     try {
       setAutoAssigning(true)
       const assignedIds = []
+      const summaryDelta = new Map()
 
       for (const item of plan) {
-        for (const lead of item.leads) {
-          await api.post('/tm/assign', { leadId: lead.id, tmId: item.tmId })
-          assignedIds.push(lead.id)
-        }
+        const ids = item.leads.map((lead) => Number(lead.id)).filter((v) => Number.isInteger(v) && v > 0)
+        if (ids.length === 0) continue
+        const res = await api.post('/admin/leads/reassign-bulk', {
+          leadIds: ids,
+          tmId: Number(item.tmId),
+        })
+        const updated = Number(res.data?.updated || ids.length)
+        ids.forEach((id) => assignedIds.push(id))
+        summaryDelta.set(String(item.tmId), (summaryDelta.get(String(item.tmId)) || 0) + updated)
       }
 
       setLeads((prev) => {
-        const next = prev.filter((lead) => !assignedIds.includes(lead.id))
+        const next = prev.filter((lead) => !assignedIds.includes(Number(lead.id)))
         dispatch(setAdminDataset({ key: 'tmLeads', rows: next, fetchedAt: Date.now() }))
         return next
       })
-      setError('')
+      summaryDelta.forEach((delta, tmId) => updateSummaryLocal(tmId, delta))
+      setSelectedLeadIds([])
       setAutoPreviewOpen(false)
       setActivePreviewTm(null)
+      setError('')
     } catch (err) {
       setError('자동 배정에 실패했습니다.')
     } finally {
@@ -162,67 +220,31 @@ export default function TmAssign() {
     }
   }
 
-  const handleExport = async () => {
-    try {
-      setDownloading(true)
-      const response = await api.get('/tm/leads/export', { responseType: 'blob' })
-      const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  const sortedLeads = useMemo(() => {
+    const rows = [...leads]
+    if (sortMode === 'inbound') {
+      rows.sort((a, b) => {
+        const aTime = new Date(a.inboundDate || 0).getTime()
+        const bTime = new Date(b.inboundDate || 0).getTime()
+        if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0
+        return bTime - aTime
       })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'tm_leads.xlsx'
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-    } catch (err) {
-      setError('엑셀 다운로드에 실패했습니다.')
-    } finally {
-      setDownloading(false)
+      return rows
     }
-  }
+    rows.sort((a, b) => {
+      const aEvent = String(a.event || '').trim()
+      const bEvent = String(b.event || '').trim()
+      if (aEvent !== bEvent) return aEvent.localeCompare(bEvent, 'ko')
+      const aTime = new Date(a.inboundDate || 0).getTime()
+      const bTime = new Date(b.inboundDate || 0).getTime()
+      if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0
+      return bTime - aTime
+    })
+    return rows
+  }, [leads, sortMode])
 
-  const normalizedQuery = query.trim().toLowerCase()
-  const filteredLeads = leads.filter((lead) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      (lead.name || '').toLowerCase().includes(normalizedQuery) ||
-      (lead.phone || '').toLowerCase().includes(normalizedQuery) ||
-      (lead.event || '').toLowerCase().includes(normalizedQuery)
-
-    const matchesTime =
-      timeFilter === 'all' || (lead.availableTime || '') === timeFilter
-
-    return matchesQuery && matchesTime
-  })
-
-  const timeOptions = Array.from(
-    new Set(leads.map((lead) => lead.availableTime).filter(Boolean))
-  )
-
-  const buildAutoPlan = () => {
-    if (selectedTms.length === 0) return []
-    if (filteredLeads.length === 0) return []
-
-    const plan = selectedTms.map((tmId) => ({
-      tmId,
-      leads: [],
-    }))
-
-    let index = 0
-    for (const lead of filteredLeads) {
-      const slot = plan[index % plan.length]
-      slot.leads.push(lead)
-      index += 1
-    }
-
-    return plan
-  }
-
-  const plan = buildAutoPlan()
-  const totalPlanned = plan.reduce((sum, item) => sum + item.leads.length, 0)
+  const allVisibleSelected =
+    sortedLeads.length > 0 && sortedLeads.every((lead) => selectedLeadIds.includes(String(lead.id)))
 
   if (loading) {
     return <div className="tm-assign">불러오는 중...</div>
@@ -230,118 +252,113 @@ export default function TmAssign() {
 
   return (
     <div className="tm-assign">
-      <div className="tm-assign-controls">
-        <div className="tm-assign-search">
-          <label htmlFor="tm-search">검색</label>
-          <input
-            id="tm-search"
-            type="text"
-            placeholder="이름, 연락처, 이벤트"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
+      <div className="tm-assign-controls tm-assign-controls-topline">
         <div className="tm-assign-filter">
-          <label htmlFor="tm-time">상담가능시간</label>
+          <label htmlFor="tm-sort">정렬 방식</label>
           <select
-            id="tm-time"
-            value={timeFilter}
-            onChange={(event) => setTimeFilter(event.target.value)}
+            id="tm-sort"
+            value={sortMode}
+            onChange={(event) => setSortMode(event.target.value)}
           >
-            <option value="all">전체</option>
-            {timeOptions.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
+            <option value="event">이벤트</option>
+            <option value="inbound">인입시간</option>
           </select>
         </div>
-        <div className="tm-assign-header-actions">
-          <button
-            className="tm-assign-export"
-            type="button"
-            onClick={handleExport}
-            disabled={downloading}
-          >
-            {downloading ? '다운로드 중...' : '엑셀 다운로드'}
-          </button>
-          <div className="tm-assign-count">대기 {filteredLeads.length}건</div>
+        <button
+          className="tm-assign-auto-button"
+          type="button"
+          onClick={() => setShowAutoAssign((prev) => !prev)}
+        >
+          자동 TM배정
+        </button>
+        <div className="tm-assign-count">
+          대기 {sortedLeads.length}건 / 선택 {selectedLeadIds.length}건
         </div>
       </div>
 
-      <div className="tm-assign-auto">
-        <div className="tm-assign-auto-title">자동 TM 배정</div>
-        <div className="tm-assign-auto-body">
-          <div className="tm-assign-auto-list">
-            {agents.map((agent) => (
-              <label key={agent.id} className="tm-assign-auto-item">
-                <input
-                  type="checkbox"
-                  checked={selectedTms.includes(String(agent.id))}
-                  onChange={() => toggleTm(agent.id)}
-                />
-                <span>{agent.name}</span>
-              </label>
-            ))}
+      {showAutoAssign ? (
+        <div className="tm-assign-auto">
+          <div className="tm-assign-auto-title">자동 TM 배정</div>
+          <div className="tm-assign-auto-body">
+            <div className="tm-assign-auto-list">
+              {agents.map((agent) => (
+                <label key={agent.id} className="tm-assign-auto-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedTms.includes(String(agent.id))}
+                    onChange={() => toggleTm(agent.id)}
+                  />
+                  <span>{agent.name}</span>
+                </label>
+              ))}
+            </div>
+            <button
+              className="tm-assign-auto-button"
+              type="button"
+              onClick={() => {
+                if (plan.length === 0) return
+                setAutoPreviewOpen(true)
+              }}
+              disabled={autoAssigning || selectedTms.length === 0}
+            >
+              {autoAssigning ? '배정 중...' : '균등 자동 배정'}
+            </button>
           </div>
-          <button
-            className="tm-assign-auto-button"
-            type="button"
-            onClick={() => {
-              if (plan.length === 0) return
-              setAutoPreviewOpen(true)
-            }}
-            disabled={autoAssigning || selectedTms.length === 0}
-          >
-            {autoAssigning ? '배정 중...' : '균등 자동 배정'}
-          </button>
         </div>
+      ) : null}
+
+      <div className="tm-assign-summary-grid">
+        {summaryRows.map((row) => (
+          <button
+            key={String(row.tmId)}
+            type="button"
+            className={`tm-assign-summary-card${selectedLeadIds.length > 0 ? ' assignable' : ''}`}
+            onClick={() => handleAssignSelectedToTm(row.tmId)}
+            disabled={batchAssigning || autoAssigning || selectedLeadIds.length === 0}
+            title={selectedLeadIds.length > 0 ? `${row.name}에게 선택건 배정` : '먼저 DB를 선택하세요'}
+          >
+            <div className="tm-assign-summary-name">{row.name}</div>
+            <div className="tm-assign-summary-meta">전체: {Number(row.totalCount || 0)}건</div>
+            <div className="tm-assign-summary-meta">오늘: {Number(row.todayCount || 0)}건</div>
+          </button>
+        ))}
       </div>
 
       {error ? <div className="tm-assign-error">{error}</div> : null}
 
       <div className="tm-assign-table">
         <div className="tm-assign-row tm-assign-head">
+          <div>
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              onChange={toggleAllVisible}
+              disabled={sortedLeads.length === 0}
+            />
+          </div>
           <div>인입시간</div>
           <div>이름</div>
           <div>연락처</div>
           <div>상담가능시간</div>
           <div>이벤트</div>
-          <div>TM 배정</div>
         </div>
-        {filteredLeads.length === 0 ? (
+        {sortedLeads.length === 0 ? (
           <div className="tm-assign-empty">배정할 인입이 없습니다.</div>
         ) : (
-          filteredLeads.map((lead) => (
+          sortedLeads.map((lead) => (
             <div className="tm-assign-row" key={lead.id}>
+              <div>
+                <input
+                  type="checkbox"
+                  checked={selectedLeadIds.includes(String(lead.id))}
+                  onChange={() => toggleLead(lead.id)}
+                />
+              </div>
               <div>{lead.inboundDate ? formatDateTime(lead.inboundDate) : '-'}</div>
               <div>{lead.name || '-'}</div>
               <div>{lead.phone ? formatPhone(lead.phone) : '-'}</div>
               <div>{lead.availableTime || '-'}</div>
               <div>{lead.event || '-'}</div>
-              <div className="tm-assign-cell-actions">
-                <select
-                  className="tm-assign-select"
-                  value=""
-                  disabled={assigningId === lead.id || autoAssigning}
-                  onChange={(event) => handleAssign(lead.id, event.target.value)}
-                >
-                  <option value="">TM 선택</option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="tm-assign-hold"
-                  disabled={assigningId === lead.id || autoAssigning}
-                  onClick={() => handleHold(lead.id)}
-                >
-                  보류
-                </button>
-              </div>
             </div>
           ))
         )}
@@ -393,7 +410,6 @@ export default function TmAssign() {
                       <span>{lead.inboundDate ? formatDateTime(lead.inboundDate) : '-'}</span>
                       <span>{lead.name || '-'}</span>
                       <span>{lead.phone ? formatPhone(lead.phone) : '-'}</span>
-                      <span>{lead.availableTime || '-'}</span>
                       <span>{lead.event || '-'}</span>
                     </div>
                   ))}
@@ -426,4 +442,3 @@ export default function TmAssign() {
     </div>
   )
 }
-
