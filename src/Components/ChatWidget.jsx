@@ -30,23 +30,53 @@ const parseMaybeJson = (raw) => {
   }
 }
 
+const parseDateTimeLocal = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+  if (iso) {
+    const local = new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3]),
+      Number(iso[4]),
+      Number(iso[5]),
+      Number(iso[6] || '0')
+    )
+    return Number.isNaN(local.getTime()) ? null : local
+  }
+  const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (plain) {
+    const local = new Date(
+      Number(plain[1]),
+      Number(plain[2]) - 1,
+      Number(plain[3]),
+      Number(plain[4]),
+      Number(plain[5]),
+      Number(plain[6] || '0')
+    )
+    return Number.isNaN(local.getTime()) ? null : local
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 const formatChatTime = (value) => {
   if (!value) return ''
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleString('ko-KR', {
-    hour12: false,
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const d = parseDateTimeLocal(value)
+  if (!d || Number.isNaN(d.getTime())) return ''
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}-${dd} ${hh}:${mi}`
 }
 
 const formatDateTime = (value) => {
   if (!value) return '-'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return String(value)
+  const d = parseDateTimeLocal(value)
+  if (!d || Number.isNaN(d.getTime())) return String(value)
   const yyyy = d.getFullYear()
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
