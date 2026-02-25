@@ -2951,6 +2951,11 @@ input {
   border-bottom: none;
 }
 
+.tm-assign-row.is-queue-duplicate {
+  background: #fff7ed;
+  border-left: 4px solid #f97316;
+}
+
 .tm-assign-head {
   background: #f1f5f9;
   font-weight: 600;

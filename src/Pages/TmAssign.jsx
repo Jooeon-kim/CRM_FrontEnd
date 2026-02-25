@@ -31,6 +31,13 @@ export default function TmAssign() {
     return value
   }
 
+  const normalizePhoneDigits = (value) => {
+    if (!value) return ''
+    let digits = String(value).replace(/\D/g, '')
+    if (digits.startsWith('82')) digits = `0${digits.slice(2)}`
+    return digits
+  }
+
   const formatDateTime = (value) => {
     if (!value) return ''
     const raw = String(value).trim()
@@ -283,7 +290,25 @@ export default function TmAssign() {
         if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0
         return bTime - aTime
       })
-      return rows
+      const phoneCount = new Map()
+      rows.forEach((row) => {
+        const key = normalizePhoneDigits(row.phone)
+        if (!key) return
+        phoneCount.set(key, (phoneCount.get(key) || 0) + 1)
+      })
+      const groupedDupRows = []
+      const handled = new Set()
+      rows.forEach((row) => {
+        const key = normalizePhoneDigits(row.phone)
+        if (!key || (phoneCount.get(key) || 0) < 2 || handled.has(key)) return
+        groupedDupRows.push(...rows.filter((item) => normalizePhoneDigits(item.phone) === key))
+        handled.add(key)
+      })
+      const normalRows = rows.filter((row) => {
+        const key = normalizePhoneDigits(row.phone)
+        return !key || (phoneCount.get(key) || 0) < 2
+      })
+      return [...groupedDupRows, ...normalRows]
     }
     rows.sort((a, b) => {
       const aEvent = String(a.event || '').trim()
@@ -294,8 +319,36 @@ export default function TmAssign() {
       if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0
       return bTime - aTime
     })
-    return rows
+    const phoneCount = new Map()
+    rows.forEach((row) => {
+      const key = normalizePhoneDigits(row.phone)
+      if (!key) return
+      phoneCount.set(key, (phoneCount.get(key) || 0) + 1)
+    })
+    const groupedDupRows = []
+    const handled = new Set()
+    rows.forEach((row) => {
+      const key = normalizePhoneDigits(row.phone)
+      if (!key || (phoneCount.get(key) || 0) < 2 || handled.has(key)) return
+      groupedDupRows.push(...rows.filter((item) => normalizePhoneDigits(item.phone) === key))
+      handled.add(key)
+    })
+    const normalRows = rows.filter((row) => {
+      const key = normalizePhoneDigits(row.phone)
+      return !key || (phoneCount.get(key) || 0) < 2
+    })
+    return [...groupedDupRows, ...normalRows]
   }, [leads, sortMode])
+
+  const queuePhoneCountMap = useMemo(() => {
+    const map = new Map()
+    sortedLeads.forEach((lead) => {
+      const key = normalizePhoneDigits(lead.phone)
+      if (!key) return
+      map.set(key, (map.get(key) || 0) + 1)
+    })
+    return map
+  }, [sortedLeads])
 
   const allVisibleSelected =
     sortedLeads.length > 0 && sortedLeads.every((lead) => selectedLeadIds.includes(String(lead.id)))
@@ -401,7 +454,10 @@ export default function TmAssign() {
           <div className="tm-assign-empty">배정할 인입이 없습니다.</div>
         ) : (
           sortedLeads.map((lead) => (
-            <div className="tm-assign-row" key={lead.id}>
+            <div
+              className={`tm-assign-row${(queuePhoneCountMap.get(normalizePhoneDigits(lead.phone)) || 0) >= 2 ? ' is-queue-duplicate' : ''}`}
+              key={lead.id}
+            >
               <div>
                 <input
                   type="checkbox"
@@ -415,7 +471,8 @@ export default function TmAssign() {
               <div>{lead.availableTime || '-'}</div>
               <div>{lead.event || '-'}</div>
               <div className="tm-assign-dup-cell">
-                {(lead.duplicateMemoTmName || lead.duplicateMemoContent || lead.duplicatePreviousEvent)
+                {(() => {
+                  return (lead.duplicateMemoTmName || lead.duplicateMemoContent || lead.duplicatePreviousEvent)
                   ? (
                     <div className="tm-assign-dup-lines">
                       <div className="tm-assign-dup-line">
@@ -432,7 +489,8 @@ export default function TmAssign() {
                       </div>
                     </div>
                   )
-                  : '-'}
+                  : '-'
+                })()}
               </div>
             </div>
           ))
