@@ -113,7 +113,7 @@ const parseMemoStatusMeta = (memo) => {
       body: text,
     }
   }
-  const re = /(예약부도|내원완료|예약)(?:\s+예약일시:([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?/u
+  const re = /(리콜대기|예약부도|내원완료|예약)(?:\s+(?:예약일시|리콜일시):([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}))?/u
   const m = text.match(re)
   if (!m) return { badge: '', reservationText: '', body: text }
   const fullMatch = String(m[0] || '').trim()
@@ -792,7 +792,12 @@ export default function TmCalendar() {
                           <div className="tm-lead-memo-time">{formatDateTime(memo.memo_time)}</div>
                           {(() => {
                             const parsed = parseMemoStatusMeta(memo)
-                            const reservationText = String(parsed.reservationText || '').trim()
+                            const statusTimeText = String(
+                              parsed.badge === '리콜대기'
+                                ? (parsed.reservationText || (activeLead?.['리콜_예정일시'] ? formatDateTime(activeLead['리콜_예정일시']) : ''))
+                                : (parsed.reservationText || (activeLead?.['예약_내원일시'] ? formatDateTime(activeLead['예약_내원일시']) : ''))
+                            ).trim()
+                            const statusTimeLabel = parsed.badge === '리콜대기' ? '리콜일시' : '예약일시'
                             const badgeClassMap = {
                               예약: 'tm-lead-memo-badge is-reserved',
                               예약부도: 'tm-lead-memo-badge is-noshow',
@@ -806,8 +811,8 @@ export default function TmCalendar() {
                             return parsed.badge ? (
                               <div className="tm-lead-memo-status">
                                 <span className={badgeClass}>{parsed.badge}</span>
-                                {reservationText ? (
-                                  <span className="tm-lead-memo-status-time">예약일시: {reservationText}</span>
+                                {statusTimeText ? (
+                                  <span className="tm-lead-memo-status-time">{statusTimeLabel}: {statusTimeText}</span>
                                 ) : null}
                               </div>
                             ) : null
