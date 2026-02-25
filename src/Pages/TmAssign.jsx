@@ -341,6 +341,7 @@ export default function TmAssign() {
           <div>연락처</div>
           <div>상담가능시간</div>
           <div>이벤트</div>
+          <div>중복체크</div>
         </div>
         {sortedLeads.length === 0 ? (
           <div className="tm-assign-empty">배정할 인입이 없습니다.</div>
@@ -359,6 +360,11 @@ export default function TmAssign() {
               <div>{lead.phone ? formatPhone(lead.phone) : '-'}</div>
               <div>{lead.availableTime || '-'}</div>
               <div>{lead.event || '-'}</div>
+              <div className="tm-assign-dup-cell">
+                {lead.duplicateMemoContent
+                  ? `${lead.duplicateMemoTmName || 'TM'}: ${lead.duplicateMemoContent}`
+                  : '-'}
+              </div>
             </div>
           ))
         )}
