@@ -33,7 +33,33 @@ export default function TmAssign() {
 
   const formatDateTime = (value) => {
     if (!value) return ''
-    const date = new Date(value)
+    const raw = String(value).trim()
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+    let date = null
+    if (iso) {
+      date = new Date(
+        Number(iso[1]),
+        Number(iso[2]) - 1,
+        Number(iso[3]),
+        Number(iso[4]),
+        Number(iso[5]),
+        Number(iso[6] || '0')
+      )
+    } else {
+      const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+      if (plain) {
+        date = new Date(
+          Number(plain[1]),
+          Number(plain[2]) - 1,
+          Number(plain[3]),
+          Number(plain[4]),
+          Number(plain[5]),
+          Number(plain[6] || '0')
+        )
+      } else {
+        date = new Date(raw)
+      }
+    }
     if (Number.isNaN(date.getTime())) return String(value)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
@@ -221,11 +247,39 @@ export default function TmAssign() {
   }
 
   const sortedLeads = useMemo(() => {
+    const toInboundTime = (value) => {
+      if (!value) return Number.NaN
+      const raw = String(value).trim()
+      const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/)
+      if (iso) {
+        return new Date(
+          Number(iso[1]),
+          Number(iso[2]) - 1,
+          Number(iso[3]),
+          Number(iso[4]),
+          Number(iso[5]),
+          Number(iso[6] || '0')
+        ).getTime()
+      }
+      const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+      if (plain) {
+        return new Date(
+          Number(plain[1]),
+          Number(plain[2]) - 1,
+          Number(plain[3]),
+          Number(plain[4]),
+          Number(plain[5]),
+          Number(plain[6] || '0')
+        ).getTime()
+      }
+      return new Date(raw).getTime()
+    }
+
     const rows = [...leads]
     if (sortMode === 'inbound') {
       rows.sort((a, b) => {
-        const aTime = new Date(a.inboundDate || 0).getTime()
-        const bTime = new Date(b.inboundDate || 0).getTime()
+        const aTime = toInboundTime(a.inboundDate)
+        const bTime = toInboundTime(b.inboundDate)
         if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0
         return bTime - aTime
       })
@@ -235,8 +289,8 @@ export default function TmAssign() {
       const aEvent = String(a.event || '').trim()
       const bEvent = String(b.event || '').trim()
       if (aEvent !== bEvent) return aEvent.localeCompare(bEvent, 'ko')
-      const aTime = new Date(a.inboundDate || 0).getTime()
-      const bTime = new Date(b.inboundDate || 0).getTime()
+      const aTime = toInboundTime(a.inboundDate)
+      const bTime = toInboundTime(b.inboundDate)
       if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0
       return bTime - aTime
     })
