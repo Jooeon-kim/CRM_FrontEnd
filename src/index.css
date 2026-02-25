@@ -2917,9 +2917,34 @@ input {
 }
 
 .tm-assign-dup-cell {
+  min-width: 0;
+}
+
+.tm-assign-dup-lines {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.tm-assign-dup-line {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.tm-assign-dup-label {
+  color: #64748b;
+  font-weight: 600;
   white-space: nowrap;
+}
+
+.tm-assign-dup-value {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tm-assign-row:last-child {

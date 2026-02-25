@@ -415,8 +415,23 @@ export default function TmAssign() {
               <div>{lead.availableTime || '-'}</div>
               <div>{lead.event || '-'}</div>
               <div className="tm-assign-dup-cell">
-                {lead.duplicateMemoContent
-                  ? `${lead.duplicateMemoTmName || 'TM'}: ${lead.duplicateMemoContent}`
+                {(lead.duplicateMemoTmName || lead.duplicateMemoContent || lead.duplicatePreviousEvent)
+                  ? (
+                    <div className="tm-assign-dup-lines">
+                      <div className="tm-assign-dup-line">
+                        <span className="tm-assign-dup-label">기존TM:</span>
+                        <span className="tm-assign-dup-value">{lead.duplicateMemoTmName || '-'}</span>
+                      </div>
+                      <div className="tm-assign-dup-line">
+                        <span className="tm-assign-dup-label">최근메모:</span>
+                        <span className="tm-assign-dup-value">{lead.duplicateMemoContent || '-'}</span>
+                      </div>
+                      <div className="tm-assign-dup-line">
+                        <span className="tm-assign-dup-label">이전 신청이벤트:</span>
+                        <span className="tm-assign-dup-value">{lead.duplicatePreviousEvent || '-'}</span>
+                      </div>
+                    </div>
+                  )
                   : '-'}
               </div>
             </div>
