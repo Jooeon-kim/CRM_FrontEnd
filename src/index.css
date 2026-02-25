@@ -3131,10 +3131,163 @@ input {
 }
 
 .daily-report-modal {
-  max-width: 1080px;
-  width: min(1080px, 96vw);
-  max-height: 86vh;
+    max-width: 1080px;
+    width: min(1080px, 96vw);
+    max-height: 86vh;
+    overflow: auto;
+}
+
+.audit-log-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.audit-log-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: flex-end;
+}
+
+.audit-log-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.audit-log-controls select,
+.audit-log-controls button {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.audit-log-controls button {
+  cursor: pointer;
+}
+
+.audit-log-table-wrap {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
   overflow: auto;
+  background: #ffffff;
+}
+
+.audit-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+}
+
+.audit-log-table th,
+.audit-log-table td {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.audit-log-table th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+}
+
+.audit-log-detail-btn {
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+  border-radius: 8px;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+}
+
+.audit-log-empty {
+  text-align: center;
+  color: var(--muted);
+}
+
+.audit-log-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audit-log-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.audit-log-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(1080px, 95vw);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  padding: 1rem;
+}
+
+.audit-log-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.audit-log-modal-header h3 {
+  margin: 0;
+}
+
+.audit-log-modal-header button {
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+}
+
+.audit-log-modal-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 0.9rem;
+  font-size: 0.88rem;
+  color: #334155;
+  margin-bottom: 0.8rem;
+}
+
+.audit-log-modal-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.audit-log-modal-body h4 {
+  margin: 0 0 0.35rem;
+}
+
+.audit-log-modal-body pre {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 0.7rem;
+  min-height: 280px;
+  max-height: 58vh;
+  overflow: auto;
+  font-size: 0.78rem;
 }
 
 .daily-report-metrics {

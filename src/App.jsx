@@ -11,6 +11,7 @@ import TmCallStatus from './Pages/TmCallStatus'
 import AdminCalendar from './Pages/AdminCalendar'
 import AdminDailyReport from './Pages/AdminDailyReport'
 import AdminTmReassign from './Pages/AdminTmReassign'
+import AdminAuditLogs from './Pages/AdminAuditLogs'
 import TmLayout from './Pages/TmLayout'
 import TmHome from './Pages/TmHome'
 import TmMissed from './Pages/TmMissed'
@@ -74,6 +75,7 @@ function App() {
         <Route path="db-list" element={<DbList />} />
         <Route path="calendar" element={<AdminCalendar />} />
         <Route path="daily-report" element={<AdminDailyReport />} />
+        <Route path="audit-logs" element={<AdminAuditLogs />} />
       </Route>
     </Routes>
   )

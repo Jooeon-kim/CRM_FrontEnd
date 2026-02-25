@@ -31,6 +31,8 @@ export default function Admin() {
         ? 'DB목록'
         : location.pathname.includes('/admin/daily-report')
           ? '마감보고'
+          : location.pathname.includes('/admin/audit-logs')
+            ? '감사로그'
           : location.pathname.includes('/admin/calendar')
             ? '캘린더'
             : '관리자'
@@ -226,6 +228,14 @@ export default function Admin() {
               }
             >
               캘린더
+            </NavLink>
+            <NavLink
+              to="/admin/audit-logs"
+              className={({ isActive }) =>
+                `admin-nav-item${isActive ? ' active' : ''}`
+              }
+            >
+              감사로그
             </NavLink>
             <button
               type="button"
