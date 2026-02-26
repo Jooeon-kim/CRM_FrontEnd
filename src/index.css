@@ -1843,6 +1843,18 @@ input {
   min-height: 0;
 }
 
+.tm-lead-right .tm-lead-summary {
+  order: 1;
+}
+
+.tm-lead-right .tm-lead-form {
+  order: 2;
+}
+
+.tm-lead-right .tm-lead-actions {
+  order: 3;
+}
+
 .tm-lead-form {
   display: grid;
   gap: 0.8rem;
