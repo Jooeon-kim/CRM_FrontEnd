@@ -1270,57 +1270,57 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                     />
                   </label>
                 </div>
-              </div>
-            </div>
 
-            <div className="tm-lead-actions">
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({
-                  ...prev,
-                  memo: prev.memo ? `${prev.memo}\n${toLocalDateTimeString(new Date())}` : toLocalDateTimeString(new Date()),
-                }))}
-              >
-                현재시간기입
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({
-                  ...prev,
-                  memo: prev.memo ? `${prev.memo}/예약ok` : '/예약ok',
-                }))}
-              >
-                예약ok
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({
-                  ...prev,
-                  memo: prev.memo ? `${prev.memo}/문자보냄` : '/문자보냄',
-                }))}
-              >
-                문자보냄
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const myTmName = user?.username || user?.name || ''
-                  if (!myTmName) return
-                  setForm((prev) => ({
-                    ...prev,
-                    memo: prev.memo ? `${prev.memo}/${myTmName}` : `/${myTmName}`,
-                  }))
-                }}
-              >
-                /본인TM이름
-              </button>
-              <button type="button" onClick={handleShareLead}>
-                공유
-              </button>
-              <button type="button" onClick={() => setModalOpen(false)}>취소</button>
-              <button type="button" onClick={handleSave} disabled={saving}>
-                {saving ? '저장 중...' : '저장'}
-              </button>
+                <div className="tm-lead-actions">
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      memo: prev.memo ? `${prev.memo}\n${toLocalDateTimeString(new Date())}` : toLocalDateTimeString(new Date()),
+                    }))}
+                  >
+                    현재시간기입
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      memo: prev.memo ? `${prev.memo}/예약ok` : '/예약ok',
+                    }))}
+                  >
+                    예약ok
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      memo: prev.memo ? `${prev.memo}/문자보냄` : '/문자보냄',
+                    }))}
+                  >
+                    문자보냄
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const myTmName = user?.username || user?.name || ''
+                      if (!myTmName) return
+                      setForm((prev) => ({
+                        ...prev,
+                        memo: prev.memo ? `${prev.memo}/${myTmName}` : `/${myTmName}`,
+                      }))
+                    }}
+                  >
+                    /본인TM이름
+                  </button>
+                  <button type="button" onClick={handleShareLead}>
+                    공유
+                  </button>
+                  <button type="button" onClick={() => setModalOpen(false)}>취소</button>
+                  <button type="button" onClick={handleSave} disabled={saving}>
+                    {saving ? '저장 중...' : '저장'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
