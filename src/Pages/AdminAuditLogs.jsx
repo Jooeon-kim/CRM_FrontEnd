@@ -2,35 +2,22 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import api from '../apiClient'
 
-const parseDateTimeLocal = (value) => {
-  if (!value) return null
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
-  const raw = String(value).trim()
-  const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
-  if (plain) {
-    const d = new Date(
-      Number(plain[1]),
-      Number(plain[2]) - 1,
-      Number(plain[3]),
-      Number(plain[4]),
-      Number(plain[5]),
-      Number(plain[6] || '0')
-    )
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-  const parsed = new Date(raw)
-  return Number.isNaN(parsed.getTime()) ? null : parsed
-}
-
 const formatDateTime = (value) => {
-  const d = parseDateTimeLocal(value)
-  if (!d) return '-'
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mi = String(d.getMinutes()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`
+  if (!value) return '-'
+  if (value instanceof Date) {
+    const yyyy = value.getFullYear()
+    const mm = String(value.getMonth() + 1).padStart(2, '0')
+    const dd = String(value.getDate()).padStart(2, '0')
+    const hh = String(value.getHours()).padStart(2, '0')
+    const mi = String(value.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`
+  }
+
+  // Keep DB text as-is (no timezone conversion), trim to minute precision.
+  const raw = String(value).trim()
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/)
+  if (m) return `${m[1]} ${m[2]}`
+  return raw
 }
 
 const safeParse = (value) => {
