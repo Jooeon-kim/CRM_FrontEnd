@@ -190,6 +190,19 @@ input {
 }
 
 @media (max-width: 900px) {
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+  .admin-page,
+  .admin-body,
+  .admin-content,
+  .db-list,
+  .db-list-mobile-cards {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
   .db-list-table {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -219,6 +232,14 @@ input {
   }
   .admin-header-left {
     flex-wrap: wrap;
+    min-width: 0;
+  }
+  .admin-team,
+  .admin-page-title {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .admin-menu-toggle {
     display: inline-flex;
@@ -295,6 +316,7 @@ input {
     width: 100%;
     justify-content: space-between;
     flex-wrap: wrap;
+    max-width: 100%;
   }
   .mobile-filter-toggle {
     display: inline-flex;
@@ -314,6 +336,8 @@ input {
     display: grid !important;
     grid-template-columns: 1fr;
     gap: 0.6rem;
+    width: 100%;
+    max-width: 100%;
   }
   .tm-db-search input {
     width: 100%;
@@ -1146,6 +1170,7 @@ input {
 
 .db-mobile-card {
   width: 100%;
+  max-width: 100%;
   text-align: left;
   border: 1px solid rgba(15, 23, 42, 0.1);
   background: #ffffff;
