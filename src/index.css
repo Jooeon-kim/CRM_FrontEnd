@@ -308,7 +308,7 @@ input {
     display: grid;
   }
   .db-list-table.desktop-table {
-    display: block;
+    display: none !important;
   }
   .db-list-mobile-cards {
     display: grid !important;
