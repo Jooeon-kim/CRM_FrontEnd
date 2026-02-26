@@ -47,6 +47,7 @@ export default function AdminTmReassign() {
   const [selectedIds, setSelectedIds] = useState([])
   const [targetTmId, setTargetTmId] = useState('')
   const [saving, setSaving] = useState(false)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   useEffect(() => {
     const CACHE_TTL_MS = 2 * 60 * 1000
@@ -193,13 +194,20 @@ export default function AdminTmReassign() {
       <div className="db-list-header">
         <h1>TM변경</h1>
         <div className="db-list-actions">
+          <button
+            className="db-list-reset mobile-filter-toggle"
+            type="button"
+            onClick={() => setMobileFiltersOpen((prev) => !prev)}
+          >
+            {mobileFiltersOpen ? '필터 닫기' : '필터 열기'}
+          </button>
           <div className="db-list-count">필터 {filteredRows.length}건 / 선택 {selectedIds.length}건</div>
         </div>
       </div>
 
       {error ? <div className="db-list-error">{error}</div> : null}
 
-      <div className="db-list-filters">
+      <div className={`db-list-filters${mobileFiltersOpen ? ' open' : ''}`}>
         <label>
           현재 TM
           <select value={fromTm} onChange={(e) => setFromTm(e.target.value)}>
@@ -237,7 +245,7 @@ export default function AdminTmReassign() {
         </label>
       </div>
 
-      <div className="db-list-actions" style={{ marginBottom: 12 }}>
+      <div className="db-list-actions tm-reassign-actions">
         <button type="button" className="db-list-reset" onClick={toggleAllFiltered}>
           {allFilteredSelected ? '필터 전체 해제' : '필터 전체 선택'}
         </button>
@@ -260,7 +268,7 @@ export default function AdminTmReassign() {
         </button>
       </div>
 
-      <div className="db-list-table">
+      <div className="db-list-table desktop-table">
         <div className="db-list-row db-list-head">
           <div>선택</div>
           <div>배정날짜</div>
@@ -287,6 +295,29 @@ export default function AdminTmReassign() {
                 <div>{tmNameMap.get(String(row.tm)) || row.tm || '-'}</div>
                 <div>{row['상태'] || '대기'}</div>
               </div>
+            )
+          })
+        )}
+      </div>
+
+      <div className="db-list-mobile-cards tm-reassign-mobile-cards">
+        {filteredRows.length === 0 ? (
+          <div className="db-list-empty">조건에 맞는 데이터가 없습니다.</div>
+        ) : (
+          filteredRows.map((row) => {
+            const checked = selectedIds.includes(String(row.id))
+            return (
+              <label key={`m-${row.id}`} className="db-mobile-card tm-reassign-card">
+                <div className="db-mobile-card-head">
+                  <strong>{row['이름'] || '-'}</strong>
+                  <input type="checkbox" checked={checked} onChange={() => toggleOne(row.id)} />
+                </div>
+                <div className="db-mobile-card-line">배정: {formatDateTime(row['배정날짜'])}</div>
+                <div className="db-mobile-card-line">연락처: {formatPhone(row['연락처'])}</div>
+                <div className="db-mobile-card-line">이벤트: {row['이벤트'] || '-'}</div>
+                <div className="db-mobile-card-line">현재 TM: {tmNameMap.get(String(row.tm)) || row.tm || '-'}</div>
+                <div className="db-mobile-card-line">상태: {row['상태'] || '대기'}</div>
+              </label>
             )
           })
         )}
