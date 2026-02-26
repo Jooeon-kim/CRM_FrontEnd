@@ -296,6 +296,25 @@ input {
     justify-content: space-between;
     flex-wrap: wrap;
   }
+  .mobile-filter-toggle {
+    display: inline-flex;
+  }
+  .db-list-filters,
+  .tm-db-filters {
+    display: none;
+  }
+  .db-list-filters.open,
+  .tm-db-filters.open {
+    display: grid;
+  }
+  .db-list-table.desktop-table {
+    display: none;
+  }
+  .db-list-mobile-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
   .tm-db-search input {
     width: 100%;
   }
@@ -977,6 +996,10 @@ input {
   gap: 0.45rem;
 }
 
+.mobile-filter-toggle {
+  display: none;
+}
+
 .db-list-checkbox {
   display: inline-flex;
   align-items: center;
@@ -1108,6 +1131,55 @@ input {
   border-radius: 16px;
   overflow: auto;
   max-height: 800px;
+}
+
+.db-list-mobile-cards {
+  display: none;
+}
+
+.db-mobile-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  color: var(--text);
+}
+
+.db-mobile-card.is-available {
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+.db-mobile-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.db-mobile-card-head strong {
+  font-size: 0.95rem;
+}
+
+.db-mobile-card-head span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.db-mobile-card-line {
+  font-size: 0.82rem;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.db-mobile-card-memo {
+  color: #0f172a;
 }
 
 .db-list-row {

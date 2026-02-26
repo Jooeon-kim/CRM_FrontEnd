@@ -60,6 +60,7 @@ export default function DbList() {
     event: '',
     tmId: '',
   })
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const CACHE_TTL_MS = 2 * 60 * 1000
 
@@ -556,15 +557,22 @@ export default function DbList() {
   }
 
   return (
-    <div className="db-list">
-      <div className="db-list-header">
-        <h1>DB 목록</h1>
-        <div className="db-list-actions">
-          <div className="tm-db-search">
-            <input
-              type="text"
-              value={nameQuery}
-              onChange={(e) => setNameQuery(e.target.value)}
+      <div className="db-list">
+        <div className="db-list-header">
+          <h1>DB 목록</h1>
+          <div className="db-list-actions">
+            <button
+              className="db-list-reset mobile-filter-toggle"
+              type="button"
+              onClick={() => setMobileFiltersOpen((prev) => !prev)}
+            >
+              {mobileFiltersOpen ? '필터 닫기' : '필터 열기'}
+            </button>
+            <div className="tm-db-search">
+              <input
+                type="text"
+                value={nameQuery}
+                onChange={(e) => setNameQuery(e.target.value)}
               placeholder="이름 검색"
             />
           </div>
@@ -594,7 +602,7 @@ export default function DbList() {
         </div>
       </div>
 
-      <div className="db-list-filters">
+      <div className={`db-list-filters${mobileFiltersOpen ? ' open' : ''}`}>
         <label>
           TM
           <select value={tmFilter} onChange={(e) => setTmFilter(e.target.value)}>
@@ -679,15 +687,16 @@ export default function DbList() {
 
       {error ? <div className="db-list-error">{error}</div> : null}
 
-      {filteredRows.length === 0 ? (
-        <div className="db-list-empty">표시할 데이터가 없습니다.</div>
-      ) : (
-        <div className="db-list-table">
-          <div className="db-list-row db-list-head">
-            {visibleColumns.map((key) => (
-              <div key={key}>{key}</div>
-            ))}
-          </div>
+        {filteredRows.length === 0 ? (
+          <div className="db-list-empty">표시할 데이터가 없습니다.</div>
+        ) : (
+          <>
+          <div className="db-list-table desktop-table">
+            <div className="db-list-row db-list-head">
+              {visibleColumns.map((key) => (
+                <div key={key}>{key}</div>
+              ))}
+            </div>
           {filteredRows.map((row, index) => (
             <div
               className="db-list-row db-list-click"
@@ -702,10 +711,34 @@ export default function DbList() {
                   {formatCell(key, row[key])}
                 </div>
               ))}
-            </div>
-          ))}
-        </div>
-      )}
+              </div>
+            ))}
+          </div>
+          <div className="db-list-mobile-cards">
+            {filteredRows.map((row, index) => (
+              <button
+                type="button"
+                key={`m-${index}`}
+                className="db-mobile-card"
+                onClick={() => openModal(row)}
+              >
+                <div className="db-mobile-card-head">
+                  <strong>{row['이름'] || '-'}</strong>
+                  <span>{formatCell('상태', row['상태'])}</span>
+                </div>
+                <div className="db-mobile-card-line">연락처: {formatCell('연락처', row['연락처'])}</div>
+                <div className="db-mobile-card-line">이벤트: {formatCell('이벤트', row['이벤트'])}</div>
+                <div className="db-mobile-card-line">TM: {formatCell('tm', row['tm'])}</div>
+                <div className="db-mobile-card-line">인입: {formatCell('인입날짜', row['인입날짜'])}</div>
+                <div className="db-mobile-card-line">배정: {formatCell('배정날짜', row['배정날짜'])}</div>
+                <div className="db-mobile-card-line db-mobile-card-memo">
+                  메모: {formatCell('최근메모내용', row['최근메모내용'])}
+                </div>
+              </button>
+            ))}
+          </div>
+          </>
+        )}
 
       {modalOpen && activeLead ? (
         <div className="tm-lead-modal">

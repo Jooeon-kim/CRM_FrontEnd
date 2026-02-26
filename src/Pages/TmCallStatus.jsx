@@ -127,6 +127,7 @@ export default function TmCallStatus() {
   const [activeLead, setActiveLead] = useState(null)
   const [memos, setMemos] = useState([])
   const [saving, setSaving] = useState(false)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [form, setForm] = useState({
     status: '',
     region: '',
@@ -563,15 +564,22 @@ export default function TmCallStatus() {
   if (loading) return <div className="db-list">불러오는 중...</div>
 
   return (
-    <div className="tm-call">
-      <div className="tm-call-header">
-        <h1>TM 콜 현황</h1>
-        <div className="db-list-actions">
-          <span className="db-list-count">{filteredRows.length}건</span>
+      <div className="tm-call">
+        <div className="tm-call-header">
+          <h1>TM 콜 현황</h1>
+          <div className="db-list-actions">
+            <button
+              type="button"
+              className="db-list-reset mobile-filter-toggle"
+              onClick={() => setMobileFiltersOpen((prev) => !prev)}
+            >
+              {mobileFiltersOpen ? '필터 닫기' : '필터 열기'}
+            </button>
+            <span className="db-list-count">{filteredRows.length}건</span>
+          </div>
         </div>
-      </div>
 
-      <div className="db-list-filters">
+      <div className={`db-list-filters${mobileFiltersOpen ? ' open' : ''}`}>
         <label>
           배정 시작일
           <input
@@ -736,15 +744,16 @@ export default function TmCallStatus() {
 
       {error ? <div className="db-list-error">{error}</div> : null}
 
-      {filteredRows.length === 0 ? (
-        <div className="db-list-empty">표시할 데이터가 없습니다.</div>
-      ) : (
-        <div className="db-list-table tm-call-table">
-          <div className="db-list-row db-list-head">
-            {visibleColumns.map((key) => (
-              <div key={key}>{key}</div>
-            ))}
-          </div>
+        {filteredRows.length === 0 ? (
+          <div className="db-list-empty">표시할 데이터가 없습니다.</div>
+        ) : (
+          <>
+          <div className="db-list-table tm-call-table desktop-table">
+            <div className="db-list-row db-list-head">
+              {visibleColumns.map((key) => (
+                <div key={key}>{key}</div>
+              ))}
+            </div>
           {filteredRows.map((row, index) => (
             <div
               className="db-list-row db-list-click"
@@ -759,10 +768,32 @@ export default function TmCallStatus() {
                   {formatCell(key, row[key])}
                 </div>
               ))}
-            </div>
-          ))}
-        </div>
-      )}
+              </div>
+            ))}
+          </div>
+          <div className="db-list-mobile-cards">
+            {filteredRows.map((row, index) => (
+              <button
+                type="button"
+                key={`m-${index}`}
+                className="db-mobile-card"
+                onClick={() => openModal(row)}
+              >
+                <div className="db-mobile-card-head">
+                  <strong>{row['이름'] || '-'}</strong>
+                  <span>{row['상태'] || '-'}</span>
+                </div>
+                <div className="db-mobile-card-line">연락처: {formatPhone(row['연락처'])}</div>
+                <div className="db-mobile-card-line">TM: {row['tm'] || '-'}</div>
+                <div className="db-mobile-card-line">이벤트: {row['이벤트'] || '-'}</div>
+                <div className="db-mobile-card-line">콜시간: {formatCell('콜_날짜시간', row['콜_날짜시간'])}</div>
+                <div className="db-mobile-card-line">예약: {formatCell('예약_내원일시', row['예약_내원일시'])}</div>
+                <div className="db-mobile-card-line db-mobile-card-memo">메모: {row['최근메모내용'] || '-'}</div>
+              </button>
+            ))}
+          </div>
+          </>
+        )}
 
       {modalOpen && activeLead ? (
         <div className="tm-lead-modal">

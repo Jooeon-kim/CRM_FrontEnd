@@ -152,6 +152,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   const [editingMemoContent, setEditingMemoContent] = useState('')
   const [editingMemoSaving, setEditingMemoSaving] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   useEffect(() => {
     if (cacheEntry && Array.isArray(cacheEntry.rows)) {
@@ -814,17 +815,24 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
   return (
     <div className="db-list">
-      <div className="db-list-header">
-        <div>
-          <h1>{statusFilter ? statusFilter : ''}</h1>
-          <span className="db-list-count">{filteredList.length}건</span>
-        </div>
-        <div className="db-list-actions">
-          <div className="tm-db-search">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+        <div className="db-list-header">
+          <div>
+            <h1>{statusFilter ? statusFilter : ''}</h1>
+            <span className="db-list-count">{filteredList.length}건</span>
+          </div>
+          <div className="db-list-actions">
+            <button
+              type="button"
+              className="db-list-reset mobile-filter-toggle"
+              onClick={() => setMobileFiltersOpen((prev) => !prev)}
+            >
+              {mobileFiltersOpen ? '필터 닫기' : '필터 열기'}
+            </button>
+            <div className="tm-db-search">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="이름, 연락처, 이벤트, 메모 검색"
             />
           </div>
@@ -834,7 +842,7 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         </div>
       </div>
 
-      <div className="tm-db-filters">
+      <div className={`tm-db-filters${mobileFiltersOpen ? ' open' : ''}`}>
         <label>
           상태
           <select value={statusFilterLocal} onChange={(e) => setStatusFilterLocal(e.target.value)}>
@@ -910,10 +918,11 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
 
       {error ? <div className="db-list-error">{error}</div> : null}
 
-      {filteredList.length === 0 ? (
-        <div className="db-list-empty">표시할 데이터가 없습니다.</div>
-      ) : (
-        <div className="db-list-table tm-db-table">
+        {filteredList.length === 0 ? (
+          <div className="db-list-empty">표시할 데이터가 없습니다.</div>
+        ) : (
+        <>
+        <div className="db-list-table tm-db-table desktop-table">
           <div className={`db-list-row db-list-head tm-db-row${hasRecallColumn ? ' tm-db-row-recall' : ''}`}>
             <div></div>
             {visibleColumns.map((key) => (
@@ -958,9 +967,36 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 )
               })}
             </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+          <div className="db-list-mobile-cards">
+            {filteredList.map((row, index) => (
+              <button
+                type="button"
+                key={`m-${index}`}
+                className={`db-mobile-card${isAvailableNow(row) ? ' is-available' : ''}`}
+                onClick={() => openModal(row)}
+              >
+                <div className="db-mobile-card-head">
+                  <strong>{row['이름'] || '-'}</strong>
+                  <span>{row['상태'] || '-'}</span>
+                </div>
+                <div className="db-mobile-card-line">연락처: {formatPhone(row['연락처'])}</div>
+                <div className="db-mobile-card-line">이벤트: {row['이벤트'] || '-'}</div>
+                <div className="db-mobile-card-line">상담가능: {row['상담가능시간'] || '-'}</div>
+                {assignedTodayOnly ? (
+                  <div className="db-mobile-card-line">배정: {formatUtcAsKstDateTime(getAssignedDateValue(row))}</div>
+                ) : (
+                  <div className="db-mobile-card-line">인입: {formatDateTime(row['인입날짜'])}</div>
+                )}
+                <div className="db-mobile-card-line db-mobile-card-memo">
+                  메모: {row['최근메모내용'] || '-'}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+        )}
 
       {modalOpen && activeLead ? (
         <div className="tm-lead-modal">
