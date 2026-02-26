@@ -3612,3 +3612,28 @@ input {
     max-width: 100% !important;
   }
 }
+
+/* Final mobile header override */
+@media (max-width: 900px) {
+  .admin-header {
+    padding: 1rem 1rem 1.1rem !important;
+    min-height: 86px;
+  }
+
+  .admin-header-left {
+    align-items: flex-start !important;
+    row-gap: 0.3rem;
+  }
+
+  .admin-team,
+  .admin-page-title {
+    padding-bottom: 0.28rem !important;
+  }
+
+  .admin-logo-mobile-tag {
+    display: inline-block !important;
+    background: rgba(245, 158, 11, 0.22) !important;
+    border-color: rgba(251, 191, 36, 0.9) !important;
+    color: #fef3c7 !important;
+  }
+}
