@@ -45,6 +45,7 @@ const safeParse = (value) => {
 const ROLE_OPTIONS = ['all', 'ADMIN', 'TM', 'SYSTEM']
 
 export default function AdminAuditLogs() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900)
   const agentsCache = useSelector((state) => state.main.adminDatasets?.agents?.rows || [])
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -77,6 +78,12 @@ export default function AdminAuditLogs() {
   useEffect(() => {
     load()
   }, [action, targetType, adminTmId, actorRole, limit])
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 900)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const actionOptions = useMemo(() => {
     const set = new Set(rows.map((row) => String(row?.action || '').trim()).filter(Boolean))
@@ -153,7 +160,35 @@ export default function AdminAuditLogs() {
       {loading ? <div className="db-list">불러오는 중...</div> : null}
       {error ? <div className="db-error">{error}</div> : null}
 
-      {!loading && !error ? (
+      {!loading && !error && isMobile ? (
+        <div className="audit-log-mobile-list">
+          {rows.map((row) => (
+            <article key={row.id} className="audit-log-mobile-card">
+              <div className="audit-log-mobile-head">
+                <strong>#{row.id}</strong>
+                <span>{formatDateTime(row.created_at)}</span>
+              </div>
+              <div className="audit-log-mobile-line"><b>역할:</b> {row.actor_role || '-'}</div>
+              <div className="audit-log-mobile-line"><b>사용자:</b> {row.admin_name || row.admin_tm_id || '-'}</div>
+              <div className="audit-log-mobile-line"><b>액션:</b> {row.action || '-'}</div>
+              <div className="audit-log-mobile-line"><b>대상:</b> {row.target_type || '-'} / {row.target_id || '-'}</div>
+              <div className="audit-log-mobile-line"><b>IP:</b> {row.ip_address || '-'}</div>
+              <button
+                type="button"
+                className="audit-log-detail-btn"
+                onClick={() => setDetail(row)}
+              >
+                보기
+              </button>
+            </article>
+          ))}
+          {rows.length === 0 ? (
+            <div className="audit-log-empty">조회 결과가 없습니다.</div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!loading && !error && !isMobile ? (
         <div className="audit-log-table-wrap">
           <table className="audit-log-table">
             <thead>
@@ -232,4 +267,3 @@ export default function AdminAuditLogs() {
     </section>
   )
 }
-

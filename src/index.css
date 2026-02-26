@@ -3494,6 +3494,49 @@ input {
   gap: 0.9rem;
 }
 
+.audit-log-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.audit-log-mobile-card {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.audit-log-mobile-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+}
+
+.audit-log-mobile-head strong {
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.audit-log-mobile-head span {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.audit-log-mobile-line {
+  font-size: 0.84rem;
+  color: #0f172a;
+}
+
+.audit-log-mobile-line b {
+  color: #334155;
+}
+
 .audit-log-controls {
   display: flex;
   flex-wrap: wrap;
@@ -3639,6 +3682,53 @@ input {
   max-height: 58vh;
   overflow: auto;
   font-size: 0.78rem;
+}
+
+@media (max-width: 900px) {
+  .audit-log-controls {
+    gap: 0.45rem;
+  }
+
+  .audit-log-controls label {
+    flex: 1 1 calc(50% - 0.3rem);
+    min-width: 140px;
+  }
+
+  .audit-log-controls select,
+  .audit-log-controls button {
+    width: 100%;
+    min-height: 38px;
+    font-size: 0.86rem;
+    padding: 0.42rem 0.55rem;
+  }
+
+  .audit-log-detail-btn {
+    align-self: flex-start;
+    margin-top: 0.25rem;
+  }
+
+  .audit-log-modal-card {
+    width: min(98vw, 98vw);
+    max-height: 92vh;
+    padding: 0.75rem;
+  }
+
+  .audit-log-modal-meta {
+    grid-template-columns: 1fr;
+    font-size: 0.82rem;
+  }
+
+  .audit-log-modal-body {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .audit-log-modal-body pre {
+    min-height: 180px;
+    max-height: 36vh;
+    font-size: 0.74rem;
+    padding: 0.55rem;
+  }
 }
 
 .daily-report-metrics {
