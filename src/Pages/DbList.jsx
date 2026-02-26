@@ -584,17 +584,9 @@ export default function DbList() {
               placeholder="전화번호 검색"
             />
           </div>
-          <button
-            className="db-list-export"
-            type="button"
-            onClick={handleExport}
-            disabled={downloading}
-          >
-            {downloading ? '다운로드 중...' : '엑셀 다운로드'}
-          </button>
-          <button className="db-list-export" type="button" onClick={openCreateModal}>
-            DB 추가
-          </button>
+            <button className="db-list-export" type="button" onClick={openCreateModal}>
+              DB 추가
+            </button>
           <button className="db-list-reset" type="button" onClick={handleReset}>
             초기화
           </button>
@@ -602,7 +594,7 @@ export default function DbList() {
         </div>
       </div>
 
-      <div className={`db-list-filters${mobileFiltersOpen ? ' open' : ''}`}>
+        <div className={`db-list-filters${mobileFiltersOpen ? ' open' : ''}`}>
         <label>
           TM
           <select value={tmFilter} onChange={(e) => setTmFilter(e.target.value)}>
@@ -675,15 +667,23 @@ export default function DbList() {
             onChange={(e) => setMemoQuery(e.target.value)}
           />
         </label>
-        <label className="db-list-checkbox">
-          <input
-            type="checkbox"
-            checked={assignedTodayOnly}
-            onChange={(e) => setAssignedTodayOnly(e.target.checked)}
-          />
-          당일배정DB
-        </label>
-      </div>
+          <label className="db-list-checkbox">
+            <input
+              type="checkbox"
+              checked={assignedTodayOnly}
+              onChange={(e) => setAssignedTodayOnly(e.target.checked)}
+            />
+            당일배정DB
+          </label>
+          <button
+            className="db-list-export"
+            type="button"
+            onClick={handleExport}
+            disabled={downloading}
+          >
+            {downloading ? '다운로드 중...' : '엑셀 다운로드'}
+          </button>
+        </div>
 
       {error ? <div className="db-list-error">{error}</div> : null}
 

@@ -833,14 +833,11 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="이름, 연락처, 이벤트, 메모 검색"
-            />
+                placeholder="이름, 연락처, 이벤트, 메모 검색"
+              />
+            </div>
           </div>
-          <button type="button" className="db-list-export" onClick={handleExport} disabled={filteredList.length === 0}>
-            엑셀 다운로드
-          </button>
         </div>
-      </div>
 
       <div className={`tm-db-filters${mobileFiltersOpen ? ' open' : ''}`}>
         <label>
@@ -904,17 +901,25 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
             placeholder="예: 1"
           />
         </label>
-        <label>
-          예약부도 이상
-          <input
-            type="number"
-            min="0"
-            value={noShowMin}
-            onChange={(e) => setNoShowMin(e.target.value)}
-            placeholder="예: 1"
-          />
-        </label>
-      </div>
+          <label>
+            예약부도 이상
+            <input
+              type="number"
+              min="0"
+              value={noShowMin}
+              onChange={(e) => setNoShowMin(e.target.value)}
+              placeholder="예: 1"
+            />
+          </label>
+          <button
+            type="button"
+            className="db-list-export"
+            onClick={handleExport}
+            disabled={filteredList.length === 0}
+          >
+            엑셀 다운로드
+          </button>
+        </div>
 
       {error ? <div className="db-list-error">{error}</div> : null}
 

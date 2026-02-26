@@ -1190,6 +1190,11 @@ input {
   background: #ffffff;
 }
 
+.db-list-filters .db-list-export,
+.tm-db-filters .db-list-export {
+  align-self: end;
+}
+
 .db-list-empty {
   padding: 2rem;
   text-align: center;
@@ -3235,6 +3240,10 @@ input {
     min-height: 0;
   }
 
+  .tm-lead-summary {
+    grid-template-columns: 1fr;
+  }
+
   .tm-lead-top {
     grid-template-columns: 1fr;
   }
@@ -3246,6 +3255,20 @@ input {
   .tm-lead-memos-list {
     max-height: 280px;
     overflow-y: auto;
+  }
+
+  .tm-lead-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.45rem;
+  }
+
+  .tm-lead-actions button {
+    flex: 0 0 auto;
+    min-width: 84px;
+    white-space: nowrap;
+    word-break: keep-all;
+    padding: 0.45rem 0.7rem;
   }
 }
 
@@ -3563,5 +3586,11 @@ input {
 
   .db-list-mobile-cards {
     display: grid !important;
+  }
+
+  .db-list-actions .tm-db-search,
+  .db-list-actions .tm-db-search input {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
