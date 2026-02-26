@@ -43,6 +43,8 @@ export default function TmLayout() {
   const location = useLocation()
   const [todayCount, setTodayCount] = useState(0)
   const [assignedTodayCount, setAssignedTodayCount] = useState(0)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900)
 
   useEffect(() => {
     const loadToday = async () => {
@@ -73,6 +75,20 @@ export default function TmLayout() {
 
     loadToday()
   }, [user?.id])
+
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth <= 900
+      setIsMobile(mobile)
+      if (!mobile) setSidebarOpen(false)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+  }, [location.pathname, isMobile])
 
   useEffect(() => {
     const loadAssignedToday = async () => {
@@ -113,6 +129,14 @@ export default function TmLayout() {
     <div className="admin-page">
       <header className="admin-header">
         <div className="admin-header-left">
+          <button
+            type="button"
+            className="admin-menu-toggle"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label="메뉴 열기"
+          >
+            ☰
+          </button>
           <div className="admin-logo">Client Manager</div>
           <div className="admin-team">샤인유의원 고객관리팀</div>
           <div className="admin-page-title">{pageTitle}</div>
@@ -131,43 +155,49 @@ export default function TmLayout() {
         </div>
       </header>
 
-      <div className="admin-body">
-        <aside className="admin-sidebar">
+      <div className={`admin-body${sidebarOpen ? ' sidebar-open' : ''}`}>
+        <aside className={`admin-sidebar${sidebarOpen ? ' open' : ''}`}>
           <nav className="admin-nav">
             <NavLink
               to="/main"
               end
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               배정 완료 DB
             </NavLink>
             <NavLink
               to="/main/waiting"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               대기
             </NavLink>
             <NavLink
               to="/main/available"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               상담가능
             </NavLink>
             <NavLink
               to="/main/missed"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               부재중
             </NavLink>
             <NavLink
               to="/main/recall"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               <span>리콜대기</span>
             </NavLink>
             <NavLink
               to="/main/reserved"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               예약
             </NavLink>
@@ -176,6 +206,7 @@ export default function TmLayout() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}${assignedTodayCount ? ' calendar-alert' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               <span>당일배정DB</span>
               {assignedTodayCount ? (
@@ -187,6 +218,7 @@ export default function TmLayout() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}${todayCount ? ' calendar-alert' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               <span>{calendarLabel}</span>
               {todayCount ? <span className="calendar-badge">오늘 예약 {todayCount}명</span> : null}
@@ -194,11 +226,20 @@ export default function TmLayout() {
             <NavLink
               to="/main/daily-report"
               className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               마감보고
             </NavLink>
           </nav>
         </aside>
+        {isMobile && sidebarOpen ? (
+          <button
+            type="button"
+            className="admin-sidebar-backdrop"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="사이드바 닫기"
+          />
+        ) : null}
 
         <main className="admin-content">
           <Outlet />

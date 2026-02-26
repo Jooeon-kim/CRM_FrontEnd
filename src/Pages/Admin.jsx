@@ -20,6 +20,8 @@ export default function Admin() {
     phone: '',
     password: '',
   })
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900)
 
   const pageTitle = location.pathname.includes('/admin/tm-assign')
     ? 'TM배정'
@@ -139,10 +141,32 @@ export default function Admin() {
     }
   }, [adminDatasets, dispatch])
 
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth <= 900
+      setIsMobile(mobile)
+      if (!mobile) setSidebarOpen(false)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+  }, [location.pathname, isMobile])
+
   return (
     <div className="admin-page">
       <header className="admin-header">
         <div className="admin-header-left">
+          <button
+            type="button"
+            className="admin-menu-toggle"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label="메뉴 열기"
+          >
+            ☰
+          </button>
           <div className="admin-logo">Client Manager</div>
           <div className="admin-team">샤인유의원 고객관리팀</div>
           <div className="admin-page-title">{pageTitle}</div>
@@ -169,8 +193,8 @@ export default function Admin() {
         </div>
       </header>
 
-      <div className="admin-body">
-        <aside className="admin-sidebar">
+      <div className={`admin-body${sidebarOpen ? ' sidebar-open' : ''}`}>
+        <aside className={`admin-sidebar${sidebarOpen ? ' open' : ''}`}>
           <nav className="admin-nav">
             <NavLink
               to="/admin"
@@ -178,6 +202,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               메인페이지
             </NavLink>
@@ -186,6 +211,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               TM배정
             </NavLink>
@@ -194,6 +220,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               TM콜현황
             </NavLink>
@@ -202,6 +229,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               TM변경
             </NavLink>
@@ -210,6 +238,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               DB목록
             </NavLink>
@@ -218,6 +247,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               마감보고
             </NavLink>
@@ -226,6 +256,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               캘린더
             </NavLink>
@@ -234,6 +265,7 @@ export default function Admin() {
               className={({ isActive }) =>
                 `admin-nav-item${isActive ? ' active' : ''}`
               }
+              onClick={() => isMobile && setSidebarOpen(false)}
             >
               감사로그
             </NavLink>
@@ -246,6 +278,14 @@ export default function Admin() {
             </button>
           </nav>
         </aside>
+        {isMobile && sidebarOpen ? (
+          <button
+            type="button"
+            className="admin-sidebar-backdrop"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="사이드바 닫기"
+          />
+        ) : null}
 
         <main className="admin-content">
           <Outlet />
