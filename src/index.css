@@ -86,12 +86,23 @@ input {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #0f172a;
-  text-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
+  text-shadow: none;
   display: inline-block;
   padding: 0.2rem 0.6rem;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.12));
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+}
+
+.login-title-line {
+  display: block;
+  line-height: 1.25;
+}
+
+.login-title-mobile {
+  color: #1d4ed8;
+  font-size: 0.95em;
+  font-weight: 800;
 }
 
 .login-subtitle {

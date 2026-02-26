@@ -6,6 +6,7 @@ import { login, logout } from '../store/authSlice'
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { status, error, isAuthenticated, isAdmin } = useSelector((state) => state.auth)
@@ -25,7 +26,7 @@ export default function Login() {
   const statusMessage = error
     ? { type: 'error', message: typeof error === 'string' ? error : JSON.stringify(error) }
     : isAuthenticated
-      ? { type: 'success', message: '로그인 성공' }
+      ? { type: 'success', message: '인증 성공' }
       : null
 
   useEffect(() => {
@@ -40,12 +41,27 @@ export default function Login() {
     wasAuthenticated.current = isAuthenticated
   }, [isAuthenticated, status, navigate])
 
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 900)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   return (
     <div className="login-shell">
       <div className="login-panel">
         <div className="login-brand">
-          <div className="login-title">샤인유의원 고객관리팀</div>
-          <div className="login-subtitle">로그인</div>
+          <div className="login-title">
+            {isMobile ? (
+              <>
+                <span className="login-title-line">샤인유의원</span>
+                <span className="login-title-line">고객관리팀</span>
+                <span className="login-title-line login-title-mobile">Mobile</span>
+              </>
+            ) : (
+              '샤인유의원 고객관리팀'
+            )}
+          </div>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
@@ -55,7 +71,7 @@ export default function Login() {
               type="text"
               name="username"
               autoComplete="username"
-              placeholder="이름을 입력하세요."
+              placeholder="이름을 입력하세요"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               required
@@ -68,7 +84,7 @@ export default function Login() {
               type="password"
               name="password"
               autoComplete="current-password"
-              placeholder="비밀번호를 입력하세요."
+              placeholder="비밀번호를 입력하세요"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
@@ -76,7 +92,7 @@ export default function Login() {
           </label>
 
           <button className="login-button" type="submit" disabled={loading}>
-            {loading ? '로그인 중...' : '로그인'}
+            {loading ? '처리 중...' : '입장'}
           </button>
 
           {isAuthenticated ? (
