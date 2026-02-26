@@ -1046,6 +1046,12 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                 ) : (
                   <div className="db-mobile-card-line">인입: {formatDateTime(row['인입날짜'])}</div>
                 )}
+                {row['예약_내원일시'] ? (
+                  <div className="db-mobile-card-line">
+                    <span className="db-mobile-badge is-reserved">예약</span>{' '}
+                    {formatDateTime(row['예약_내원일시'])}
+                  </div>
+                ) : null}
                 <div className="db-mobile-card-line db-mobile-card-memo">
                   메모: {row['최근메모내용'] || '-'}
                 </div>

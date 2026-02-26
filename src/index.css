@@ -1297,6 +1297,21 @@ input {
   overflow: hidden;
 }
 
+.db-mobile-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.db-mobile-badge.is-reserved {
+  background: #2563eb;
+  color: #ffffff;
+}
+
 .db-list-row {
   display: grid;
   grid-template-columns: 1fr 1fr 0.95fr 1fr 0.9fr 0.75fr 0.8fr 3.2fr 1fr 1.1fr 0.8fr 1fr 0.55fr;
