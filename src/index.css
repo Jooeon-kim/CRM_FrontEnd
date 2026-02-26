@@ -308,10 +308,10 @@ input {
     display: grid;
   }
   .db-list-table.desktop-table {
-    display: none;
+    display: block;
   }
   .db-list-mobile-cards {
-    display: grid;
+    display: grid !important;
     grid-template-columns: 1fr;
     gap: 0.6rem;
   }
