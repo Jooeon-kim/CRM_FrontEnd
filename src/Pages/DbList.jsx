@@ -451,8 +451,10 @@ export default function DbList() {
 
   const filteredRows = rows.filter((row) => {
     const tmOk = tmFilter === 'all' || String(row.tm) === String(tmFilter)
+    const statusValue = String(row['상태'] || '').trim()
+    const normalizedStatus = statusValue || '대기'
     const statusOk =
-      statusFilter === 'all' || String(row['상태'] || '').includes(statusFilter)
+      statusFilter === 'all' || normalizedStatus === statusFilter
     const callCount = Number(row['콜횟수'] || 0)
     const missCount = Number(row['부재중_횟수'] || 0)
     const callOk = Number.isNaN(callMinNum) || callMin === '' || callCount >= callMinNum
