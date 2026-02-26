@@ -3544,3 +3544,24 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+/* Final mobile override: keep desktop filters/table hidden on small screens */
+@media (max-width: 900px) {
+  .db-list-filters,
+  .tm-db-filters {
+    display: none !important;
+  }
+
+  .db-list-filters.open,
+  .tm-db-filters.open {
+    display: grid !important;
+  }
+
+  .db-list-table.desktop-table {
+    display: none !important;
+  }
+
+  .db-list-mobile-cards {
+    display: grid !important;
+  }
+}
