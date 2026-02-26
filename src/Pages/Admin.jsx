@@ -167,7 +167,9 @@ export default function Admin() {
           >
             ☰
           </button>
-          <div className="admin-logo">Client Manager</div>
+          <div className="admin-logo">
+            Client Manager <span className="admin-logo-mobile-tag">MOBILE</span>
+          </div>
           <div className="admin-team">샤인유의원 고객관리팀</div>
           <div className="admin-page-title">{pageTitle}</div>
         </div>
