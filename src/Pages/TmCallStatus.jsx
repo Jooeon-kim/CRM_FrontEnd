@@ -297,6 +297,11 @@ export default function TmCallStatus() {
   const applyQuickRange = (mode) => {
     const today = new Date()
     const todayKey = toKstDateKeyFromUtc(today)
+    if (mode === 'all') {
+      setAssignedDateFrom('')
+      setAssignedDateTo('')
+      return
+    }
     if (mode === 'today') {
       setAssignedDateFrom(todayKey)
       setAssignedDateTo(todayKey)
@@ -314,6 +319,12 @@ export default function TmCallStatus() {
       const start = new Date(today)
       start.setDate(start.getDate() - 6)
       setAssignedDateFrom(toKstDateKeyFromUtc(start))
+      setAssignedDateTo(todayKey)
+      return
+    }
+    if (mode === 'thisMonth') {
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+      setAssignedDateFrom(toKstDateKeyFromUtc(monthStart))
       setAssignedDateTo(todayKey)
       return
     }
@@ -596,10 +607,11 @@ export default function TmCallStatus() {
             onChange={(e) => setAssignedDateTo(e.target.value)}
           />
         </label>
-        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('today')}>오늘</button>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('all')}>전체</button>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('yesterday')}>어제</button>
+        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('today')}>오늘</button>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('last7')}>최근7일</button>
+        <button type="button" className="db-list-reset" onClick={() => applyQuickRange('thisMonth')}>이번달</button>
         <button type="button" className="db-list-reset" onClick={() => applyQuickRange('reset')}>날짜 초기화</button>
       </div>
 
@@ -787,7 +799,12 @@ export default function TmCallStatus() {
                 <div className="db-mobile-card-line">TM: {row['tm'] || '-'}</div>
                 <div className="db-mobile-card-line">이벤트: {row['이벤트'] || '-'}</div>
                 <div className="db-mobile-card-line">콜시간: {formatCell('콜_날짜시간', row['콜_날짜시간'])}</div>
-                <div className="db-mobile-card-line">예약: {formatCell('예약_내원일시', row['예약_내원일시'])}</div>
+                {row['예약_내원일시'] ? (
+                  <div className="db-mobile-card-line">
+                    <span className="db-mobile-badge is-reserved">예약</span>{' '}
+                    {formatCell('예약_내원일시', row['예약_내원일시'])}
+                  </div>
+                ) : null}
                 <div className="db-mobile-card-line db-mobile-card-memo">메모: {row['최근메모내용'] || '-'}</div>
               </button>
             ))}

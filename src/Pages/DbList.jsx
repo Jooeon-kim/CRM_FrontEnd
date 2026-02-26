@@ -731,6 +731,12 @@ export default function DbList() {
                 <div className="db-mobile-card-line">TM: {formatCell('tm', row['tm'])}</div>
                 <div className="db-mobile-card-line">인입: {formatCell('인입날짜', row['인입날짜'])}</div>
                 <div className="db-mobile-card-line">배정: {formatCell('배정날짜', row['배정날짜'])}</div>
+                {row['예약_내원일시'] ? (
+                  <div className="db-mobile-card-line">
+                    <span className="db-mobile-badge is-reserved">예약</span>{' '}
+                    {formatCell('예약_내원일시', row['예약_내원일시'])}
+                  </div>
+                ) : null}
                 <div className="db-mobile-card-line db-mobile-card-memo">
                   메모: {formatCell('최근메모내용', row['최근메모내용'])}
                 </div>
