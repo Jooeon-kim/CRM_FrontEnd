@@ -813,6 +813,58 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
   if (!user?.id) return <div className="db-list">TM 정보가 없습니다.</div>
   if (loading) return <div className="db-list">불러오는 중...</div>
 
+  const renderLeadActionButtons = (extraClass = '') => (
+    <div className={`tm-lead-actions ${extraClass}`.trim()}>
+      <button
+        type="button"
+        onClick={() => setForm((prev) => ({
+          ...prev,
+          memo: prev.memo ? `${prev.memo}\n${toLocalDateTimeString(new Date())}` : toLocalDateTimeString(new Date()),
+        }))}
+      >
+        현재시간기입
+      </button>
+      <button
+        type="button"
+        onClick={() => setForm((prev) => ({
+          ...prev,
+          memo: prev.memo ? `${prev.memo}/예약ok` : '/예약ok',
+        }))}
+      >
+        예약ok
+      </button>
+      <button
+        type="button"
+        onClick={() => setForm((prev) => ({
+          ...prev,
+          memo: prev.memo ? `${prev.memo}/문자보냄` : '/문자보냄',
+        }))}
+      >
+        문자보냄
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const myTmName = user?.username || user?.name || ''
+          if (!myTmName) return
+          setForm((prev) => ({
+            ...prev,
+            memo: prev.memo ? `${prev.memo}/${myTmName}` : `/${myTmName}`,
+          }))
+        }}
+      >
+        /본인TM이름
+      </button>
+      <button type="button" onClick={handleShareLead}>
+        공유
+      </button>
+      <button type="button" onClick={() => setModalOpen(false)}>취소</button>
+      <button type="button" onClick={handleSave} disabled={saving}>
+        {saving ? '저장 중...' : '저장'}
+      </button>
+    </div>
+  )
+
   return (
     <div className="db-list">
         <div className="db-list-header">
@@ -1271,57 +1323,10 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
                   </label>
                 </div>
 
-                <div className="tm-lead-actions">
-                  <button
-                    type="button"
-                    onClick={() => setForm((prev) => ({
-                      ...prev,
-                      memo: prev.memo ? `${prev.memo}\n${toLocalDateTimeString(new Date())}` : toLocalDateTimeString(new Date()),
-                    }))}
-                  >
-                    현재시간기입
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setForm((prev) => ({
-                      ...prev,
-                      memo: prev.memo ? `${prev.memo}/예약ok` : '/예약ok',
-                    }))}
-                  >
-                    예약ok
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setForm((prev) => ({
-                      ...prev,
-                      memo: prev.memo ? `${prev.memo}/문자보냄` : '/문자보냄',
-                    }))}
-                  >
-                    문자보냄
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const myTmName = user?.username || user?.name || ''
-                      if (!myTmName) return
-                      setForm((prev) => ({
-                        ...prev,
-                        memo: prev.memo ? `${prev.memo}/${myTmName}` : `/${myTmName}`,
-                      }))
-                    }}
-                  >
-                    /본인TM이름
-                  </button>
-                  <button type="button" onClick={handleShareLead}>
-                    공유
-                  </button>
-                  <button type="button" onClick={() => setModalOpen(false)}>취소</button>
-                  <button type="button" onClick={handleSave} disabled={saving}>
-                    {saving ? '저장 중...' : '저장'}
-                  </button>
-                </div>
+                {renderLeadActionButtons('tm-lead-actions-mobile')}
               </div>
             </div>
+            {renderLeadActionButtons('tm-lead-actions-desktop')}
           </div>
         </div>
       ) : null}

@@ -2119,6 +2119,14 @@ input {
   gap: 0.6rem;
 }
 
+.tm-lead-actions-mobile {
+  display: none;
+}
+
+.tm-lead-actions-desktop {
+  display: flex;
+}
+
 .tm-lead-actions button {
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 8px;
@@ -3352,6 +3360,14 @@ input {
     white-space: nowrap;
     word-break: keep-all;
     padding: 0.45rem 0.7rem;
+  }
+
+  .tm-lead-actions-mobile {
+    display: flex;
+  }
+
+  .tm-lead-actions-desktop {
+    display: none;
   }
 }
 
