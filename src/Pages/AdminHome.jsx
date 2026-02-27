@@ -189,6 +189,11 @@ export default function AdminHome() {
 
   const formatDateTime = (value) => {
     if (!value) return '-'
+    if (typeof value === 'string') {
+      const raw = value.trim()
+      const plain = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::\d{2})?$/)
+      if (plain) return `${plain[1]} ${plain[2]}`
+    }
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return String(value)
     const yyyy = date.getFullYear()
@@ -285,7 +290,9 @@ export default function AdminHome() {
                 <div className="admin-home-tm-name">{agent.name}</div>
                 <div className="admin-home-tm-phone">{formatPhone(agent.phone)}</div>
                 <div className="admin-home-tm-login">
-                  {agent.is_logged_in ? '현재 로그인' : '로그아웃'}
+                  {agent.is_logged_in
+                    ? '현재 로그인'
+                    : `최근 접속: ${formatDateTime(agent.last_login_at)}`}
                 </div>
                 <button
                   className="admin-home-tm-edit"
