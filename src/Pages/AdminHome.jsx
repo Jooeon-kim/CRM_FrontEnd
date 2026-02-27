@@ -6,7 +6,6 @@ import { setAdminDataset } from '../store/mainSlice'
 
 export default function AdminHome() {
   const dispatch = useDispatch()
-  const authUser = useSelector((state) => state.auth.user)
   const dbCache = useSelector((state) => state.main.adminDatasets?.dbRows)
   const agentsCache = useSelector((state) => state.main.adminDatasets?.agents)
   const tmLeadsCache = useSelector((state) => state.main.adminDatasets?.tmLeads)
@@ -15,6 +14,7 @@ export default function AdminHome() {
   const [ruleMessage, setRuleMessage] = useState('')
   const [stats, setStats] = useState({
     unassigned: 0,
+    activeTmCount: 0,
   })
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
@@ -55,6 +55,7 @@ export default function AdminHome() {
         setAgents(cachedAgents)
         setStats({
           unassigned: cachedTmLeads.length || 0,
+          activeTmCount: cachedAgents.filter((agent) => !agent.isAdmin && agent.is_logged_in).length || 0,
         })
         setLoading(false)
         if (dbFresh && agentsFresh && tmLeadsFresh) return
@@ -75,6 +76,7 @@ export default function AdminHome() {
         const dbRows = dbRes.data || []
         setStats({
           unassigned: unassignedRes.data?.leads?.length || 0,
+          activeTmCount: (tmRes.data || []).filter((agent) => !agent.isAdmin && agent.is_logged_in).length || 0,
         })
         setRows(dbRows)
         setAgents(tmRes.data || [])
@@ -246,11 +248,11 @@ export default function AdminHome() {
           <div className="admin-home-card-sub">TM 배정 대기</div>
         </div>
         <div className="admin-home-card">
-          <div className="admin-home-card-title">현재 로그인 TM</div>
+          <div className="admin-home-card-title">로그인 중 TM</div>
           <div className="admin-home-card-value">
-            {authUser?.username || '-'}
+            {loading ? '...' : `${stats.activeTmCount}명`}
           </div>
-          <div className="admin-home-card-sub">현재 접속 계정</div>
+          <div className="admin-home-card-sub">현재 세션 유지 중</div>
         </div>
       </div>
 
@@ -272,7 +274,7 @@ export default function AdminHome() {
                 <div className="admin-home-tm-name">{agent.name}</div>
                 <div className="admin-home-tm-phone">{formatPhone(agent.phone)}</div>
                 <div className="admin-home-tm-login">
-                  최근 로그인 {formatDateTime(agent.last_login_at)}
+                  {agent.is_logged_in ? '현재 로그인' : '로그아웃'}
                 </div>
                 <button
                   className="admin-home-tm-edit"
