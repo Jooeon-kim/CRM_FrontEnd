@@ -112,11 +112,21 @@ const parseMemoStatusMeta = (memo) => {
 }
 
 const getSocketUrl = () => {
-  const base = import.meta.env.VITE_SOCKET_URL || ''
-  if (/^https?:\/\//i.test(base)) {
-    return base.replace(/\/+$/i, '')
+  const explicit = String(import.meta.env.VITE_SOCKET_URL || '').trim()
+  if (/^https?:\/\//i.test(explicit)) {
+    const normalized = explicit.replace(/\/+$/i, '')
+    try {
+      // Guard misconfiguration: frontend origin cannot serve Socket.IO backend.
+      if (/shineyou-client\.vercel\.app$/i.test(new URL(normalized).host)) {
+        return 'https://crmbackend-production-d9da.up.railway.app'
+      }
+    } catch {
+      return 'https://crmbackend-production-d9da.up.railway.app'
+    }
+    return normalized
   }
-  return undefined
+  // WebSocket must connect to backend origin directly in production.
+  return 'https://crmbackend-production-d9da.up.railway.app'
 }
 
 const getMessageRoomKey = (msg, myTmId) => {
@@ -273,7 +283,13 @@ export default function ChatWidget() {
         username: user.username,
         isAdmin,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 6,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.5,
     })
     socketRef.current = socket
 
