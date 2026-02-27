@@ -25,6 +25,7 @@ export default function AdminHome() {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState('add')
   const [formData, setFormData] = useState({ id: '', name: '', phone: '', password: '' })
+  const loggedInAgents = agents.filter((agent) => !agent.isAdmin && agent.is_logged_in)
 
   useEffect(() => {
     const CACHE_TTL_MS = 2 * 60 * 1000
@@ -248,11 +249,21 @@ export default function AdminHome() {
           <div className="admin-home-card-sub">TM 배정 대기</div>
         </div>
         <div className="admin-home-card">
-          <div className="admin-home-card-title">로그인 중 TM</div>
-          <div className="admin-home-card-value">
-            {loading ? '...' : `${stats.activeTmCount}명`}
-          </div>
-          <div className="admin-home-card-sub">현재 세션 유지 중</div>
+          <div className="admin-home-card-title">TM 상태</div>
+          {loading ? (
+            <div className="admin-home-card-value">...</div>
+          ) : loggedInAgents.length === 0 ? (
+            <div className="admin-home-card-sub">현재 로그인 없음</div>
+          ) : (
+            <div className="admin-home-login-list">
+              {loggedInAgents.map((agent) => (
+                <div key={`logged-${agent.id}`} className="admin-home-login-item">
+                  <span className="admin-home-login-badge">로그인</span>
+                  <span className="admin-home-login-name">{agent.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
