@@ -3095,14 +3095,14 @@ input {
   }
 
   .tm-calendar-grid {
-    grid-template-columns: repeat(7, minmax(54px, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .tm-calendar-cell {
-    height: 136px;
-    min-height: 136px;
-    max-height: 136px;
-    padding: 0.34rem 0.32rem 0.42rem;
+    height: 132px;
+    min-height: 132px;
+    max-height: 132px;
+    padding: 0.3rem 0.26rem 0.36rem;
   }
 
   .tm-calendar-date {
@@ -3119,8 +3119,9 @@ input {
   }
 
   .tm-calendar-status-badge {
-    font-size: 0.61rem;
-    padding: 0.1rem 0.3rem;
+    font-size: 0.58rem;
+    padding: 0.08rem 0.24rem;
+    max-width: 100%;
   }
 
   .tm-calendar-nav button,
