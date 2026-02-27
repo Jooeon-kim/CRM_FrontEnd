@@ -46,44 +46,50 @@ export default function AdminHome() {
       const cachedRows = Array.isArray(dbCache?.rows) ? dbCache.rows : []
       const cachedAgents = Array.isArray(agentsCache?.rows) ? agentsCache.rows : []
       const cachedTmLeads = Array.isArray(tmLeadsCache?.rows) ? tmLeadsCache.rows : []
-      const hasCache = cachedRows.length > 0 && cachedAgents.length > 0 && cachedTmLeads.length > 0
+      const hasCoreCache = cachedAgents.length > 0 && cachedTmLeads.length > 0
       const dbFresh = now - Number(dbCache?.fetchedAt || 0) < CACHE_TTL_MS
       const agentsFresh = now - Number(agentsCache?.fetchedAt || 0) < CACHE_TTL_MS
       const tmLeadsFresh = now - Number(tmLeadsCache?.fetchedAt || 0) < CACHE_TTL_MS
 
-      if (!force && hasCache) {
-        setRows(cachedRows)
+      if (!force && hasCoreCache) {
         setAgents(cachedAgents)
         setStats({
           unassigned: cachedTmLeads.length || 0,
           activeTmCount: cachedAgents.filter((agent) => !agent.isAdmin && agent.is_logged_in).length || 0,
         })
+        if (cachedRows.length > 0) setRows(cachedRows)
         setLoading(false)
-        if (dbFresh && agentsFresh && tmLeadsFresh) return
+        if (dbFresh && agentsFresh && tmLeadsFresh && cachedRows.length > 0) return
       }
 
       try {
-        if (!hasCache || force) setLoading(true)
-        try {
-          await api.post('/admin/sync-meta-leads')
-        } catch (syncErr) {
-          // 자동 동기화 실패 시에도 화면 데이터 로드는 계속 진행
-        }
-        const [dbRes, unassignedRes, tmRes] = await Promise.all([
-          api.get('/dbdata'),
+        if (!hasCoreCache || force) setLoading(true)
+
+        // 자동 동기화는 대기하지 않고 백그라운드로만 실행
+        api.post('/admin/sync-meta-leads').catch(() => {})
+
+        const [unassignedRes, tmRes] = await Promise.all([
           api.get('/tm/leads'),
           api.get('/tm/agents'),
         ])
-        const dbRows = dbRes.data || []
+
         setStats({
           unassigned: unassignedRes.data?.leads?.length || 0,
           activeTmCount: (tmRes.data || []).filter((agent) => !agent.isAdmin && agent.is_logged_in).length || 0,
         })
-        setRows(dbRows)
         setAgents(tmRes.data || [])
-        dispatch(setAdminDataset({ key: 'dbRows', rows: dbRows, fetchedAt: Date.now() }))
         dispatch(setAdminDataset({ key: 'tmLeads', rows: unassignedRes.data?.leads || [], fetchedAt: Date.now() }))
         dispatch(setAdminDataset({ key: 'agents', rows: tmRes.data || [], fetchedAt: Date.now() }))
+
+        // 대용량 DB는 핵심 영역 렌더 후 별도로 로드
+        if (force || !dbFresh || cachedRows.length === 0) {
+          const dbRes = await api.get('/dbdata')
+          const dbRows = dbRes.data || []
+          setRows(dbRows)
+          dispatch(setAdminDataset({ key: 'dbRows', rows: dbRows, fetchedAt: Date.now() }))
+        } else if (cachedRows.length > 0) {
+          setRows(cachedRows)
+        }
       } finally {
         setLoading(false)
       }
