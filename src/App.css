@@ -1,3 +1,59 @@
 .app-root {
   min-height: 100%;
 }
+
+.session-expired-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.session-expired-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.session-expired-card {
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  padding: 20px 20px 16px;
+  box-shadow: 0 24px 40px rgba(15, 23, 42, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-expired-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.session-expired-card p {
+  margin: 0;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.session-expired-card button {
+  align-self: flex-end;
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.session-expired-card button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
