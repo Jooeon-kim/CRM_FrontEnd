@@ -1,5 +1,13 @@
 {
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://crmbackend-production-d9da.up.railway.app/$1"
+    },
+    {
+      "source": "/socket.io/(.*)",
+      "destination": "https://crmbackend-production-d9da.up.railway.app/socket.io/$1"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

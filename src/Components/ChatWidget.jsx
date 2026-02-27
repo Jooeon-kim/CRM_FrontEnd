@@ -112,9 +112,9 @@ const parseMemoStatusMeta = (memo) => {
 }
 
 const getSocketUrl = () => {
-  const base = import.meta.env.VITE_API_BASE_URL || ''
+  const base = import.meta.env.VITE_SOCKET_URL || ''
   if (/^https?:\/\//i.test(base)) {
-    return base.replace(/\/api\/?$/i, '')
+    return base.replace(/\/+$/i, '')
   }
   return undefined
 }
