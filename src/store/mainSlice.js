@@ -16,6 +16,9 @@ const initialState = {
   },
 }
 
+const sanitizeRows = (rows) =>
+  (Array.isArray(rows) ? rows : []).filter((row) => row !== undefined && row !== null)
+
 const mainSlice = createSlice({
   name: 'main',
   initialState,
@@ -24,7 +27,7 @@ const mainSlice = createSlice({
       const { key, rows, fetchedAt } = action.payload || {}
       if (!key) return
       state.tmDbCache[key] = {
-        rows: Array.isArray(rows) ? rows : [],
+        rows: sanitizeRows(rows),
         fetchedAt: Number(fetchedAt || Date.now()),
       }
     },
@@ -53,7 +56,7 @@ const mainSlice = createSlice({
         state.adminDatasets[key] = { rows: [], fetchedAt: 0 }
       }
       state.adminDatasets[key] = {
-        rows: Array.isArray(rows) ? rows : [],
+        rows: sanitizeRows(rows),
         fetchedAt: Number(fetchedAt || Date.now()),
       }
     },
@@ -74,7 +77,7 @@ const mainSlice = createSlice({
       const key = String(tmId || '')
       if (!key) return
       state.calendarCache.tmBase[key] = {
-        rows: Array.isArray(rows) ? rows : [],
+        rows: sanitizeRows(rows),
         fetchedAt: Number(fetchedAt || Date.now()),
       }
     },
@@ -83,16 +86,16 @@ const mainSlice = createSlice({
       const key = `${String(tmId || '')}:${String(monthKey || '')}`
       if (!key || key === ':') return
       state.calendarCache.tmMonth[key] = {
-        schedules: Array.isArray(schedules) ? schedules : [],
-        companySchedules: Array.isArray(companySchedules) ? companySchedules : [],
+        schedules: sanitizeRows(schedules),
+        companySchedules: sanitizeRows(companySchedules),
         fetchedAt: Number(fetchedAt || Date.now()),
       }
     },
     setAdminCalendarBase(state, action) {
       const { reservations, agents, fetchedAt } = action.payload || {}
       state.calendarCache.adminBase = {
-        reservations: Array.isArray(reservations) ? reservations : [],
-        agents: Array.isArray(agents) ? agents : [],
+        reservations: sanitizeRows(reservations),
+        agents: sanitizeRows(agents),
         fetchedAt: Number(fetchedAt || Date.now()),
       }
     },
@@ -101,8 +104,8 @@ const mainSlice = createSlice({
       const key = String(monthKey || '')
       if (!key) return
       state.calendarCache.adminMonth[key] = {
-        schedules: Array.isArray(schedules) ? schedules : [],
-        companySchedules: Array.isArray(companySchedules) ? companySchedules : [],
+        schedules: sanitizeRows(schedules),
+        companySchedules: sanitizeRows(companySchedules),
         fetchedAt: Number(fetchedAt || Date.now()),
       }
     },
