@@ -413,7 +413,23 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
       return
     }
     if (value === '예약부도') {
-      setForm((prev) => ({ ...prev, status: value }))
+      setForm((prev) => ({
+        ...prev,
+        status: value,
+        memo: String(prev.memo || '').includes('예약부도')
+          ? prev.memo
+          : (prev.memo ? `${prev.memo} 예약부도` : '예약부도'),
+      }))
+      return
+    }
+    if (value === '내원완료') {
+      setForm((prev) => ({
+        ...prev,
+        status: value,
+        memo: String(prev.memo || '').includes('내원완료')
+          ? prev.memo
+          : (prev.memo ? `${prev.memo} 내원완료` : '내원완료'),
+      }))
       return
     }
     if (value === '리콜대기') {

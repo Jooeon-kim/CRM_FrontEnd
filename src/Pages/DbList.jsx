@@ -337,6 +337,26 @@ export default function DbList() {
   }
 
   const handleStatusChange = (value) => {
+    if (value === '예약부도') {
+      setForm((prev) => ({
+        ...prev,
+        status: value,
+        memo: String(prev.memo || '').includes('예약부도')
+          ? prev.memo
+          : (prev.memo ? `${prev.memo} 예약부도` : '예약부도'),
+      }))
+      return
+    }
+    if (value === '내원완료') {
+      setForm((prev) => ({
+        ...prev,
+        status: value,
+        memo: String(prev.memo || '').includes('내원완료')
+          ? prev.memo
+          : (prev.memo ? `${prev.memo} 내원완료` : '내원완료'),
+      }))
+      return
+    }
     setForm((prev) => ({ ...prev, status: value }))
   }
 
