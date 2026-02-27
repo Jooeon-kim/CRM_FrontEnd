@@ -2930,20 +2930,220 @@ input {
 @media (max-width: 900px) {
   .tm-calendar-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .tm-calendar-header > div:first-child {
+    width: 100%;
+  }
+
+  .tm-calendar-header h1 {
+    margin-bottom: 0.2rem;
+    font-size: 1.2rem;
   }
 
   .tm-calendar-grid {
-    grid-template-columns: repeat(7, minmax(70px, 1fr));
+    grid-template-columns: repeat(7, minmax(64px, 1fr));
   }
 
   .tm-calendar-cell {
-    min-height: 90px;
+    height: 150px;
+    min-height: 150px;
+    max-height: 150px;
+    padding: 0.4rem 0.42rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .tm-calendar-week {
+    padding: 0.45rem 0.2rem;
+    font-size: 0.78rem;
+  }
+
+  .tm-calendar-date {
+    font-size: 0.82rem;
+    padding-bottom: 0.24rem;
+    margin-bottom: 0.05rem;
+  }
+
+  .tm-calendar-company-bars {
+    margin-left: calc(-0.42rem - 1px);
+    margin-right: calc(-0.42rem - 1px);
+    margin-bottom: 0.05rem;
+  }
+
+  .tm-calendar-company-bar {
+    width: calc(100% + 0.84rem + 2px);
+    height: 16px;
+    line-height: 16px;
+    font-size: 0.62rem;
+    padding: 0 0.2rem;
+  }
+
+  .tm-calendar-status-row {
+    flex-wrap: wrap;
+    gap: 0.18rem;
+    overflow: visible;
+  }
+
+  .tm-calendar-status-badge {
+    font-size: 0.64rem;
+    padding: 0.12rem 0.35rem;
+  }
+
+  .tm-calendar-schedule-line {
+    font-size: 0.64rem;
+    padding: 0.08rem 0.25rem;
+    max-width: 100%;
+  }
+
+  .tm-calendar-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .tm-calendar-nav button,
+  .tm-add-button {
+    min-height: 34px;
+    font-size: 0.84rem;
+    padding: 0.35rem 0.66rem;
+  }
+
+  .tm-calendar-month {
+    min-width: 72px;
+    font-size: 1rem;
   }
 
   .tm-calendar-row {
-    grid-template-columns: 70px 1fr;
-    row-gap: 0.3rem;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    padding: 0.55rem 0.6rem;
+  }
+
+  .admin-calendar-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .tm-calendar-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-width: 56px;
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    background: #eff6ff;
+  }
+
+  .tm-calendar-cell-info {
+    border-top: 1px dashed rgba(15, 23, 42, 0.12);
+    padding-top: 0.32rem;
+    gap: 0.1rem;
+  }
+
+  .tm-calendar-label {
+    font-size: 0.66rem;
+  }
+
+  .tm-calendar-value {
+    font-size: 0.86rem;
+  }
+
+  .tm-calendar-memo .tm-calendar-value {
+    white-space: normal;
+    line-height: 1.28;
+    max-height: 2.56em;
+    overflow: hidden;
+  }
+
+  .tm-calendar-card {
+    width: min(97vw, 760px);
+    max-height: 86vh;
+    padding: 0.95rem 0.92rem;
+  }
+
+  .tm-calendar-card-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .tm-calendar-card-header h3 {
+    font-size: 1rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .tm-calendar-card-header p {
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .tm-calendar {
+    gap: 0.9rem;
+  }
+
+  .tm-calendar-header h1 {
+    font-size: 1.08rem;
+  }
+
+  .tm-calendar-header p {
+    font-size: 0.82rem;
+  }
+
+  .tm-calendar-grid {
+    grid-template-columns: repeat(7, minmax(54px, 1fr));
+  }
+
+  .tm-calendar-cell {
+    height: 136px;
+    min-height: 136px;
+    max-height: 136px;
+    padding: 0.34rem 0.32rem 0.42rem;
+  }
+
+  .tm-calendar-date {
+    font-size: 0.78rem;
+  }
+
+  .tm-calendar-company-bars {
+    margin-left: calc(-0.32rem - 1px);
+    margin-right: calc(-0.32rem - 1px);
+  }
+
+  .tm-calendar-company-bar {
+    width: calc(100% + 0.64rem + 2px);
+  }
+
+  .tm-calendar-status-badge {
+    font-size: 0.61rem;
+    padding: 0.1rem 0.3rem;
+  }
+
+  .tm-calendar-nav button,
+  .tm-add-button {
+    font-size: 0.8rem;
+    min-height: 32px;
+    padding: 0.3rem 0.58rem;
+  }
+
+  .tm-calendar-month {
+    font-size: 0.94rem;
+    min-width: 64px;
+  }
+
+  .tm-calendar-card {
+    width: min(98vw, 98vw);
+    border-radius: 12px;
+    max-height: 88vh;
+    padding: 0.8rem 0.72rem;
+  }
+
+  .tm-calendar-list {
+    gap: 0.5rem;
   }
 }
 
