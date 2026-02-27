@@ -6,6 +6,7 @@ import { setAdminDataset } from '../store/mainSlice'
 
 export default function AdminHome() {
   const dispatch = useDispatch()
+  const authUser = useSelector((state) => state.auth.user)
   const dbCache = useSelector((state) => state.main.adminDatasets?.dbRows)
   const agentsCache = useSelector((state) => state.main.adminDatasets?.agents)
   const tmLeadsCache = useSelector((state) => state.main.adminDatasets?.tmLeads)
@@ -13,9 +14,7 @@ export default function AdminHome() {
   const [message, setMessage] = useState('')
   const [ruleMessage, setRuleMessage] = useState('')
   const [stats, setStats] = useState({
-    total: 0,
     unassigned: 0,
-    tmCount: 0,
   })
   const [rows, setRows] = useState([])
   const [agents, setAgents] = useState([])
@@ -55,9 +54,7 @@ export default function AdminHome() {
         setRows(cachedRows)
         setAgents(cachedAgents)
         setStats({
-          total: cachedRows.length || 0,
           unassigned: cachedTmLeads.length || 0,
-          tmCount: cachedAgents.length || 0,
         })
         setLoading(false)
         if (dbFresh && agentsFresh && tmLeadsFresh) return
@@ -77,9 +74,7 @@ export default function AdminHome() {
         ])
         const dbRows = dbRes.data || []
         setStats({
-          total: dbRows.length || 0,
           unassigned: unassignedRes.data?.leads?.length || 0,
-          tmCount: tmRes.data?.length || 0,
         })
         setRows(dbRows)
         setAgents(tmRes.data || [])
@@ -244,13 +239,6 @@ export default function AdminHome() {
 
       <div className="admin-home-grid">
         <div className="admin-home-card">
-          <div className="admin-home-card-title">전체 DB</div>
-          <div className="admin-home-card-value">
-            {loading ? '...' : stats.total}
-          </div>
-          <div className="admin-home-card-sub">등록된 전체 리드</div>
-        </div>
-        <div className="admin-home-card">
           <div className="admin-home-card-title">미배정</div>
           <div className="admin-home-card-value">
             {loading ? '...' : stats.unassigned}
@@ -258,11 +246,11 @@ export default function AdminHome() {
           <div className="admin-home-card-sub">TM 배정 대기</div>
         </div>
         <div className="admin-home-card">
-          <div className="admin-home-card-title">TM 인원</div>
+          <div className="admin-home-card-title">현재 로그인 TM</div>
           <div className="admin-home-card-value">
-            {loading ? '...' : stats.tmCount}
+            {authUser?.username || '-'}
           </div>
-          <div className="admin-home-card-sub">현재 등록된 TM</div>
+          <div className="admin-home-card-sub">현재 접속 계정</div>
         </div>
       </div>
 
@@ -410,7 +398,7 @@ export default function AdminHome() {
                 if (!state) return status === '대기'
                 return state.includes(status)
               }).length
-              const percent = stats.total ? Math.round((count / stats.total) * 100) : 0
+              const percent = rows.length ? Math.round((count / rows.length) * 100) : 0
               return (
                 <div className="admin-home-bar-row" key={status}>
                   <span className="admin-home-bar-label">{status}</span>
