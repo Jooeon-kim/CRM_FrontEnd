@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import api from '../apiClient'
 import { logout } from '../store/authSlice'
-import ChatWidget from '../Components/ChatWidget'
 
 const parseLocalDateTime = (value) => {
   if (!value) return null
@@ -247,7 +246,6 @@ export default function TmLayout() {
           <Outlet />
         </main>
       </div>
-      <ChatWidget />
     </div>
   )
 }

@@ -606,22 +606,6 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
     }
   }
 
-  const handleShareLead = () => {
-    if (!activeLead?.id) return
-    window.dispatchEvent(
-      new CustomEvent('crm:share-lead', {
-        detail: {
-          lead: {
-            id: activeLead.id,
-            이름: activeLead['이름'] || '',
-            연락처: activeLead['연락처'] || '',
-            이벤트: activeLead['이벤트'] || '',
-          },
-        },
-      })
-    )
-  }
-
   const startEditMemo = (memo) => {
     setEditingMemoId(memo.id)
     setEditingMemoContent(memo.memo_content || '')
@@ -854,9 +838,6 @@ export default function TmDbList({ statusFilter, onlyEmptyStatus = false, onlyAv
         }}
       >
         /본인TM이름
-      </button>
-      <button type="button" onClick={handleShareLead}>
-        공유
       </button>
       <button type="button" onClick={() => setModalOpen(false)}>취소</button>
       <button type="button" onClick={handleSave} disabled={saving}>
