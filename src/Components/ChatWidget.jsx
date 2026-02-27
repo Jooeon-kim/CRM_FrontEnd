@@ -273,7 +273,7 @@ export default function ChatWidget() {
         username: user.username,
         isAdmin,
       },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
     })
     socketRef.current = socket
 
