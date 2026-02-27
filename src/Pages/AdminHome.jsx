@@ -197,8 +197,13 @@ export default function AdminHome() {
     if (!value) return '-'
     if (typeof value === 'string') {
       const raw = value.trim()
+      const isoWithOffset = raw.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/)
+      if (isoWithOffset) return `${isoWithOffset[1]} ${isoWithOffset[2]}`
       const plain = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::\d{2})?$/)
       if (plain) return `${plain[1]} ${plain[2]}`
+      const compact = raw.match(/^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})/)
+      if (compact) return compact[1]
+      return raw
     }
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return String(value)
