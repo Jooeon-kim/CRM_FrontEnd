@@ -172,6 +172,7 @@ export default function ChatWidget() {
   const socketRef = useRef(null)
   const listRef = useRef(null)
   const openRef = useRef(open)
+  const selectedKeyRef = useRef(GROUP_ROOM_KEY)
   const roomFetchSeqRef = useRef(0)
 
   const socketUrl = useMemo(() => getSocketUrl(), [])
@@ -187,6 +188,10 @@ export default function ChatWidget() {
   useEffect(() => {
     openRef.current = open
   }, [open])
+
+  useEffect(() => {
+    selectedKeyRef.current = selectedKey
+  }, [selectedKey])
 
   useEffect(() => {
     const onShare = (event) => {
@@ -268,13 +273,13 @@ export default function ChatWidget() {
         username: user.username,
         isAdmin,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
     })
     socketRef.current = socket
 
     socket.on('chat:new', (msg) => {
       const roomKey = getMessageRoomKey(msg, user.id)
-      const sameRoomOpen = openRef.current && roomKey === selectedKey
+      const sameRoomOpen = openRef.current && roomKey === selectedKeyRef.current
 
       if (sameRoomOpen) {
         setMessages((prev) => [...prev, msg])
@@ -292,7 +297,7 @@ export default function ChatWidget() {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin, selectedKey])
+  }, [isAuthenticated, socketUrl, user?.id, user?.username, isAdmin])
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return
