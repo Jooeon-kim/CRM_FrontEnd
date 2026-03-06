@@ -3334,12 +3334,23 @@ input {
   }
 
   .tm-lead-card {
-    overflow: auto;
+    overflow-y: auto;
+  }
+
+  .tm-lead-left .tm-lead-memos {
+    min-height: 0;
   }
 
   .tm-lead-memos-list {
-    max-height: 280px;
-    overflow-y: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .tm-lead-right .tm-lead-form {
+    overflow: visible;
+    padding-right: 0;
   }
 
   .tm-lead-actions {
